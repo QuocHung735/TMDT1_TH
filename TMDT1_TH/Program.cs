@@ -10,7 +10,8 @@ var connectionString = builder.Configuration.GetConnectionString("DefaultConnect
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(connectionString, sqlOptions =>
     {
-        sqlOptions.EnableRetryOnFailure(3);
+        // Không bật EnableRetryOnFailure tại đây vì luồng lưu sản phẩm
+        // sử dụng transaction do ứng dụng chủ động tạo.
         sqlOptions.MigrationsAssembly(typeof(ApplicationDbContext).Assembly.FullName);
     }));
 
@@ -46,7 +47,10 @@ app.MapControllerRoute(
 
 app.MapControllers();
 
-// Sau khi bạn chạy Update-Database, ứng dụng sẽ tự cài/cập nhật trigger SQL Server.
+// Tự bổ sung các cột/bảng marketplace còn thiếu trước khi controller truy vấn dữ liệu.
+await MarketplaceProductSchemaInstaller.EnsureUpgradedAsync(app.Services, app.Logger);
+
+// Cài/cập nhật trigger kiểm tra chồng lịch và ghi lịch sử giá.
 await DatabaseTriggerInstaller.TryInstallAsync(app.Services, app.Logger);
 
 app.Run();

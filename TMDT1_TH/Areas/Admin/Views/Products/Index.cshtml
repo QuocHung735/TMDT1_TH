@@ -50,6 +50,7 @@
                     <th>Biến thể</th>
                     <th>Giá bán</th>
                     <th>Tồn kho</th>
+                    <th>Độ hoàn thiện</th>
                     <th>Trạng thái</th>
                     <th></th>
                 </tr>
@@ -58,7 +59,7 @@
             @if (Model.Items.Count == 0)
             {
                 <tr>
-                    <td colspan="7">
+                    <td colspan="8">
                         <div style="padding:42px;text-align:center;color:var(--text-secondary)">
                             <i class="bi bi-box-seam" style="font-size:32px"></i>
                             <p style="margin:10px 0 16px">Chưa có sản phẩm phù hợp.</p>
@@ -95,9 +96,20 @@
                                 <span class="stock-bar"><i style="@stockStyle"></i></span>
                             </div>
                         </td>
+                        <td>
+                            <div class="listing-quality @(item.IssueCount > 0 ? "has-issues" : "")">
+                                <div><strong>@item.ListingScore%</strong></div>
+                                <span class="listing-quality__bar"><i style="width:@item.ListingScore%"></i></span>
+                                <small>@(item.IssueCount == 0 ? "Sẵn sàng đăng bán" : $"Còn {item.IssueCount} vấn đề")</small>
+                            </div>
+                        </td>
                         <td><span class="status-pill @UiStatus.Class(item.Status)">@item.Status</span></td>
                         <td class="table-actions">
                             <a class="icon-btn" asp-action="Edit" asp-route-id="@item.Id" title="Chỉnh sửa"><i class="bi bi-pencil"></i></a>
+                            <form asp-action="Duplicate" asp-route-id="@item.Id" method="post" style="display:inline">
+                                @Html.AntiForgeryToken()
+                                <button class="icon-btn" type="submit" title="Nhân bản thành bản nháp"><i class="bi bi-copy"></i></button>
+                            </form>
                             <form asp-action="ToggleStatus" asp-route-id="@item.Id" method="post" style="display:inline">
                                 @Html.AntiForgeryToken()
                                 <button class="icon-btn" type="submit" title="Bật hoặc tạm ẩn"><i class="bi bi-eye"></i></button>

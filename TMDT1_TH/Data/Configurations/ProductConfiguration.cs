@@ -11,17 +11,31 @@ public class ProductConfiguration : IEntityTypeConfiguration<Product>
         builder.ToTable("Products", table =>
         {
             table.HasCheckConstraint("CK_Products_StockQuantity", "[StockQuantity] >= 0");
+            table.HasCheckConstraint("CK_Products_LowStockThreshold", "[LowStockThreshold] >= 0");
+            table.HasCheckConstraint("CK_Products_PurchaseQuantity", "[MinPurchaseQuantity] >= 1 AND ([MaxPurchaseQuantity] IS NULL OR [MaxPurchaseQuantity] >= [MinPurchaseQuantity])");
             table.HasCheckConstraint("CK_Products_Weight", "[Weight] IS NULL OR [Weight] >= 0");
+            table.HasCheckConstraint("CK_Products_PackageDimensions", "([PackageLengthCm] IS NULL OR [PackageLengthCm] >= 0) AND ([PackageWidthCm] IS NULL OR [PackageWidthCm] >= 0) AND ([PackageHeightCm] IS NULL OR [PackageHeightCm] >= 0)");
+            table.HasCheckConstraint("CK_Products_WarrantyMonths", "[WarrantyMonths] IS NULL OR [WarrantyMonths] >= 0");
         });
         builder.ConfigureAudit();
 
         builder.Property(x => x.Name).HasMaxLength(250).IsRequired();
         builder.Property(x => x.Slug).HasMaxLength(280).IsRequired();
         builder.Property(x => x.Sku).HasMaxLength(80).IsRequired();
+        builder.Property(x => x.ModelNumber).HasMaxLength(100);
+        builder.Property(x => x.Unit).HasMaxLength(50).IsRequired().HasDefaultValue("Cái");
         builder.Property(x => x.ShortDescription).HasMaxLength(600);
         builder.Property(x => x.Description).HasColumnType("nvarchar(max)");
+        builder.Property(x => x.CountryOfOrigin).HasMaxLength(100);
+        builder.Property(x => x.ManufacturerName).HasMaxLength(250);
+        builder.Property(x => x.ManufacturerAddress).HasMaxLength(500);
         builder.Property(x => x.Status).HasConversion<int>();
         builder.Property(x => x.Weight).HasPrecision(18, 3);
+        builder.Property(x => x.PackageLengthCm).HasPrecision(10, 2);
+        builder.Property(x => x.PackageWidthCm).HasPrecision(10, 2);
+        builder.Property(x => x.PackageHeightCm).HasPrecision(10, 2);
+        builder.Property(x => x.LowStockThreshold).HasDefaultValue(5);
+        builder.Property(x => x.MinPurchaseQuantity).HasDefaultValue(1);
 
         builder.HasIndex(x => x.Slug)
             .IsUnique()

@@ -59,18 +59,27 @@ public sealed record ProductRow(
     string Status,
     string Initials,
     string Tone,
-    string? ImageUrl);
+    string? ImageUrl,
+    int ListingScore,
+    int IssueCount);
 
-public sealed class ProductEditorViewModel : IValidatableObject
+public sealed class ProductEditorViewModel
 {
     public int? Id { get; set; }
 
     [Required(ErrorMessage = "Vui lòng nhập tên sản phẩm.")]
-    [StringLength(250, ErrorMessage = "Tên sản phẩm tối đa 250 ký tự.")]
+    [StringLength(250, MinimumLength = 10, ErrorMessage = "Tên sản phẩm cần từ 10 đến 250 ký tự.")]
     public string Name { get; set; } = string.Empty;
 
     [StringLength(80, ErrorMessage = "Mã sản phẩm tối đa 80 ký tự.")]
     public string Sku { get; set; } = string.Empty;
+
+    [StringLength(100, ErrorMessage = "Mã model tối đa 100 ký tự.")]
+    public string? ModelNumber { get; set; }
+
+    [Required(ErrorMessage = "Vui lòng nhập đơn vị bán.")]
+    [StringLength(50, ErrorMessage = "Đơn vị bán tối đa 50 ký tự.")]
+    public string Unit { get; set; } = "Cái";
 
     [Required(ErrorMessage = "Vui lòng chọn danh mục.")]
     [Range(1, int.MaxValue, ErrorMessage = "Vui lòng chọn danh mục.")]
@@ -85,52 +94,84 @@ public sealed class ProductEditorViewModel : IValidatableObject
 
     public string? Description { get; set; }
 
+    [StringLength(100, ErrorMessage = "Xuất xứ tối đa 100 ký tự.")]
+    public string? CountryOfOrigin { get; set; }
+
+    [StringLength(250, ErrorMessage = "Tên nhà sản xuất tối đa 250 ký tự.")]
+    public string? ManufacturerName { get; set; }
+
+    [StringLength(500, ErrorMessage = "Địa chỉ nhà sản xuất tối đa 500 ký tự.")]
+    public string? ManufacturerAddress { get; set; }
+
+    [Range(0, 120, ErrorMessage = "Thời hạn bảo hành phải từ 0 đến 120 tháng.")]
+    public int? WarrantyMonths { get; set; }
+
     public ProductStatus Status { get; set; } = ProductStatus.Draft;
     public bool IsFeatured { get; set; }
-    public bool HasVariants { get; set; } = true;
+    public bool HasVariants { get; set; }
 
     [Range(0, int.MaxValue, ErrorMessage = "Tồn kho không được âm.")]
     public int StockQuantity { get; set; }
 
-    [Range(0, double.MaxValue, ErrorMessage = "Khối lượng không được âm.")]
+    [Range(0, int.MaxValue, ErrorMessage = "Ngưỡng cảnh báo tồn kho không được âm.")]
+    public int LowStockThreshold { get; set; } = 5;
+
+    [Range(1, 9999, ErrorMessage = "Số lượng mua tối thiểu phải từ 1 đến 9.999.")]
+    public int MinPurchaseQuantity { get; set; } = 1;
+
+    [Range(1, 999999, ErrorMessage = "Số lượng mua tối đa không hợp lệ.")]
+    public int? MaxPurchaseQuantity { get; set; }
+
+    [Range(typeof(decimal), "0", "999999", ErrorMessage = "Khối lượng không hợp lệ.")]
     public decimal? Weight { get; set; }
 
+    [Range(typeof(decimal), "0", "999999", ErrorMessage = "Chiều dài kiện hàng không hợp lệ.")]
+    public decimal? PackageLengthCm { get; set; }
+
+    [Range(typeof(decimal), "0", "999999", ErrorMessage = "Chiều rộng kiện hàng không hợp lệ.")]
+    public decimal? PackageWidthCm { get; set; }
+
+    [Range(typeof(decimal), "0", "999999", ErrorMessage = "Chiều cao kiện hàng không hợp lệ.")]
+    public decimal? PackageHeightCm { get; set; }
+
     [StringLength(100, ErrorMessage = "Tên thuộc tính tối đa 100 ký tự.")]
-    public string? OptionName1 { get; set; } = "Dung tích";
+    public string? OptionName1 { get; set; }
 
-    public string? OptionValues1 { get; set; } = "4 lít, 6 lít";
+    public string? OptionValues1 { get; set; }
 
     [StringLength(100, ErrorMessage = "Tên thuộc tính tối đa 100 ký tự.")]
-    public string? OptionName2 { get; set; } = "Màu sắc";
+    public string? OptionName2 { get; set; }
 
-    public string? OptionValues2 { get; set; } = "Kem, Xanh mint";
+    public string? OptionValues2 { get; set; }
 
-    [Range(0, int.MaxValue, ErrorMessage = "Tồn kho mỗi biến thể không được âm.")]
-    public int VariantStockQuantity { get; set; } = 10;
+    public List<ProductVariantEditorItem> Variants { get; set; } = new();
 
-    [Required(ErrorMessage = "Vui lòng chọn thị trường áp dụng giá.")]
-    [Range(1, int.MaxValue, ErrorMessage = "Vui lòng chọn thị trường áp dụng giá.")]
     public int? MarketId { get; set; }
 
     [Range(typeof(decimal), "0", "999999999999", ErrorMessage = "Giá vốn không hợp lệ.")]
     public decimal CostPrice { get; set; }
 
-    [Range(typeof(decimal), "1", "999999999999", ErrorMessage = "Giá niêm yết phải lớn hơn 0.")]
+    [Range(typeof(decimal), "0", "999999999999", ErrorMessage = "Giá niêm yết không hợp lệ.")]
     public decimal ListPrice { get; set; }
 
-    [Range(typeof(decimal), "1", "999999999999", ErrorMessage = "Giá bán phải lớn hơn 0.")]
+    [Range(typeof(decimal), "0", "999999999999", ErrorMessage = "Giá bán không hợp lệ.")]
     public decimal SalePrice { get; set; }
 
-    [Required(ErrorMessage = "Vui lòng chọn thời điểm bắt đầu áp dụng giá.")]
+    public int? ProductPriceScheduleId { get; set; }
     public DateTime ValidFrom { get; set; } = DateTime.Now;
-
     public DateTime? ValidTo { get; set; }
 
     [StringLength(1000, ErrorMessage = "Ghi chú giá tối đa 1000 ký tự.")]
     public string? PriceNote { get; set; }
 
-    public IFormFile? PrimaryImageFile { get; set; }
-    public string? ExistingPrimaryImageUrl { get; set; }
+    public List<IFormFile> ImageFiles { get; set; } = new();
+    public List<int> RemoveImageIds { get; set; } = new();
+    public int? PrimaryImageId { get; set; }
+
+    public List<ProductSpecificationEditorItem> Specifications { get; set; } = new();
+
+    [ValidateNever]
+    public IReadOnlyList<ProductImageEditorItem> ExistingImages { get; set; } = Array.Empty<ProductImageEditorItem>();
 
     [ValidateNever]
     public IReadOnlyList<SelectListItem> CategoryOptions { get; set; } = Array.Empty<SelectListItem>();
@@ -142,53 +183,62 @@ public sealed class ProductEditorViewModel : IValidatableObject
     public IReadOnlyList<SelectListItem> MarketOptions { get; set; } = Array.Empty<SelectListItem>();
 
     public bool IsEdit => Id.HasValue;
+}
 
-    public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
-    {
-        if (SalePrice > ListPrice)
-        {
-            yield return new ValidationResult(
-                "Giá bán không được lớn hơn giá niêm yết.",
-                new[] { nameof(SalePrice), nameof(ListPrice) });
-        }
+public sealed class ProductVariantEditorItem
+{
+    public int? Id { get; set; }
+    public int? PriceScheduleId { get; set; }
+    public string CombinationKey { get; set; } = string.Empty;
+    public string Value1 { get; set; } = string.Empty;
+    public string? Value2 { get; set; }
+    public string Name { get; set; } = string.Empty;
 
-        if (ValidTo.HasValue && ValidTo.Value <= ValidFrom)
-        {
-            yield return new ValidationResult(
-                "Thời điểm kết thúc phải sau thời điểm bắt đầu.",
-                new[] { nameof(ValidTo), nameof(ValidFrom) });
-        }
+    [StringLength(100, ErrorMessage = "SKU biến thể tối đa 100 ký tự.")]
+    public string Sku { get; set; } = string.Empty;
 
-        if (!HasVariants)
-            yield break;
+    [StringLength(100, ErrorMessage = "Barcode tối đa 100 ký tự.")]
+    public string? Barcode { get; set; }
 
-        if (string.IsNullOrWhiteSpace(OptionName1))
-        {
-            yield return new ValidationResult(
-                "Vui lòng nhập tên thuộc tính thứ nhất.",
-                new[] { nameof(OptionName1) });
-        }
+    [Range(0, int.MaxValue, ErrorMessage = "Tồn kho biến thể không được âm.")]
+    public int StockQuantity { get; set; }
 
-        if (SplitValues(OptionValues1).Count == 0)
-        {
-            yield return new ValidationResult(
-                "Vui lòng nhập ít nhất một giá trị cho thuộc tính thứ nhất.",
-                new[] { nameof(OptionValues1) });
-        }
+    [Range(0, int.MaxValue, ErrorMessage = "Ngưỡng cảnh báo không được âm.")]
+    public int LowStockThreshold { get; set; } = 5;
 
-        if (!string.IsNullOrWhiteSpace(OptionName2) && SplitValues(OptionValues2).Count == 0)
-        {
-            yield return new ValidationResult(
-                "Thuộc tính thứ hai đã có tên nên cần ít nhất một giá trị.",
-                new[] { nameof(OptionValues2) });
-        }
-    }
+    [Range(typeof(decimal), "0", "999999", ErrorMessage = "Khối lượng biến thể không hợp lệ.")]
+    public decimal? Weight { get; set; }
 
-    private static IReadOnlyList<string> SplitValues(string? value) =>
-        (value ?? string.Empty)
-            .Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries)
-            .Distinct(StringComparer.OrdinalIgnoreCase)
-            .ToList();
+    [Range(typeof(decimal), "0", "999999999999", ErrorMessage = "Giá vốn biến thể không hợp lệ.")]
+    public decimal CostPrice { get; set; }
+
+    [Range(typeof(decimal), "0", "999999999999", ErrorMessage = "Giá niêm yết biến thể không hợp lệ.")]
+    public decimal ListPrice { get; set; }
+
+    [Range(typeof(decimal), "0", "999999999999", ErrorMessage = "Giá bán biến thể không hợp lệ.")]
+    public decimal SalePrice { get; set; }
+
+    public bool IsDefault { get; set; }
+    public bool IsActive { get; set; } = true;
+}
+
+public sealed class ProductImageEditorItem
+{
+    public int Id { get; init; }
+    public string ImageUrl { get; init; } = string.Empty;
+    public bool IsPrimary { get; init; }
+    public int DisplayOrder { get; init; }
+}
+
+public sealed class ProductSpecificationEditorItem
+{
+    public int? Id { get; set; }
+
+    [StringLength(150, ErrorMessage = "Tên thông số tối đa 150 ký tự.")]
+    public string? Name { get; set; }
+
+    [StringLength(1000, ErrorMessage = "Giá trị thông số tối đa 1000 ký tự.")]
+    public string? Value { get; set; }
 }
 
 public sealed class PricingViewModel

@@ -8,9 +8,11 @@ public class ProductVariant : AuditableEntity
     public string Sku { get; set; } = string.Empty;
     public string? Barcode { get; set; }
     public string Name { get; set; } = string.Empty;
-    // Chuỗi chuẩn hóa tổ hợp, ví dụ: COLOR=WHITE|SIZE=M.
+    // Chuỗi chuẩn hóa tổ hợp, ví dụ: 1=6-LIT|2=TRANG.
     public string CombinationKey { get; set; } = string.Empty;
     public int StockQuantity { get; set; }
+    public int LowStockThreshold { get; set; } = 5;
+    public int SortOrder { get; set; }
     public decimal? Weight { get; set; }
     public bool IsDefault { get; set; }
     public bool IsActive { get; set; } = true;

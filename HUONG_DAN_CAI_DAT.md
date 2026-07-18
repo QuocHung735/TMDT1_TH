@@ -1,49 +1,24 @@
-# Mây Home – Hướng dẫn cập nhật giai đoạn 5
+# Hướng dẫn cài đặt
 
-## Cài đặt
-
-1. Đóng Visual Studio.
-2. Giải nén ZIP tại thư mục chứa `TMDT1_TH.sln`.
-3. Chọn **Replace/Ghi đè**.
-4. Xóa `TMDT1_TH/bin` và `TMDT1_TH/obj` nếu Visual Studio còn cache.
-5. Mở solution và chọn **Build → Rebuild Solution**.
-6. Chạy project và truy cập `/Admin/Markets`.
-
-## Database
-
-Nếu database đã được tạo ở các giai đoạn trước, không chạy migration mới.
-
-Nếu chưa có database:
+1. Sao lưu project và database hiện tại.
+2. Đóng Visual Studio.
+3. Giải nén ZIP tại thư mục chứa `TMDT1_TH.sln`.
+4. Chọn Replace/Ghi đè file trùng.
+5. Xóa thư mục `TMDT1_TH/bin` và `TMDT1_TH/obj`.
+6. Mở lại solution và Rebuild Solution.
+7. Kiểm tra chuỗi kết nối trong `appsettings.json`.
+8. Chạy migration:
 
 ```powershell
-Add-Migration InitialCommerceSchema
+Add-Migration UpgradeMarketplaceProductModule
 Update-Database
 ```
 
-Sau khi chạy, ứng dụng tự cài trigger kiểm tra chồng lịch giá và ghi lịch sử giá.
+9. Chạy ứng dụng và truy cập `/Admin/Products`.
 
-## Dữ liệu thật
+## Lưu ý
 
-Các trang sau lấy dữ liệu trực tiếp từ SQL Server:
-
-```text
-/Admin/Dashboard
-/Admin/Categories
-/Admin/Brands
-/Admin/Products
-/Admin/Pricing
-/Admin/Markets
-```
-
-Ứng dụng không tự thêm catalog đồ gia dụng mẫu khi khởi động. Danh mục, thương hiệu và sản phẩm bạn tạo sẽ được sử dụng trực tiếp ở các form liên quan.
-
-## CSS riêng
-
-Không sử dụng Bootstrap hoặc Bootstrap Icons. Toàn bộ giao diện nằm trong:
-
-```text
-TMDT1_TH/wwwroot/admin/css/style.css
-TMDT1_TH/wwwroot/admin/css/icons.css
-```
-
-Không cần kết nối CDN để giao diện hoạt động.
+- Đây là bản thay đổi schema, bắt buộc cập nhật database.
+- Không cần xóa dữ liệu sản phẩm cũ.
+- Các cột mới có giá trị mặc định an toàn cho bản ghi cũ.
+- Ứng dụng không tự seed sản phẩm mẫu.

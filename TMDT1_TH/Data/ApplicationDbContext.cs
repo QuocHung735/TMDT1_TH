@@ -14,6 +14,7 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
     public DbSet<ProductOptionValue> ProductOptionValues => Set<ProductOptionValue>();
     public DbSet<ProductVariant> ProductVariants => Set<ProductVariant>();
     public DbSet<ProductVariantValue> ProductVariantValues => Set<ProductVariantValue>();
+    public DbSet<ProductSpecification> ProductSpecifications => Set<ProductSpecification>();
     public DbSet<Market> Markets => Set<Market>();
     public DbSet<PriceSchedule> PriceSchedules => Set<PriceSchedule>();
     public DbSet<PriceHistory> PriceHistories => Set<PriceHistory>();

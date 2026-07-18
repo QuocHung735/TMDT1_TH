@@ -11,6 +11,8 @@ public class ProductVariantConfiguration : IEntityTypeConfiguration<ProductVaria
         builder.ToTable("ProductVariants", table =>
         {
             table.HasCheckConstraint("CK_ProductVariants_StockQuantity", "[StockQuantity] >= 0");
+            table.HasCheckConstraint("CK_ProductVariants_LowStockThreshold", "[LowStockThreshold] >= 0");
+            table.HasCheckConstraint("CK_ProductVariants_SortOrder", "[SortOrder] >= 0");
             table.HasCheckConstraint("CK_ProductVariants_Weight", "[Weight] IS NULL OR [Weight] >= 0");
         });
         builder.ConfigureAudit();
@@ -20,6 +22,8 @@ public class ProductVariantConfiguration : IEntityTypeConfiguration<ProductVaria
         builder.Property(x => x.Name).HasMaxLength(250).IsRequired();
         builder.Property(x => x.CombinationKey).HasMaxLength(500).IsRequired();
         builder.Property(x => x.Weight).HasPrecision(18, 3);
+        builder.Property(x => x.LowStockThreshold).HasDefaultValue(5);
+        builder.Property(x => x.SortOrder).HasDefaultValue(0);
 
         builder.HasIndex(x => new { x.ProductId, x.CombinationKey })
             .IsUnique()
