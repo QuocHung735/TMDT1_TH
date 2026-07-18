@@ -10,11 +10,11 @@ public class ProductsController : Controller
     {
         Items =
         [
-            new(1, "Áo sơ mi Linen Breeze", "SHIRT-LB", "Áo nữ", "Lumi Basic", 9, "489.000đ", 86, "Đang bán", "LB", "purple"),
-            new(2, "Quần ống rộng Cloudy", "PANT-CL", "Quần nữ", "Mây Studio", 6, "529.000đ", 42, "Đang bán", "CL", "mint"),
-            new(3, "Túi mini Pastel Day", "BAG-PD", "Phụ kiện", "Nắng Atelier", 4, "349.000đ", 12, "Sắp hết", "PD", "amber"),
-            new(4, "Váy midi Soft Bloom", "DRESS-SB", "Váy & đầm", "Cloud Nine", 8, "699.000đ", 0, "Hết hàng", "SB", "rose"),
-            new(5, "Cardigan Morning Mist", "CARD-MM", "Áo nữ", "Mây Studio", 5, "579.000đ", 28, "Bản nháp", "MM", "blue")
+            new(1, "Nồi chiên không dầu AirCare", "HOME-AF-6L", "Điện gia dụng", "Mây Home", 4, "1.890.000đ", 36, "Đang bán", "AC", "purple"),
+            new(2, "Chảo chống dính Ceramic Glow", "HOME-PAN-CG", "Nồi & chảo", "Bếp Xinh", 6, "429.000đ", 72, "Đang bán", "CG", "mint"),
+            new(3, "Bộ hộp bảo quản FreshBox", "HOME-BOX-FB", "Lưu trữ thực phẩm", "PureNest", 3, "289.000đ", 9, "Sắp hết", "FB", "amber"),
+            new(4, "Cây lau nhà xoay 360 CleanSpin", "HOME-MOP-CS", "Vệ sinh nhà cửa", "CleanJoy", 2, "359.000đ", 0, "Hết hàng", "CS", "rose"),
+            new(5, "Kệ đa năng FlexiRack 4 tầng", "HOME-RACK-F4", "Lưu trữ & sắp xếp", "Mây Home", 3, "549.000đ", 24, "Bản nháp", "FR", "blue")
         ]
     });
 
@@ -23,11 +23,11 @@ public class ProductsController : Controller
     public IActionResult Edit(int id) => View("Editor", new ProductEditorViewModel
     {
         Id = id,
-        Name = "Áo sơ mi Linen Breeze",
-        Sku = "SHIRT-LB",
-        Category = "Áo nữ",
-        Brand = "Lumi Basic",
-        Description = "Thiết kế linen nhẹ, phom thoải mái và dễ phối trong nhiều hoàn cảnh."
+        Name = "Nồi chiên không dầu AirCare 6L",
+        Sku = "HOME-AF-6L",
+        Category = "Điện gia dụng",
+        Brand = "Mây Home",
+        Description = "Dung tích 6 lít, bảng điều khiển cảm ứng và lòng nồi chống dính dễ vệ sinh."
     });
 
     [HttpPost]

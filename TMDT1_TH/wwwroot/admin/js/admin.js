@@ -20,6 +20,10 @@
         window.setTimeout(close, 4500);
     });
 
+    if (document.querySelector('.modal.is-open')) {
+        document.body.classList.add('modal-open');
+    }
+
     document.querySelectorAll('[data-modal-target]').forEach((trigger) => {
         trigger.addEventListener('click', () => {
             const id = trigger.getAttribute('data-modal-target');

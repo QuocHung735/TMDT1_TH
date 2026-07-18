@@ -48,5 +48,6 @@ app.MapControllers();
 
 // Sau khi bạn chạy Update-Database, ứng dụng sẽ tự cài/cập nhật trigger SQL Server.
 await DatabaseTriggerInstaller.TryInstallAsync(app.Services, app.Logger);
+await HouseholdCatalogSeeder.TrySeedAsync(app.Services, app.Logger);
 
 app.Run();

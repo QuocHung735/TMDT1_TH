@@ -6,24 +6,25 @@ public sealed class DashboardViewModel
     public IReadOnlyList<RecentProductRow> RecentProducts { get; init; } = [];
     public IReadOnlyList<ActivityRow> Activities { get; init; } = [];
     public IReadOnlyList<PriceAlertRow> PriceAlerts { get; init; } = [];
+    public StockHealthViewModel StockHealth { get; init; } = new();
+    public int LowStockCount { get; init; }
+    public int UpcomingPriceCount { get; init; }
 }
 
 public sealed record MetricCard(string Label, string Value, string Change, string Icon, string Tone, string Caption);
-public sealed record RecentProductRow(string Name, string Sku, string Category, string Price, string Stock, string Status, string Initials, string Tone);
+public sealed record RecentProductRow(int Id, string Name, string Sku, string Category, string Price, string Stock, string Status, string Initials, string Tone);
 public sealed record ActivityRow(string Icon, string Title, string Description, string Time, string Tone);
-public sealed record PriceAlertRow(string Product, string Market, string PriceType, string EffectiveDate, string Status);
+public sealed record PriceAlertRow(string Product, string Market, string PriceType, string Day, string Month, string Status);
 
-public sealed class CategoriesViewModel
+public sealed class StockHealthViewModel
 {
-    public IReadOnlyList<CategoryRow> Items { get; init; } = [];
+    public int Total { get; init; }
+    public int InStock { get; init; }
+    public int InStockPercent { get; init; }
+    public int LowStock { get; init; }
+    public int OutOfStock { get; init; }
+    public int ReadyPercent { get; init; }
 }
-public sealed record CategoryRow(int Id, string Name, string Slug, string Parent, int ProductCount, string Status, int Level, string Icon);
-
-public sealed class BrandsViewModel
-{
-    public IReadOnlyList<BrandRow> Items { get; init; } = [];
-}
-public sealed record BrandRow(int Id, string Name, string Country, int ProductCount, string Status, string Initials, string Tone);
 
 public sealed class ProductsViewModel
 {

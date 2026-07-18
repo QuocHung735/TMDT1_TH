@@ -1,75 +1,85 @@
-# TMDT1_TH – UI/UX Admin + Entity Framework Core Models
+# TMDT1_TH – Giai đoạn 2: CRUD danh mục, thương hiệu và dashboard database
 
-## 1. Cài bộ file
+## Cài đặt
 
 1. Đóng Visual Studio.
-2. Giải nén ZIP tại thư mục đang chứa `TMDT1_TH.sln`.
-3. Chọn **Replace/Ghi đè** file trùng.
-4. Mở lại solution.
-5. Kiểm tra chuỗi kết nối trong `TMDT1_TH/appsettings.json`.
+2. Giải nén file ZIP tại thư mục đang chứa `TMDT1_TH.sln`.
+3. Chọn **Replace / Ghi đè** khi Windows hỏi.
+4. Mở lại solution và kiểm tra `ConnectionStrings:DefaultConnection` trong `TMDT1_TH/appsettings.json`.
+5. Build lại solution và chạy project.
 
-Chuỗi mặc định:
+## Migration
 
-```json
-"DefaultConnection": "Server=.;Database=TMDT1_TH_DB;Trusted_Connection=True;TrustServerCertificate=True;MultipleActiveResultSets=true"
-```
+### Trường hợp chưa tạo database
 
-Nếu SQL Server dùng instance khác, chỉ sửa phần `Server`, ví dụ:
-
-```text
-Server=.\\SQLEXPRESS
-Server=localhost
-Server=TENMAY\\NGUYEN1
-```
-
-## 2. Tạo database
-
-Mở **Tools → NuGet Package Manager → Package Manager Console**.
-
-Chọn `TMDT1_TH` tại ô **Default project**, sau đó chạy:
+Mở **Package Manager Console**, chọn Default project là `TMDT1_TH`, sau đó chạy:
 
 ```powershell
 Add-Migration InitialCommerceSchema
 Update-Database
 ```
 
-Sau đó nhấn F5 chạy ứng dụng. Ứng dụng sẽ tự tạo/cập nhật hai trigger:
+### Trường hợp đã chạy migration của gói Models trước đó
 
-- `TRG_PriceSchedules_Validate`: ngăn lịch giá chồng thời gian.
-- `TRG_PriceSchedules_History`: tự ghi lịch sử thêm, sửa và xóa giá.
+Giai đoạn này không thay đổi cấu trúc bảng nên **không cần tạo migration mới**. Chỉ cần giải nén, build và chạy ứng dụng.
 
-## 3. Các bảng được tạo
+Nếu Visual Studio vẫn giữ cache lỗi cũ:
 
-- `Categories`: danh mục nhiều cấp.
-- `Brands`: thương hiệu.
-- `Products`: sản phẩm.
-- `ProductImages`: hình ảnh sản phẩm và biến thể.
-- `ProductOptions`: thuộc tính như Màu sắc, Kích thước.
-- `ProductOptionValues`: giá trị thuộc tính.
-- `ProductVariants`: biến thể, SKU, barcode, tồn kho.
-- `ProductVariantValues`: liên kết biến thể với giá trị thuộc tính.
-- `Markets`: thị trường/kênh bán.
-- `PriceSchedules`: ba giá và thời gian áp dụng.
-- `PriceHistories`: lịch sử biến động giá.
+1. Đóng Visual Studio.
+2. Xóa thư mục `TMDT1_TH/bin` và `TMDT1_TH/obj`.
+3. Mở lại solution và Rebuild.
 
-## 4. Quy tắc giá
+## Chức năng đã nối database
 
-Mỗi bản ghi `PriceSchedule` có đủ:
+### Danh mục
 
-- `CostPrice`: giá vốn.
-- `ListPrice`: giá niêm yết.
-- `SalePrice`: giá bán.
+- Hiển thị danh mục nhiều cấp.
+- Tìm kiếm theo tên hoặc slug.
+- Lọc theo trạng thái.
+- Thêm và chỉnh sửa trong modal.
+- Tự sinh slug tiếng Việt và tự thêm hậu tố khi trùng.
+- Chọn danh mục cha.
+- Chặn chọn chính nó hoặc danh mục con làm cha.
+- Ẩn/hiện danh mục.
+- Xóa mềm.
+- Chặn xóa khi còn danh mục con hoặc sản phẩm.
+- Thống kê số danh mục và số sản phẩm đã gán.
 
-Một lịch giá chỉ được gắn với **sản phẩm hoặc biến thể**, không được gắn đồng thời cả hai. `ValidTo = null` nghĩa là áp dụng vô thời hạn.
+### Thương hiệu
 
-## 5. Dữ liệu seed
+- Tìm kiếm theo tên, slug và quốc gia.
+- Lọc trạng thái.
+- Thêm và chỉnh sửa trong modal.
+- Tự sinh slug và chống trùng.
+- Quản lý quốc gia, website, logo URL và mô tả.
+- Kích hoạt/tạm ẩn.
+- Xóa mềm.
+- Chặn xóa thương hiệu đang có sản phẩm.
 
-Migration đầu tiên tự thêm ba thị trường:
+### Dashboard
 
-- `ONLINE` – Kênh trực tuyến.
-- `VN-HCM` – Thành phố Hồ Chí Minh.
-- `VN-HN` – Hà Nội.
+Dashboard đọc trực tiếp từ SQL Server:
 
-## 6. Lưu ý
+- Tổng sản phẩm.
+- Sản phẩm đang bán.
+- Biến thể đang hoạt động.
+- Sản phẩm sắp hết và hết hàng.
+- Lịch giá sẽ áp dụng trong 7 ngày.
+- Danh sách sản phẩm gần đây.
+- Giá bán hiện tại.
+- Hoạt động tạo/cập nhật gần đây.
+- Biểu đồ sức khỏe tồn kho.
 
-Giao diện admin hiện vẫn sử dụng dữ liệu minh họa trong controller để bạn xem UI ngay. Models, DbContext, quan hệ và database đã sẵn sàng; bước tiếp theo là thay dữ liệu mẫu bằng truy vấn `ApplicationDbContext` và hoàn thiện CRUD.
+## Đường dẫn kiểm tra
+
+```text
+/Admin/Dashboard
+/Admin/Categories
+/Admin/Brands
+```
+
+## Lưu ý
+
+- Trang sản phẩm, biến thể và giá vẫn giữ giao diện mô phỏng của giai đoạn trước.
+- Giai đoạn tiếp theo là nối CRUD sản phẩm, hình ảnh và sinh tổ hợp biến thể vào database.
+- Xóa danh mục và thương hiệu sử dụng soft delete, không xóa vật lý dữ liệu.

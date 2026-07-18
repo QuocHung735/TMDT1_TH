@@ -10,16 +10,16 @@ public class PricingController : Controller
     {
         Items =
         [
-            new(1, "Áo sơ mi Linen Breeze", "Trắng / M", "Online", "245.000đ", "549.000đ", "489.000đ", "Không giới hạn", "Đang áp dụng"),
-            new(2, "Áo sơ mi Linen Breeze", "Tím / L", "Hồ Chí Minh", "245.000đ", "549.000đ", "459.000đ", "20/07 – 31/07", "Sắp áp dụng"),
-            new(3, "Quần ống rộng Cloudy", "Kem / S", "Online", "280.000đ", "599.000đ", "529.000đ", "Không giới hạn", "Đang áp dụng"),
-            new(4, "Túi mini Pastel Day", "Xanh mint", "Hà Nội", "170.000đ", "399.000đ", "349.000đ", "01/07 – 22/07", "Sắp hết hạn")
+            new(1, "Nồi chiên không dầu AirCare", "6 lít / Kem", "Online", "1.180.000đ", "2.490.000đ", "1.890.000đ", "Không giới hạn", "Đang áp dụng"),
+            new(2, "Nồi chiên không dầu AirCare", "4 lít / Xanh mint", "Hồ Chí Minh", "920.000đ", "1.990.000đ", "1.590.000đ", "20/07 – 31/07", "Sắp áp dụng"),
+            new(3, "Chảo chống dính Ceramic Glow", "28 cm / Kem", "Online", "230.000đ", "549.000đ", "429.000đ", "Không giới hạn", "Đang áp dụng"),
+            new(4, "Bộ hộp bảo quản FreshBox", "Bộ 5 hộp", "Hà Nội", "145.000đ", "349.000đ", "289.000đ", "01/07 – 22/07", "Sắp hết hạn")
         ],
         History =
         [
-            new("Áo sơ mi Linen Breeze", "Trắng / M", "Online", "Giá bán", "479.000đ", "489.000đ", "+2,1%", "Quốc Hưng", "18/07/2026 07:22", "up"),
-            new("Quần ống rộng Cloudy", "Kem / S", "Online", "Giá niêm yết", "629.000đ", "599.000đ", "-4,8%", "Quốc Hưng", "17/07/2026 14:05", "down"),
-            new("Túi mini Pastel Day", "Xanh mint", "Hà Nội", "Giá bán", "329.000đ", "349.000đ", "+6,1%", "Price Manager", "16/07/2026 10:18", "up")
+            new("Nồi chiên không dầu AirCare", "6 lít / Kem", "Online", "Giá bán", "1.790.000đ", "1.890.000đ", "+5,6%", "Quốc Hưng", "18/07/2026 07:22", "up"),
+            new("Chảo chống dính Ceramic Glow", "28 cm / Kem", "Online", "Giá niêm yết", "599.000đ", "549.000đ", "-8,3%", "Quốc Hưng", "17/07/2026 14:05", "down"),
+            new("Bộ hộp bảo quản FreshBox", "Bộ 5 hộp", "Hà Nội", "Giá bán", "269.000đ", "289.000đ", "+7,4%", "Price Manager", "16/07/2026 10:18", "up")
         ]
     });
 

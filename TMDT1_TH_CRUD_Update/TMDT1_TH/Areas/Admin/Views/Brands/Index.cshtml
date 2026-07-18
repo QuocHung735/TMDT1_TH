@@ -1,0 +1,26 @@
+@model IReadOnlyList<TMDT1_TH.Domain.Entities.Brand>
+@{
+    ViewData["Title"] = "Quản lý thương hiệu";
+    ViewData["Description"] = "Chuẩn hóa thông tin thương hiệu để tăng độ tin cậy khi khách lựa chọn sản phẩm.";
+}
+@section PageActions { <a class="btn btn-primary" asp-action="Create"><i class="bi bi-plus-lg"></i> Thêm thương hiệu</a> }
+<form method="get" class="toolbar card panel">
+    <label class="field-search"><i class="bi bi-search"></i><input name="keyword" value="@ViewBag.Keyword" placeholder="Tìm thương hiệu..." /></label>
+    <select class="form-select" name="active"><option value="">Tất cả</option><option value="true" selected="@(ViewBag.Active is true)">Hoạt động</option><option value="false" selected="@(ViewBag.Active is false)">Tạm ẩn</option></select>
+    <button class="btn btn-light">Lọc</button>
+</form>
+<section class="brand-grid">
+@foreach (var item in Model)
+{
+    <article class="brand-card card">
+        <div class="brand-card__header"><span class="brand-logo tone-purple">@(item.Name.Length >= 2 ? item.Name[..2].ToUpper() : item.Name.ToUpper())</span></div>
+        <div class="brand-card__body"><h2>@item.Name</h2><p><i class="bi bi-geo-alt"></i> @(item.Country ?? "Chưa cập nhật")</p></div>
+        <div class="brand-card__footer"><span><strong>@item.Products.Count(x => !x.IsDeleted)</strong> sản phẩm</span><span class="status-pill @(item.IsActive ? "is-success" : "is-muted")">@(item.IsActive ? "Đang hoạt động" : "Tạm ẩn")</span></div>
+        <div class="table-actions">
+            <a class="icon-btn" asp-action="Edit" asp-route-id="@item.Id"><i class="bi bi-pencil"></i></a>
+            <form asp-action="Toggle" asp-route-id="@item.Id" method="post">@Html.AntiForgeryToken()<button class="icon-btn"><i class="bi bi-eye-slash"></i></button></form>
+            <form asp-action="Delete" asp-route-id="@item.Id" method="post" onsubmit="return confirm('Xóa mềm thương hiệu này?')">@Html.AntiForgeryToken()<button class="icon-btn"><i class="bi bi-trash"></i></button></form>
+        </div>
+    </article>
+}
+</section>
