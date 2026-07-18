@@ -1,0 +1,226 @@
+@using TMDT1_TH.Domain.Enums
+@model ProductEditorViewModel
+@{
+    ViewData["Title"] = Model.IsEdit ? "Chỉnh sửa sản phẩm" : "Thêm sản phẩm";
+    ViewData["Description"] = "Lưu sản phẩm, biến thể, ảnh đại diện, tồn kho và ba mức giá trực tiếp vào database.";
+    var hasPrimaryImage = !string.IsNullOrWhiteSpace(Model.ExistingPrimaryImageUrl);
+    var primaryImageSource = hasPrimaryImage ? Model.ExistingPrimaryImageUrl : string.Empty;
+    var primaryImageStyle = hasPrimaryImage
+        ? "max-width:100%;max-height:230px;object-fit:contain;"
+        : "display:none;max-width:100%;max-height:230px;object-fit:contain;";
+    var emptyImageStyle = hasPrimaryImage
+        ? "display:none;text-align:center;color:var(--text-secondary);"
+        : "text-align:center;color:var(--text-secondary);";
+    var hasRequiredOptions = Model.CategoryOptions.Count > 0
+        && Model.BrandOptions.Count > 0
+        && Model.MarketOptions.Count > 0;
+    var saveDisabled = hasRequiredOptions ? null : "disabled";
+}
+@section PageActions {
+    <a class="btn btn-light" asp-action="Index">Hủy</a>
+    <button class="btn btn-light" type="button" data-product-save-button="draft" disabled="@saveDisabled"><i class="bi bi-save"></i> Lưu nháp</button>
+    <button class="btn btn-primary" type="button" data-product-save-button="save" disabled="@saveDisabled"><i class="bi bi-check2"></i> Lưu sản phẩm</button>
+}
+
+<div class="editor-layout">
+    <aside class="editor-steps card">
+        <a href="#general" class="editor-step is-active"><span>1</span><div><strong>Thông tin chung</strong><small>Tên, mô tả và phân loại</small></div></a>
+        <a href="#media" class="editor-step"><span>2</span><div><strong>Hình ảnh</strong><small>Ảnh đại diện sản phẩm</small></div></a>
+        <a href="#variants" class="editor-step"><span>3</span><div><strong>Thuộc tính & biến thể</strong><small>Dung tích, kích thước, màu</small></div></a>
+        <a href="#pricing" class="editor-step"><span>4</span><div><strong>Giá & tồn kho</strong><small>Ba giá và thời gian áp dụng</small></div></a>
+        <a href="#seo" class="editor-step"><span>5</span><div><strong>Hiển thị</strong><small>Trạng thái và sản phẩm nổi bật</small></div></a>
+    </aside>
+
+    <form id="product-form" asp-action="Save" method="post" enctype="multipart/form-data" class="editor-content" data-product-form>
+        @Html.AntiForgeryToken()
+        <input asp-for="Id" type="hidden" />
+        <input asp-for="ExistingPrimaryImageUrl" type="hidden" />
+        <button type="submit" name="mode" value="draft" hidden data-product-real-submit="draft"></button>
+        <button type="submit" hidden data-product-real-submit="save"></button>
+
+        @if (!hasRequiredOptions)
+        {
+            <div class="validation-banner validation-banner--error">
+                <i class="bi bi-exclamation-triangle"></i>
+                <div>
+                    <strong>Chưa đủ dữ liệu để lưu sản phẩm</strong>
+                    <p>
+                        Hãy bảo đảm database có ít nhất một danh mục đang hiển thị,
+                        một thương hiệu đang hoạt động và một thị trường đang hoạt động.
+                    </p>
+                </div>
+            </div>
+        }
+
+        @if (!ViewData.ModelState.IsValid)
+        {
+            <div class="validation-banner" style="border-color:#fecaca;background:#fff1f2;color:#991b1b">
+                <i class="bi bi-exclamation-triangle"></i>
+                <div>
+                    <strong>Chưa thể lưu sản phẩm</strong>
+                    <div asp-validation-summary="All"></div>
+                </div>
+            </div>
+        }
+
+        <section class="card form-section" id="general">
+            <div class="form-section__header"><div><span class="section-number">1</span><h2>Thông tin chung</h2></div><p>Danh mục và thương hiệu được lấy trực tiếp từ database.</p></div>
+            <div class="form-section__body form-stack">
+                <label class="form-field">
+                    <span>Tên sản phẩm <em>*</em></span>
+                    <input asp-for="Name" placeholder="Ví dụ: Nồi chiên không dầu AirCare 6L" />
+                    <span asp-validation-for="Name" style="color:#dc2626"></span>
+                </label>
+                <div class="form-grid form-grid--3">
+                    <label class="form-field">
+                        <span>Mã sản phẩm</span>
+                        <input asp-for="Sku" placeholder="Tự động nếu để trống" />
+                        <span asp-validation-for="Sku" style="color:#dc2626"></span>
+                    </label>
+                    <label class="form-field">
+                        <span>Danh mục <em>*</em></span>
+                        <select asp-for="CategoryId" asp-items="Model.CategoryOptions">
+                            <option value="">Chọn danh mục</option>
+                        </select>
+                        <span asp-validation-for="CategoryId" style="color:#dc2626"></span>
+                    </label>
+                    <label class="form-field">
+                        <span>Thương hiệu <em>*</em></span>
+                        <select asp-for="BrandId" asp-items="Model.BrandOptions">
+                            <option value="">Chọn thương hiệu</option>
+                        </select>
+                        <span asp-validation-for="BrandId" style="color:#dc2626"></span>
+                    </label>
+                </div>
+                <label class="form-field">
+                    <span>Mô tả ngắn</span>
+                    <textarea asp-for="ShortDescription" rows="3" maxlength="600" placeholder="Tóm tắt công dụng và ưu điểm chính..."></textarea>
+                    <span asp-validation-for="ShortDescription" style="color:#dc2626"></span>
+                </label>
+                <label class="form-field">
+                    <span>Mô tả chi tiết</span>
+                    <textarea asp-for="Description" rows="7" placeholder="Chất liệu, công suất, dung tích, kích thước, phụ kiện và hướng dẫn sử dụng..."></textarea>
+                </label>
+                <div class="form-grid form-grid--2">
+                    <label class="form-field">
+                        <span>Khối lượng (kg)</span>
+                        <input asp-for="Weight" type="number" min="0" step="0.001" placeholder="Ví dụ: 3.5" />
+                        <span asp-validation-for="Weight" style="color:#dc2626"></span>
+                    </label>
+                    <div></div>
+                </div>
+            </div>
+        </section>
+
+        <section class="card form-section" id="media">
+            <div class="form-section__header"><div><span class="section-number">2</span><h2>Ảnh đại diện</h2></div><p>Ảnh được lưu trong <code>wwwroot/uploads/products</code>.</p></div>
+            <div class="form-section__body">
+                <div class="form-grid form-grid--2">
+                    <label class="media-upload media-upload--primary" style="min-height:230px">
+                        <input asp-for="PrimaryImageFile" type="file" accept=".jpg,.jpeg,.png,.webp" data-product-image-input />
+                        <span><i class="bi bi-cloud-arrow-up"></i></span>
+                        <strong>Chọn ảnh sản phẩm</strong>
+                        <small>JPG, PNG hoặc WEBP · tối đa 5 MB</small>
+                    </label>
+                    <div class="card" style="display:grid;place-items:center;min-height:230px;overflow:hidden">
+                        <img data-product-image-preview
+                             src="@primaryImageSource"
+                             alt="Xem trước ảnh"
+                             style="@primaryImageStyle" />
+                        <div data-product-image-empty style="@emptyImageStyle">
+                            <i class="bi bi-image" style="font-size:34px"></i><p>Ảnh xem trước</p>
+                        </div>
+                    </div>
+                </div>
+                <span asp-validation-for="PrimaryImageFile" style="color:#dc2626"></span>
+            </div>
+        </section>
+
+        <section class="card form-section" id="variants">
+            <div class="form-section__header"><div><span class="section-number">3</span><h2>Thuộc tính & biến thể</h2></div><p>Hệ thống tự sinh tổ hợp và SKU biến thể khi lưu.</p></div>
+            <div class="form-section__body form-stack">
+                <label class="switch-row switch-row--border">
+                    <span><strong>Sản phẩm có biến thể</strong><small>Ví dụ: dung tích × màu sắc hoặc kích thước × chất liệu.</small></span>
+                    <input asp-for="HasVariants" data-product-has-variants /><i></i>
+                </label>
+
+                <div data-product-variant-fields>
+                    <div class="option-builder">
+                        <div class="option-builder__head"><strong>Thuộc tính 1</strong></div>
+                        <div class="form-grid form-grid--option">
+                            <label class="form-field"><span>Tên thuộc tính</span><input asp-for="OptionName1" placeholder="Dung tích" /><span asp-validation-for="OptionName1" style="color:#dc2626"></span></label>
+                            <label class="form-field"><span>Giá trị, cách nhau bằng dấu phẩy</span><input asp-for="OptionValues1" placeholder="4 lít, 6 lít" /><span asp-validation-for="OptionValues1" style="color:#dc2626"></span></label>
+                        </div>
+                    </div>
+                    <div class="option-builder">
+                        <div class="option-builder__head"><strong>Thuộc tính 2 (không bắt buộc)</strong></div>
+                        <div class="form-grid form-grid--option">
+                            <label class="form-field"><span>Tên thuộc tính</span><input asp-for="OptionName2" placeholder="Màu sắc" /><span asp-validation-for="OptionName2" style="color:#dc2626"></span></label>
+                            <label class="form-field"><span>Giá trị, cách nhau bằng dấu phẩy</span><input asp-for="OptionValues2" placeholder="Kem, Xanh mint" /><span asp-validation-for="OptionValues2" style="color:#dc2626"></span></label>
+                        </div>
+                    </div>
+                    <div class="form-grid form-grid--2">
+                        <label class="form-field"><span>Tồn kho mặc định mỗi biến thể</span><input asp-for="VariantStockQuantity" type="number" min="0" /><span asp-validation-for="VariantStockQuantity" style="color:#dc2626"></span></label>
+                        <div class="inline-tip"><i class="bi bi-info-circle"></i><div><strong>Chỉnh tồn kho chi tiết</strong><p>Giai đoạn quản lý tồn kho riêng từng biến thể sẽ được triển khai tiếp theo.</p></div></div>
+                    </div>
+                    <div class="variant-preview">
+                        <div class="variant-preview__header"><div><strong>Tổ hợp dự kiến</strong><span data-product-variant-count>0 biến thể</span></div></div>
+                        <div class="table-wrap"><table class="data-table data-table--compact"><thead><tr><th>Biến thể</th><th>SKU dự kiến</th><th>Tồn kho</th></tr></thead><tbody data-product-variant-body></tbody></table></div>
+                    </div>
+                </div>
+
+                <div data-product-simple-stock>
+                    <label class="form-field"><span>Tồn kho sản phẩm</span><input asp-for="StockQuantity" type="number" min="0" /><span asp-validation-for="StockQuantity" style="color:#dc2626"></span></label>
+                </div>
+            </div>
+        </section>
+
+        <section class="card form-section" id="pricing">
+            <div class="form-section__header"><div><span class="section-number">4</span><h2>Giá & thời gian áp dụng</h2></div><p>Lưu đủ giá vốn, giá niêm yết và giá bán cho thị trường đã chọn.</p></div>
+            <div class="form-section__body form-stack">
+                <div class="form-grid form-grid--2">
+                    <label class="form-field"><span>Thị trường <em>*</em></span><select asp-for="MarketId" asp-items="Model.MarketOptions"><option value="">Chọn thị trường</option></select><span asp-validation-for="MarketId" style="color:#dc2626"></span></label>
+                    <label class="form-field"><span>Ghi chú giá</span><input asp-for="PriceNote" placeholder="Ví dụ: Giá bán mặc định" /><span asp-validation-for="PriceNote" style="color:#dc2626"></span></label>
+                </div>
+                <div class="price-input-grid">
+                    <label class="form-field price-field"><span>Giá vốn <em>*</em></span><div><input asp-for="CostPrice" type="number" min="0" step="1000" /><i>₫</i></div><span asp-validation-for="CostPrice" style="color:#dc2626"></span></label>
+                    <label class="form-field price-field"><span>Giá niêm yết <em>*</em></span><div><input asp-for="ListPrice" type="number" min="1" step="1000" data-product-list-price /><i>₫</i></div><span asp-validation-for="ListPrice" style="color:#dc2626"></span></label>
+                    <label class="form-field price-field price-field--highlight"><span>Giá bán <em>*</em></span><div><input asp-for="SalePrice" type="number" min="1" step="1000" data-product-sale-price /><i>₫</i></div><span asp-validation-for="SalePrice" style="color:#dc2626"></span></label>
+                </div>
+                <div class="form-grid form-grid--2">
+                    <label class="form-field"><span>Bắt đầu áp dụng <em>*</em></span><input asp-for="ValidFrom" type="datetime-local" /><span asp-validation-for="ValidFrom" style="color:#dc2626"></span></label>
+                    <label class="form-field"><span>Kết thúc</span><input asp-for="ValidTo" type="datetime-local" /><small>Để trống nghĩa là áp dụng vô hạn.</small><span asp-validation-for="ValidTo" style="color:#dc2626"></span></label>
+                </div>
+            </div>
+        </section>
+
+        <section class="card form-section" id="seo">
+            <div class="form-section__header"><div><span class="section-number">5</span><h2>Hiển thị sản phẩm</h2></div><p>Kiểm soát trạng thái bán trong khu vực quản trị.</p></div>
+            <div class="form-section__body form-stack">
+                <div class="form-grid form-grid--2">
+                    <label class="form-field">
+                        <span>Trạng thái</span>
+                        <select asp-for="Status">
+                            <option value="1">Bản nháp</option>
+                            <option value="2">Đang bán</option>
+                            <option value="3">Tạm ẩn</option>
+                            <option value="4">Hết hàng</option>
+                            <option value="5">Ngừng kinh doanh</option>
+                        </select>
+                    </label>
+                    <label class="switch-row switch-row--border"><span><strong>Sản phẩm nổi bật</strong><small>Ưu tiên hiển thị tại trang chủ sau này.</small></span><input asp-for="IsFeatured" /><i></i></label>
+                </div>
+            </div>
+        </section>
+
+        <div class="product-form-actions">
+            <a class="btn btn-light" asp-action="Index">Hủy</a>
+            <button class="btn btn-light" type="submit" name="mode" value="draft" disabled="@saveDisabled"><i class="bi bi-save"></i> Lưu nháp</button>
+            <button class="btn btn-primary" type="submit" disabled="@saveDisabled"><i class="bi bi-check2"></i> Lưu sản phẩm</button>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    <script src="~/admin/js/product-editor.js" asp-append-version="true"></script>
+}

@@ -102,3 +102,77 @@ button { cursor: pointer; }
 .brand-website { margin-top: 9px; display: inline-flex; align-items: center; gap: 5px; color: var(--primary-dark); font-size: 9px; font-weight: 600; }
 .toast-message--error > i { color: #c55463; }
 .donut-chart { position: relative; background: conic-gradient(var(--mint) 0 calc(var(--in-stock-percent) * 1%), #f4c874 calc(var(--in-stock-percent) * 1%) calc(var(--ready-percent) * 1%), #ef8d98 calc(var(--ready-percent) * 1%) 100%); }
+
+/* Phase 4: database-backed pricing management */
+.switch-inline { display: inline-flex; align-items: center; gap: 7px; color: var(--muted); font-size: 9px; cursor: pointer; }
+.switch-inline input { accent-color: var(--primary); }
+.change-pill--neutral { color: #6f6d7e; background: #f1f0f5; }
+.data-table .empty-state { max-width: none; margin: 0; padding: 42px 20px; }
+.data-table .empty-state > i { display: block; margin-bottom: 10px; color: var(--primary); font-size: 24px; }
+.data-table .empty-state strong { display: block; margin-bottom: 5px; }
+.data-table .empty-state p { margin: 0; color: var(--muted); font-size: 10px; }
+
+.market-description {
+    display: block;
+    max-width: 420px;
+    margin-top: 0.3rem;
+    color: var(--muted);
+    font-size: 0.78rem;
+    line-height: 1.45;
+}
+
+.market-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    flex-wrap: nowrap;
+}
+
+.market-actions form {
+    margin: 0;
+}
+
+.icon-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+@media (max-width: 1050px) {
+    .market-row {
+        grid-template-columns: auto minmax(220px, 1fr) repeat(2, minmax(90px, auto));
+    }
+
+    .market-row > div:nth-of-type(4),
+    .market-row > .status-pill {
+        display: none;
+    }
+}
+
+
+/* Native controls customized without Bootstrap. */
+.form-select {
+    appearance: none;
+    -webkit-appearance: none;
+    background-image:
+        linear-gradient(45deg, transparent 50%, #77758a 50%),
+        linear-gradient(135deg, #77758a 50%, transparent 50%);
+    background-position:
+        calc(100% - 16px) 50%,
+        calc(100% - 11px) 50%;
+    background-size: 5px 5px, 5px 5px;
+    background-repeat: no-repeat;
+}
+.form-select:focus,
+.form-field input:focus,
+.form-field textarea:focus {
+    border-color: #b8adf8;
+    outline: none;
+    box-shadow: 0 0 0 3px var(--primary-soft);
+}
+.btn:focus-visible,
+.icon-btn:focus-visible,
+a:focus-visible,
+button:focus-visible {
+    outline: 3px solid rgba(133,115,244,.28);
+    outline-offset: 2px;
+}

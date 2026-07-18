@@ -1,0 +1,77 @@
+/*
+ * Mây Home custom icon set.
+ * Pure CSS/Unicode icons: no Bootstrap Icons, no icon font, no CDN.
+ */
+.ui-icon {
+    width: 1.15em;
+    height: 1.15em;
+    display: inline-grid;
+    place-items: center;
+    flex: 0 0 auto;
+    font-family: Arial, "Segoe UI Symbol", sans-serif;
+    font-size: 1em;
+    font-style: normal;
+    font-weight: 700;
+    line-height: 1;
+    text-align: center;
+    vertical-align: -0.08em;
+}
+.ui-icon::before { content: "•"; }
+.icon-arrow-counterclockwise::before { content: "↻"; }
+.icon-arrow-right::before { content: "→"; }
+.icon-bag-heart::before { content: "♡"; }
+.icon-bell::before { content: "◉"; }
+.icon-box-arrow-right::before { content: "⇥"; }
+.icon-box-seam::before { content: "▣"; }
+.icon-broadcast-pin::before { content: "⌁"; }
+.icon-calendar2-check::before { content: "▦"; }
+.icon-check-circle-fill::before { content: "✓"; }
+.icon-check2::before { content: "✓"; }
+.icon-chevron-down::before { content: "⌄"; }
+.icon-chevron-right::before { content: "›"; }
+.icon-clock-history::before { content: "◷"; }
+.icon-cloud-arrow-up::before { content: "⇧"; }
+.icon-diagram-2::before,
+.icon-diagram-3::before { content: "⌘"; }
+.icon-download::before { content: "⇩"; }
+.icon-exclamation-circle-fill::before { content: "!"; }
+.icon-exclamation-triangle::before { content: "△"; }
+.icon-eye::before { content: "◉"; }
+.icon-eye-slash::before { content: "⊘"; }
+.icon-folder2::before,
+.icon-folder2-open::before { content: "▱"; }
+.icon-funnel::before { content: "▽"; }
+.icon-gear::before { content: "⚙"; }
+.icon-geo-alt::before { content: "⌖"; }
+.icon-globe-asia-australia::before,
+.icon-globe2::before { content: "◎"; }
+.icon-graph-up-arrow::before { content: "↗"; }
+.icon-grid-1x2::before { content: "▦"; }
+.icon-hourglass-split::before { content: "◫"; }
+.icon-image::before { content: "▧"; }
+.icon-info-circle::before,
+.icon-info-circle-fill::before { content: "i"; }
+.icon-list::before { content: "☰"; }
+.icon-patch-check::before { content: "✓"; }
+.icon-pause-circle::before { content: "Ⅱ"; }
+.icon-pencil::before { content: "✎"; }
+.icon-people::before { content: "♟"; }
+.icon-person::before { content: "●"; }
+.icon-play-circle::before { content: "▶"; }
+.icon-plus-lg::before { content: "+"; }
+.icon-save::before { content: "▣"; }
+.icon-search::before { content: "⌕"; }
+.icon-shield-check::before { content: "◇"; }
+.icon-shop::before { content: "⌂"; }
+.icon-sliders::before { content: "≡"; }
+.icon-star::before { content: "☆"; }
+.icon-stars::before { content: "✦"; }
+.icon-tags::before { content: "◇"; }
+.icon-trash::before,
+.icon-trash3::before { content: "×"; }
+.icon-x::before,
+.icon-x-lg::before { content: "×"; }
+.icon-arrow-counterclockwise,
+.icon-download,
+.icon-graph-up-arrow,
+.icon-play-circle { font-weight: 500; }

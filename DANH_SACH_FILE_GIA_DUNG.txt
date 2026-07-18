@@ -1,5 +1,8 @@
+Mây Home – Danh sách file giai đoạn 5
+
+CAP_NHAT_DANH_MUC_THUONG_HIEU_DONG.md
 CHUYEN_DOI_SANG_WEB_GIA_DUNG.md
-DANH_SACH_FILE.txt
+FIX_LOI_SYNTAX.md
 HUONG_DAN_CAI_DAT.md
 MO_HINH_DU_LIEU.md
 THAY_DOI_GIAI_DOAN_2.md
@@ -11,6 +14,8 @@ TMDT1_TH/Areas/Admin/Controllers/PricingController.cs
 TMDT1_TH/Areas/Admin/Controllers/ProductsController.cs
 TMDT1_TH/Areas/Admin/ViewModels/AdminUiModels.cs
 TMDT1_TH/Areas/Admin/ViewModels/CatalogAdminViewModels.cs
+TMDT1_TH/Areas/Admin/ViewModels/MarketAdminViewModels.cs
+TMDT1_TH/Areas/Admin/ViewModels/PricingAdminViewModels.cs
 TMDT1_TH/Areas/Admin/ViewModels/UiStatus.cs
 TMDT1_TH/Areas/Admin/Views/Brands/Index.cshtml
 TMDT1_TH/Areas/Admin/Views/Categories/Index.cshtml
@@ -37,7 +42,6 @@ TMDT1_TH/Data/Configurations/ProductOptionValueConfiguration.cs
 TMDT1_TH/Data/Configurations/ProductVariantConfiguration.cs
 TMDT1_TH/Data/Configurations/ProductVariantValueConfiguration.cs
 TMDT1_TH/Data/Database/DatabaseTriggerInstaller.cs
-TMDT1_TH/Data/Database/HouseholdCatalogSeeder.cs
 TMDT1_TH/Domain/Common/AuditableEntity.cs
 TMDT1_TH/Domain/Entities/Brand.cs
 TMDT1_TH/Domain/Entities/Category.cs
@@ -65,5 +69,10 @@ TMDT1_TH/Views/_ViewImports.cshtml
 TMDT1_TH/Views/_ViewStart.cshtml
 TMDT1_TH/appsettings.Development.json
 TMDT1_TH/appsettings.json
-TMDT1_TH/wwwroot/admin/css/admin.css
+TMDT1_TH/wwwroot/admin/css/icons.css
+TMDT1_TH/wwwroot/admin/css/style.css
 TMDT1_TH/wwwroot/admin/js/admin.js
+TMDT1_TH/wwwroot/admin/js/product-editor.js
+TRIEN_KHAI_GIAI_DOAN_3_SAN_PHAM.md
+TRIEN_KHAI_GIAI_DOAN_4_QUAN_LY_GIA.md
+TRIEN_KHAI_GIAI_DOAN_5_THI_TRUONG_CUSTOM_CSS.md
