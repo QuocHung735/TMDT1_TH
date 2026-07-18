@@ -1,0 +1,16 @@
+@if (TempData["Success"] is string success)
+{
+    <div class="toast-message toast-message--success" data-toast>
+        <i class="bi bi-check-circle-fill"></i>
+        <div><strong>Đã hoàn tất</strong><span>@success</span></div>
+        <button type="button" data-toast-close aria-label="Đóng"><i class="bi bi-x"></i></button>
+    </div>
+}
+@if (TempData["Info"] is string info)
+{
+    <div class="toast-message toast-message--info" data-toast>
+        <i class="bi bi-info-circle-fill"></i>
+        <div><strong>Thông tin</strong><span>@info</span></div>
+        <button type="button" data-toast-close aria-label="Đóng"><i class="bi bi-x"></i></button>
+    </div>
+}

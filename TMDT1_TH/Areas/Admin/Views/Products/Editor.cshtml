@@ -1,0 +1,90 @@
+@model ProductEditorViewModel
+@{
+    ViewData["Title"] = Model.IsEdit ? "Chỉnh sửa sản phẩm" : "Thêm sản phẩm";
+    ViewData["Description"] = "Hoàn thiện từng bước để sản phẩm dễ hiểu, dễ chọn và giảm sai sót khi mua hàng.";
+}
+@section PageActions {
+    <a class="btn btn-light" asp-action="Index">Hủy</a>
+    <button class="btn btn-light" type="submit" form="product-form" name="mode" value="draft"><i class="bi bi-save"></i> Lưu nháp</button>
+    <button class="btn btn-primary" type="submit" form="product-form"><i class="bi bi-check2"></i> Lưu sản phẩm</button>
+}
+
+<div class="editor-layout">
+    <aside class="editor-steps card">
+        <a href="#general" class="editor-step is-active"><span>1</span><div><strong>Thông tin chung</strong><small>Tên, mô tả và phân loại</small></div></a>
+        <a href="#media" class="editor-step"><span>2</span><div><strong>Hình ảnh</strong><small>Ảnh đại diện và thư viện</small></div></a>
+        <a href="#variants" class="editor-step"><span>3</span><div><strong>Thuộc tính & biến thể</strong><small>Màu sắc, kích thước, SKU</small></div></a>
+        <a href="#pricing" class="editor-step"><span>4</span><div><strong>Giá & tồn kho</strong><small>Ba loại giá và số lượng</small></div></a>
+        <a href="#seo" class="editor-step"><span>5</span><div><strong>Hiển thị & SEO</strong><small>Trạng thái và thông tin tìm kiếm</small></div></a>
+    </aside>
+
+    <form id="product-form" asp-action="SaveDemo" method="post" class="editor-content">
+        @Html.AntiForgeryToken()
+        <section class="card form-section" id="general">
+            <div class="form-section__header"><div><span class="section-number">1</span><h2>Thông tin chung</h2></div><p>Cung cấp tên và mô tả dễ đọc cho người mua.</p></div>
+            <div class="form-section__body form-stack">
+                <label class="form-field"><span>Tên sản phẩm <em>*</em></span><input name="name" value="@Model.Name" required placeholder="Ví dụ: Áo sơ mi Linen Breeze" /><small>Ưu tiên tên ngắn, nêu rõ loại sản phẩm và đặc điểm chính.</small></label>
+                <div class="form-grid form-grid--3">
+                    <label class="form-field"><span>Mã sản phẩm</span><input value="@Model.Sku" placeholder="Tự động nếu để trống" /></label>
+                    <label class="form-field"><span>Danh mục <em>*</em></span><select required><option value="">Chọn danh mục</option>@if (Model.Category == "Áo nữ") { <option selected>Áo nữ</option> } else { <option>Áo nữ</option> }<option>Quần nữ</option><option>Váy & đầm</option></select></label>
+                    <label class="form-field"><span>Thương hiệu</span><select><option value="">Chọn thương hiệu</option>@if (Model.Brand == "Lumi Basic") { <option selected>Lumi Basic</option> } else { <option>Lumi Basic</option> }<option>Mây Studio</option></select></label>
+                </div>
+                <label class="form-field"><span>Mô tả ngắn</span><textarea rows="3" maxlength="240" placeholder="Tóm tắt điểm nổi bật trong 1–2 câu...">@Model.Description</textarea><small class="field-counter">Tối đa 240 ký tự</small></label>
+                <label class="form-field"><span>Mô tả chi tiết</span><div class="rich-toolbar"><button type="button"><b>B</b></button><button type="button"><i>I</i></button><button type="button"><i class="bi bi-list-ul"></i></button><button type="button"><i class="bi bi-link-45deg"></i></button></div><textarea rows="7" placeholder="Chất liệu, phom dáng, hướng dẫn bảo quản..."></textarea></label>
+            </div>
+        </section>
+
+        <section class="card form-section" id="media">
+            <div class="form-section__header"><div><span class="section-number">2</span><h2>Hình ảnh sản phẩm</h2></div><p>Ảnh rõ ràng giúp khách hàng tự tin lựa chọn.</p></div>
+            <div class="form-section__body">
+                <div class="media-grid">
+                    <label class="media-upload media-upload--primary"><input type="file" accept="image/*" /><span><i class="bi bi-cloud-arrow-up"></i></span><strong>Ảnh đại diện</strong><small>Kéo thả hoặc bấm để tải ảnh</small><em>Tỷ lệ gợi ý 1:1 · tối đa 5 MB</em></label>
+                    <label class="media-upload"><input type="file" accept="image/*" /><span><i class="bi bi-plus-lg"></i></span><strong>Thêm ảnh</strong></label>
+                    <label class="media-upload"><input type="file" accept="image/*" /><span><i class="bi bi-plus-lg"></i></span><strong>Thêm ảnh</strong></label>
+                    <label class="media-upload"><input type="file" accept="image/*" /><span><i class="bi bi-plus-lg"></i></span><strong>Thêm ảnh</strong></label>
+                </div>
+                <div class="inline-tip"><i class="bi bi-lightbulb"></i><div><strong>Mẹo tăng chuyển đổi</strong><p>Dùng ảnh nền sáng, thể hiện toàn cảnh, cận chất liệu và ảnh người mẫu ở nhiều góc.</p></div></div>
+            </div>
+        </section>
+
+        <section class="card form-section" id="variants">
+            <div class="form-section__header"><div><span class="section-number">3</span><h2>Thuộc tính & biến thể</h2></div><p>Tạo lựa chọn trực quan, tránh để khách nhầm màu hoặc kích thước.</p></div>
+            <div class="form-section__body form-stack">
+                <div class="option-builder">
+                    <div class="option-builder__head"><strong>Thuộc tính 1</strong><button type="button" class="text-button"><i class="bi bi-trash"></i> Xóa</button></div>
+                    <div class="form-grid form-grid--option"><label class="form-field"><span>Tên thuộc tính</span><input value="Màu sắc" /></label><label class="form-field"><span>Giá trị, cách nhau bằng dấu phẩy</span><input id="variant-colors" value="Trắng, Tím pastel, Xanh mint" /></label></div>
+                </div>
+                <div class="option-builder">
+                    <div class="option-builder__head"><strong>Thuộc tính 2</strong><button type="button" class="text-button"><i class="bi bi-trash"></i> Xóa</button></div>
+                    <div class="form-grid form-grid--option"><label class="form-field"><span>Tên thuộc tính</span><input value="Kích thước" /></label><label class="form-field"><span>Giá trị, cách nhau bằng dấu phẩy</span><input id="variant-sizes" value="S, M, L" /></label></div>
+                </div>
+                <div class="row-actions"><button class="btn btn-light" type="button"><i class="bi bi-plus-lg"></i> Thêm thuộc tính</button><button class="btn btn-secondary" type="button" data-generate-variants><i class="bi bi-stars"></i> Tạo tổ hợp biến thể</button></div>
+                <div class="variant-preview">
+                    <div class="variant-preview__header"><div><strong>Danh sách biến thể</strong><span data-variant-count>9 biến thể</span></div><button type="button" class="text-button">Chỉnh sửa hàng loạt</button></div>
+                    <div class="table-wrap"><table class="data-table data-table--compact"><thead><tr><th>Biến thể</th><th>SKU</th><th>Tồn kho</th><th>Trạng thái</th></tr></thead><tbody data-variant-body></tbody></table></div>
+                </div>
+            </div>
+        </section>
+
+        <section class="card form-section" id="pricing">
+            <div class="form-section__header"><div><span class="section-number">4</span><h2>Giá & tồn kho</h2></div><p>Thiết lập ba mức giá minh bạch cho biến thể mặc định.</p></div>
+            <div class="form-section__body">
+                <div class="price-input-grid">
+                    <label class="form-field price-field"><span>Giá vốn <em>*</em></span><div><input inputmode="numeric" value="245000" data-money-input /><i>₫</i></div><small>Chi phí nhập hoặc sản xuất</small></label>
+                    <label class="form-field price-field"><span>Giá niêm yết <em>*</em></span><div><input inputmode="numeric" value="549000" data-money-input /><i>₫</i></div><small>Giá gốc trước khuyến mãi</small></label>
+                    <label class="form-field price-field price-field--highlight"><span>Giá bán <em>*</em></span><div><input inputmode="numeric" value="489000" data-money-input /><i>₫</i></div><small>Giá khách hàng thực trả</small></label>
+                </div>
+                <label class="switch-row switch-row--border"><span><strong>Quản lý tồn kho</strong><small>Theo dõi số lượng riêng cho từng biến thể.</small></span><input type="checkbox" checked /><i></i></label>
+            </div>
+        </section>
+
+        <section class="card form-section" id="seo">
+            <div class="form-section__header"><div><span class="section-number">5</span><h2>Hiển thị & SEO</h2></div><p>Kiểm soát cách sản phẩm xuất hiện trên cửa hàng và công cụ tìm kiếm.</p></div>
+            <div class="form-section__body form-stack">
+                <div class="form-grid form-grid--2"><label class="form-field"><span>Trạng thái</span><select><option>Đang bán</option><option>Bản nháp</option><option>Tạm ẩn</option></select></label><label class="form-field"><span>Ngày xuất bản</span><input type="datetime-local" /></label></div>
+                <label class="switch-row switch-row--border"><span><strong>Sản phẩm nổi bật</strong><small>Ưu tiên xuất hiện tại trang chủ và bộ sưu tập.</small></span><input type="checkbox" /><i></i></label>
+                <div class="seo-preview"><small>Xem trước kết quả tìm kiếm</small><a href="#">Áo sơ mi Linen Breeze | Pastel Store</a><span>pastelstore.vn/san-pham/ao-so-mi-linen-breeze</span><p>Thiết kế linen nhẹ, phom thoải mái và dễ phối trong nhiều hoàn cảnh.</p></div>
+            </div>
+        </section>
+    </form>
+</div>

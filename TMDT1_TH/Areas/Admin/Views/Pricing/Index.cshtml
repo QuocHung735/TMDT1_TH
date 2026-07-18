@@ -1,0 +1,70 @@
+@model PricingViewModel
+@{
+    ViewData["Title"] = "Quản lý giá";
+    ViewData["Description"] = "Thiết lập giá vốn, giá niêm yết và giá bán theo biến thể, thị trường và thời gian.";
+}
+@section PageActions {
+    <button class="btn btn-light"><i class="bi bi-upload"></i> Nhập bảng giá</button>
+    <button class="btn btn-primary" type="button" data-modal-target="price-modal"><i class="bi bi-plus-lg"></i> Thiết lập giá</button>
+}
+
+<section class="pricing-overview">
+    <article class="pricing-overview__card"><span class="tone-purple"><i class="bi bi-tags"></i></span><div><small>Bảng giá đang áp dụng</small><strong>854</strong><em>trên 4 thị trường</em></div></article>
+    <article class="pricing-overview__card"><span class="tone-mint"><i class="bi bi-calendar2-check"></i></span><div><small>Sắp có hiệu lực</small><strong>18</strong><em>trong 7 ngày tới</em></div></article>
+    <article class="pricing-overview__card"><span class="tone-amber"><i class="bi bi-hourglass-split"></i></span><div><small>Sắp hết hạn</small><strong>7</strong><em>cần xem xét gia hạn</em></div></article>
+    <article class="pricing-overview__card"><span class="tone-blue"><i class="bi bi-graph-up-arrow"></i></span><div><small>Điều chỉnh tháng này</small><strong>42</strong><em>+9 so với tháng trước</em></div></article>
+</section>
+
+<div class="tabs" data-tabs>
+    <button class="is-active" data-tab="current-prices">Giá hiện tại</button>
+    <button data-tab="price-history">Lịch sử biến động</button>
+</div>
+
+<section class="card panel" data-tab-panel="current-prices">
+    <div class="toolbar toolbar--wrap">
+        <label class="field-search"><i class="bi bi-search"></i><input type="search" placeholder="Tìm sản phẩm, SKU hoặc biến thể..." data-table-search="pricing-table" /></label>
+        <div class="toolbar__filters"><select class="form-select"><option>Tất cả thị trường</option><option>Online</option><option>Hồ Chí Minh</option><option>Hà Nội</option></select><select class="form-select"><option>Tất cả trạng thái</option><option>Đang áp dụng</option><option>Sắp áp dụng</option></select><button class="btn btn-light"><i class="bi bi-calendar3"></i> Thời gian</button></div>
+    </div>
+    <div class="table-wrap">
+        <table class="data-table" id="pricing-table">
+            <thead><tr><th>Sản phẩm / Biến thể</th><th>Thị trường</th><th>Giá vốn</th><th>Giá niêm yết</th><th>Giá bán</th><th>Thời gian áp dụng</th><th>Trạng thái</th><th></th></tr></thead>
+            <tbody>
+            @foreach (var item in Model.Items)
+            {
+                <tr data-search-row>
+                    <td><div class="stacked-text"><strong>@item.Product</strong><small>@item.Variant</small></div></td><td><span class="market-chip"><i class="bi bi-geo-alt"></i>@item.Market</span></td><td>@item.CostPrice</td><td><span class="muted-price">@item.ListPrice</span></td><td><strong class="sale-price">@item.SalePrice</strong></td><td>@item.Period</td><td><span class="status-pill @UiStatus.Class(item.Status)">@item.Status</span></td><td class="table-actions"><button class="icon-btn" data-modal-target="price-modal"><i class="bi bi-pencil"></i></button><button class="icon-btn"><i class="bi bi-three-dots"></i></button></td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    </div>
+</section>
+
+<section class="card panel is-hidden" data-tab-panel="price-history">
+    <div class="panel__header"><div><h2>Lịch sử biến động giá</h2><p>Mọi thay đổi được ghi nhận để dễ kiểm tra và đối soát.</p></div><button class="btn btn-light"><i class="bi bi-download"></i> Xuất lịch sử</button></div>
+    <div class="table-wrap"><table class="data-table"><thead><tr><th>Sản phẩm / Biến thể</th><th>Thị trường</th><th>Loại giá</th><th>Giá cũ</th><th>Giá mới</th><th>Thay đổi</th><th>Người cập nhật</th><th>Thời gian</th></tr></thead><tbody>
+    @foreach (var item in Model.History)
+    {
+        <tr><td><div class="stacked-text"><strong>@item.Product</strong><small>@item.Variant</small></div></td><td>@item.Market</td><td>@item.PriceType</td><td class="muted-price">@item.OldPrice</td><td><strong>@item.NewPrice</strong></td><td><span class="change-pill change-pill--@item.Tone">@item.Change</span></td><td>@item.User</td><td>@item.Time</td></tr>
+    }
+    </tbody></table></div>
+</section>
+
+<div class="modal modal--wide" id="price-modal" aria-hidden="true">
+    <div class="modal__backdrop" data-modal-close></div>
+    <div class="modal__dialog">
+        <form asp-action="SaveDemo" method="post">
+            @Html.AntiForgeryToken()
+            <div class="modal__header"><div><h2>Thiết lập lịch giá</h2><p>Chọn đúng biến thể, thị trường và thời gian để tránh xung đột.</p></div><button type="button" class="icon-btn" data-modal-close><i class="bi bi-x-lg"></i></button></div>
+            <div class="modal__body form-stack">
+                <div class="form-grid form-grid--2"><label class="form-field"><span>Sản phẩm <em>*</em></span><select name="product" required><option value="">Chọn sản phẩm</option><option>Áo sơ mi Linen Breeze</option><option>Quần ống rộng Cloudy</option></select></label><label class="form-field"><span>Biến thể</span><select><option>Áp dụng toàn sản phẩm</option><option>Trắng / S</option><option>Trắng / M</option><option>Tím pastel / L</option></select></label></div>
+                <div class="form-grid form-grid--2"><label class="form-field"><span>Thị trường <em>*</em></span><select required><option>Online</option><option>Hồ Chí Minh</option><option>Hà Nội</option></select></label><label class="form-field"><span>Tiền tệ</span><select><option>VND — Việt Nam đồng</option></select></label></div>
+                <div class="price-input-grid"><label class="form-field price-field"><span>Giá vốn</span><div><input inputmode="numeric" value="245000" data-money-input /><i>₫</i></div></label><label class="form-field price-field"><span>Giá niêm yết</span><div><input inputmode="numeric" value="549000" data-money-input /><i>₫</i></div></label><label class="form-field price-field price-field--highlight"><span>Giá bán</span><div><input inputmode="numeric" value="489000" data-money-input /><i>₫</i></div></label></div>
+                <div class="schedule-box"><div class="schedule-box__head"><strong>Thời gian áp dụng</strong><div class="choice-pills"><label><input type="radio" name="duration" value="range" checked /><span>Có thời hạn</span></label><label><input type="radio" name="duration" value="forever" /><span>Vô hạn</span></label></div></div><div class="form-grid form-grid--2" data-date-range><label class="form-field"><span>Bắt đầu</span><input type="datetime-local" value="2026-07-20T00:00" /></label><label class="form-field"><span>Kết thúc</span><input type="datetime-local" value="2026-07-31T23:59" /></label></div></div>
+                <div class="validation-banner"><i class="bi bi-shield-check"></i><div><strong>Kiểm tra xung đột tự động</strong><p>Hệ thống sẽ cảnh báo nếu lịch giá trùng với giá cùng loại đang tồn tại.</p></div></div>
+                <label class="form-field"><span>Lý do thay đổi</span><textarea rows="2" placeholder="Ví dụ: Chương trình ưu đãi cuối tháng..."></textarea></label>
+            </div>
+            <div class="modal__footer"><button type="button" class="btn btn-light" data-modal-close>Hủy</button><button class="btn btn-primary" type="submit">Lưu lịch giá</button></div>
+        </form>
+    </div>
+</div>

@@ -1,0 +1,59 @@
+@model CategoriesViewModel
+@{
+    ViewData["Title"] = "Quản lý danh mục";
+    ViewData["Description"] = "Tổ chức sản phẩm theo cấu trúc dễ tìm kiếm và thuận tiện cho người mua.";
+}
+@section PageActions {
+    <button class="btn btn-primary" type="button" data-modal-target="category-modal"><i class="bi bi-plus-lg"></i> Thêm danh mục</button>
+}
+
+<section class="summary-strip">
+    <div><span class="summary-strip__icon tone-purple"><i class="bi bi-diagram-3"></i></span><p><strong>6</strong><small>Tổng danh mục</small></p></div>
+    <div><span class="summary-strip__icon tone-mint"><i class="bi bi-eye"></i></span><p><strong>5</strong><small>Đang hiển thị</small></p></div>
+    <div><span class="summary-strip__icon tone-amber"><i class="bi bi-box-seam"></i></span><p><strong>411</strong><small>Sản phẩm đã gán</small></p></div>
+</section>
+
+<section class="card panel">
+    <div class="toolbar">
+        <label class="field-search"><i class="bi bi-search"></i><input type="search" placeholder="Tìm theo tên hoặc slug..." data-table-search="category-table" /></label>
+        <div class="toolbar__filters">
+            <select class="form-select"><option>Tất cả trạng thái</option><option>Đang hiển thị</option><option>Đã ẩn</option></select>
+            <button class="btn btn-light"><i class="bi bi-sort-down"></i> Sắp xếp</button>
+        </div>
+    </div>
+    <div class="table-wrap">
+        <table class="data-table" id="category-table">
+            <thead><tr><th><input type="checkbox" data-check-all /></th><th>Danh mục</th><th>Slug</th><th>Danh mục cha</th><th>Sản phẩm</th><th>Trạng thái</th><th></th></tr></thead>
+            <tbody>
+            @foreach (var item in Model.Items)
+            {
+                <tr data-search-row>
+                    <td><input type="checkbox" data-row-check /></td>
+                    <td><div class="category-cell" style="--level:@item.Level"><span class="category-icon"><i class="bi @item.Icon"></i></span><strong>@item.Name</strong></div></td>
+                    <td><code>@item.Slug</code></td><td>@item.Parent</td><td>@item.ProductCount sản phẩm</td>
+                    <td><span class="status-pill @UiStatus.Class(item.Status)">@item.Status</span></td>
+                    <td class="table-actions"><button class="icon-btn" title="Chỉnh sửa"><i class="bi bi-pencil"></i></button><button class="icon-btn" title="Tùy chọn"><i class="bi bi-three-dots"></i></button></td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    </div>
+    <div class="pagination"><span>Hiển thị 1–6 trong 6 danh mục</span><div><button disabled><i class="bi bi-chevron-left"></i></button><button class="is-current">1</button><button disabled><i class="bi bi-chevron-right"></i></button></div></div>
+</section>
+
+<div class="modal" id="category-modal" aria-hidden="true">
+    <div class="modal__backdrop" data-modal-close></div>
+    <div class="modal__dialog">
+        <form asp-action="CreateDemo" method="post">
+            @Html.AntiForgeryToken()
+            <div class="modal__header"><div><h2>Thêm danh mục mới</h2><p>Tạo cấu trúc rõ ràng để khách dễ tìm sản phẩm.</p></div><button type="button" class="icon-btn" data-modal-close><i class="bi bi-x-lg"></i></button></div>
+            <div class="modal__body form-stack">
+                <label class="form-field"><span>Tên danh mục <em>*</em></span><input name="name" required placeholder="Ví dụ: Áo khoác nữ" /></label>
+                <label class="form-field"><span>Danh mục cha</span><select><option>Không có (danh mục gốc)</option><option>Thời trang nữ</option><option>Phụ kiện</option></select></label>
+                <label class="form-field"><span>Mô tả ngắn</span><textarea rows="3" placeholder="Giúp đội ngũ hiểu phạm vi của danh mục..."></textarea></label>
+                <label class="switch-row"><span><strong>Hiển thị trên cửa hàng</strong><small>Khách hàng có thể nhìn thấy danh mục này.</small></span><input type="checkbox" checked /><i></i></label>
+            </div>
+            <div class="modal__footer"><button type="button" class="btn btn-light" data-modal-close>Hủy</button><button class="btn btn-primary" type="submit">Lưu danh mục</button></div>
+        </form>
+    </div>
+</div>

@@ -1,0 +1,29 @@
+@model MarketsViewModel
+@{
+    ViewData["Title"] = "Quản lý thị trường";
+    ViewData["Description"] = "Phân tách giá bán theo khu vực hoặc kênh kinh doanh.";
+}
+@section PageActions {
+    <button class="btn btn-primary"><i class="bi bi-plus-lg"></i> Thêm thị trường</button>
+}
+
+<section class="card panel">
+    <div class="panel__header"><div><h2>Danh sách thị trường</h2><p>Thị trường mặc định được dùng khi chưa có bảng giá riêng.</p></div><span class="panel-badge">4 thị trường</span></div>
+    <div class="market-list">
+        @foreach (var item in Model.Items)
+        {
+            <article class="market-row">
+                <span class="market-row__icon"><i class="bi @(item.Code == "ONLINE" ? "bi-globe2" : "bi-geo-alt")"></i></span>
+                <div class="market-row__name"><strong>@item.Name @if (item.IsDefault) { <em>Mặc định</em> }</strong><small>@item.Code</small></div>
+                <div><small>Tiền tệ</small><strong>@item.Currency</strong></div>
+                <div><small>Bản ghi giá</small><strong>@item.PriceCount</strong></div>
+                <span class="status-pill @UiStatus.Class(item.Status)">@item.Status</span>
+                <div class="table-actions"><button class="icon-btn"><i class="bi bi-pencil"></i></button><button class="icon-btn"><i class="bi bi-three-dots"></i></button></div>
+            </article>
+        }
+    </div>
+</section>
+
+<section class="card info-card">
+    <span><i class="bi bi-info-circle"></i></span><div><h2>Cách hệ thống chọn giá</h2><p>Hệ thống ưu tiên giá của biến thể tại đúng thị trường. Nếu chưa có, giá sản phẩm tại thị trường được dùng; cuối cùng mới quay về thị trường mặc định.</p></div><button class="btn btn-light">Xem quy tắc chi tiết</button>
+</section>

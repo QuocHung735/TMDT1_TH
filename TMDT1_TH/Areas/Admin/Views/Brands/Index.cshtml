@@ -1,0 +1,40 @@
+@model BrandsViewModel
+@{
+    ViewData["Title"] = "Quản lý thương hiệu";
+    ViewData["Description"] = "Chuẩn hóa thông tin thương hiệu để tăng độ tin cậy khi khách lựa chọn sản phẩm.";
+}
+@section PageActions {
+    <button class="btn btn-primary" type="button" data-modal-target="brand-modal"><i class="bi bi-plus-lg"></i> Thêm thương hiệu</button>
+}
+
+<section class="brand-grid">
+    @foreach (var item in Model.Items)
+    {
+        <article class="brand-card card" data-search-row>
+            <div class="brand-card__header">
+                <span class="brand-logo tone-@item.Tone">@item.Initials</span>
+                <button class="icon-btn"><i class="bi bi-three-dots"></i></button>
+            </div>
+            <div class="brand-card__body"><h2>@item.Name</h2><p><i class="bi bi-geo-alt"></i> @item.Country</p></div>
+            <div class="brand-card__footer"><span><strong>@item.ProductCount</strong> sản phẩm</span><span class="status-pill @UiStatus.Class(item.Status)">@item.Status</span></div>
+        </article>
+    }
+    <button class="brand-card brand-card--add" type="button" data-modal-target="brand-modal"><span><i class="bi bi-plus-lg"></i></span><strong>Thêm thương hiệu</strong><small>Tạo hồ sơ thương hiệu mới</small></button>
+</section>
+
+<div class="modal" id="brand-modal" aria-hidden="true">
+    <div class="modal__backdrop" data-modal-close></div>
+    <div class="modal__dialog">
+        <form asp-action="CreateDemo" method="post">
+            @Html.AntiForgeryToken()
+            <div class="modal__header"><div><h2>Thêm thương hiệu</h2><p>Thông tin súc tích giúp khách hàng nhận diện nhanh.</p></div><button type="button" class="icon-btn" data-modal-close><i class="bi bi-x-lg"></i></button></div>
+            <div class="modal__body form-stack">
+                <div class="logo-uploader"><span><i class="bi bi-image"></i></span><div><strong>Tải logo thương hiệu</strong><small>PNG, JPG hoặc SVG · tối đa 2 MB</small></div><button type="button" class="btn btn-light btn-sm">Chọn ảnh</button></div>
+                <label class="form-field"><span>Tên thương hiệu <em>*</em></span><input name="name" required placeholder="Ví dụ: Mây Studio" /></label>
+                <div class="form-grid form-grid--2"><label class="form-field"><span>Quốc gia</span><select><option>Việt Nam</option><option>Hàn Quốc</option><option>Nhật Bản</option></select></label><label class="form-field"><span>Website</span><input type="url" placeholder="https://" /></label></div>
+                <label class="form-field"><span>Mô tả</span><textarea rows="3" placeholder="Câu chuyện hoặc điểm nổi bật của thương hiệu..."></textarea></label>
+            </div>
+            <div class="modal__footer"><button type="button" class="btn btn-light" data-modal-close>Hủy</button><button class="btn btn-primary" type="submit">Lưu thương hiệu</button></div>
+        </form>
+    </div>
+</div>
