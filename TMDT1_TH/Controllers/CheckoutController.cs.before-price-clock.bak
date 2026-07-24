@@ -8,7 +8,6 @@ using TMDT1_TH.Domain.Entities;
 using TMDT1_TH.Domain.Enums;
 using TMDT1_TH.Domain.Identity;
 using TMDT1_TH.Infrastructure.Cart;
-using TMDT1_TH.Infrastructure.Pricing;
 using TMDT1_TH.ViewModels.Storefront;
 
 namespace TMDT1_TH.Controllers;
@@ -593,7 +592,7 @@ public sealed class CheckoutController(
                 sessionItem,
                 market.Id,
                 market.CurrencyCode,
-                StorePriceClock.Now);
+                DateTime.UtcNow);
 
             if (resolution.Line is null)
             {
@@ -1134,4 +1133,3 @@ public sealed class CheckoutController(
             new(null, error);
     }
 }
-

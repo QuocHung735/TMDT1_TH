@@ -3,7 +3,6 @@ using Microsoft.EntityFrameworkCore;
 using TMDT1_TH.Data;
 using TMDT1_TH.Domain.Entities;
 using TMDT1_TH.Domain.Enums;
-using TMDT1_TH.Infrastructure.Pricing;
 using TMDT1_TH.ViewModels.Storefront;
 
 namespace TMDT1_TH.Controllers;
@@ -16,7 +15,7 @@ public class HomeController(ApplicationDbContext db) : Controller
     public async Task<IActionResult> Index()
     {
         var market = await GetStoreMarketAsync();
-        var now = StorePriceClock.Now;
+        var now = DateTime.UtcNow;
 
         var categories = await _db.Categories
             .AsNoTracking()
@@ -88,7 +87,7 @@ public class HomeController(ApplicationDbContext db) : Controller
         sort = string.IsNullOrWhiteSpace(sort) ? "newest" : sort.Trim().ToLowerInvariant();
 
         var market = await GetStoreMarketAsync();
-        var now = StorePriceClock.Now;
+        var now = DateTime.UtcNow;
 
         IQueryable<Product> query = StoreProductQuery();
 
@@ -189,7 +188,7 @@ public class HomeController(ApplicationDbContext db) : Controller
             return NotFound();
 
         var market = await GetStoreMarketAsync();
-        var now = StorePriceClock.Now;
+        var now = DateTime.UtcNow;
 
         var product = await StoreProductQuery()
             .Include(x => x.Options)
@@ -474,4 +473,3 @@ public class HomeController(ApplicationDbContext db) : Controller
         string Name,
         string CurrencyCode);
 }
-

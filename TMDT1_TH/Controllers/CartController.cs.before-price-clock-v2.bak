@@ -4,7 +4,6 @@ using TMDT1_TH.Data;
 using TMDT1_TH.Domain.Entities;
 using TMDT1_TH.Domain.Enums;
 using TMDT1_TH.Infrastructure.Cart;
-using TMDT1_TH.Infrastructure.Pricing;
 using TMDT1_TH.ViewModels.Storefront;
 
 namespace TMDT1_TH.Controllers;
@@ -323,7 +322,7 @@ public sealed class CartController(
             price = GetCurrentPrice(
                 variant.PriceSchedules,
                 market.Id,
-                StorePriceClock.Now);
+                DateTime.UtcNow);
 
             stockQuantity = variant.StockQuantity;
             sku = variant.Sku;
@@ -345,7 +344,7 @@ public sealed class CartController(
             price = GetCurrentPrice(
                 product.PriceSchedules,
                 market.Id,
-                StorePriceClock.Now);
+                DateTime.UtcNow);
 
             stockQuantity = product.StockQuantity;
             sku = product.Sku;
@@ -451,4 +450,3 @@ public sealed class CartController(
             new(null, error);
     }
 }
-
