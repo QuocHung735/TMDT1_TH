@@ -1,0 +1,503 @@
+﻿@using System.Globalization
+@model SalesReportViewModel
+@{
+    ViewData["Title"] = "Báo cáo bán hàng";
+    ViewData["Description"] =
+        "Theo dõi doanh thu, đơn hàng, sản phẩm bán chạy và khách hàng nổi bật.";
+
+    var culture = CultureInfo.GetCultureInfo("vi-VN");
+    var currentMonthFrom =
+        new DateTime(
+            Model.ToDate.Year,
+            Model.ToDate.Month,
+            1);
+
+    string Money(decimal value) =>
+        $"{value.ToString("N0", culture)} {Model.CurrencyCode}";
+
+    string ChangeText(decimal? value)
+    {
+        if (!value.HasValue)
+            return "Mới phát sinh";
+
+        if (value.Value > 0)
+            return $"+{value.Value:0.#}%";
+
+        return $"{value.Value:0.#}%";
+    }
+
+    string ChangeClass(decimal? value)
+    {
+        if (!value.HasValue)
+            return "is-new";
+
+        return value.Value switch
+        {
+            > 0 => "is-up",
+            < 0 => "is-down",
+            _ => "is-flat"
+        };
+    }
+}
+
+@section PageActions {
+    <a class="btn btn-light"
+       asp-action="ExportCsv"
+       asp-route-from="@Model.FromDate.ToString("yyyy-MM-dd")"
+       asp-route-to="@Model.ToDate.ToString("yyyy-MM-dd")">
+        <i class="bi bi-file-earmark-spreadsheet"></i>
+        Xuất CSV
+    </a>
+}
+
+<section class="report-filter card">
+    <form method="get"
+          class="report-filter__form">
+        <label>
+            <span>Từ ngày</span>
+            <input type="date"
+                   name="from"
+                   value="@Model.FromDate.ToString("yyyy-MM-dd")" />
+        </label>
+
+        <label>
+            <span>Đến ngày</span>
+            <input type="date"
+                   name="to"
+                   value="@Model.ToDate.ToString("yyyy-MM-dd")" />
+        </label>
+
+        <button class="btn btn-primary"
+                type="submit">
+            <i class="bi bi-funnel"></i>
+            Xem báo cáo
+        </button>
+    </form>
+
+    <div class="report-presets"
+         aria-label="Khoảng thời gian nhanh">
+        <a asp-action="Index"
+           asp-route-from="@Model.ToDate.AddDays(-6).ToString("yyyy-MM-dd")"
+           asp-route-to="@Model.ToDate.ToString("yyyy-MM-dd")">
+            7 ngày
+        </a>
+        <a asp-action="Index"
+           asp-route-from="@Model.ToDate.AddDays(-29).ToString("yyyy-MM-dd")"
+           asp-route-to="@Model.ToDate.ToString("yyyy-MM-dd")">
+            30 ngày
+        </a>
+        <a asp-action="Index"
+           asp-route-from="@Model.ToDate.AddDays(-89).ToString("yyyy-MM-dd")"
+           asp-route-to="@Model.ToDate.ToString("yyyy-MM-dd")">
+            90 ngày
+        </a>
+        <a asp-action="Index"
+           asp-route-from="@currentMonthFrom.ToString("yyyy-MM-dd")"
+           asp-route-to="@Model.ToDate.ToString("yyyy-MM-dd")">
+            Tháng này
+        </a>
+    </div>
+
+    <p class="report-filter__note">
+        Doanh thu được ghi nhận theo ngày đơn chuyển sang
+        <strong>Hoàn thành</strong>. Thống kê trạng thái sử dụng
+        ngày tạo đơn.
+    </p>
+</section>
+
+<section class="report-metrics">
+    <article class="report-metric card">
+        <span class="report-metric__icon is-purple">
+            <i class="bi bi-cash-stack"></i>
+        </span>
+        <div>
+            <small>Doanh thu hoàn thành</small>
+            <strong>@Money(Model.Revenue)</strong>
+            <span class="report-change @ChangeClass(Model.RevenueChangePercent)">
+                @ChangeText(Model.RevenueChangePercent)
+                so với kỳ trước
+            </span>
+        </div>
+    </article>
+
+    <article class="report-metric card">
+        <span class="report-metric__icon is-blue">
+            <i class="bi bi-receipt-cutoff"></i>
+        </span>
+        <div>
+            <small>Đơn được tạo</small>
+            <strong>@Model.CreatedOrderCount.ToString("N0", culture)</strong>
+            <span class="report-change @ChangeClass(Model.OrderChangePercent)">
+                @ChangeText(Model.OrderChangePercent)
+                so với kỳ trước
+            </span>
+        </div>
+    </article>
+
+    <article class="report-metric card">
+        <span class="report-metric__icon is-mint">
+            <i class="bi bi-check2-circle"></i>
+        </span>
+        <div>
+            <small>Đơn hoàn thành</small>
+            <strong>@Model.CompletedOrderCount.ToString("N0", culture)</strong>
+            <span>
+                Giá trị trung bình
+                @Money(Model.AverageOrderValue)
+            </span>
+        </div>
+    </article>
+
+    <article class="report-metric card">
+        <span class="report-metric__icon is-rose">
+            <i class="bi bi-x-circle"></i>
+        </span>
+        <div>
+            <small>Tỷ lệ hủy</small>
+            <strong>@Model.CancellationRate.ToString("0.#")%</strong>
+            <span>
+                @Model.CancelledOrderCount.ToString("N0", culture)
+                đơn đã hủy
+            </span>
+        </div>
+    </article>
+</section>
+
+<div class="report-grid report-grid--primary">
+    <section class="card report-panel report-revenue">
+        <header class="report-panel__heading">
+            <div>
+                <span class="eyebrow">DOANH THU</span>
+                <h2>Biến động doanh thu</h2>
+                <p>
+                    @Model.RevenueGroupingLabel ·
+                    @Model.FromDate.ToString("dd/MM/yyyy")
+                    đến
+                    @Model.ToDate.ToString("dd/MM/yyyy")
+                </p>
+            </div>
+            <div class="report-panel__total">
+                <strong>@Money(Model.Revenue)</strong>
+                <small>
+                    @Model.CompletedOrderCount.ToString("N0", culture)
+                    đơn hoàn thành
+                </small>
+            </div>
+        </header>
+
+        @if (Model.RevenuePoints.Count == 0 ||
+             Model.RevenuePoints.All(x => x.Revenue == 0))
+        {
+            <div class="report-empty">
+                <i class="bi bi-bar-chart"></i>
+                <strong>Chưa có doanh thu trong khoảng này</strong>
+                <span>
+                    Doanh thu xuất hiện khi đơn hàng được chuyển
+                    sang Hoàn thành.
+                </span>
+            </div>
+        }
+        else
+        {
+            <div class="report-chart"
+                 aria-label="Biểu đồ doanh thu">
+                @foreach (var point in Model.RevenuePoints)
+                {
+                    var height = point.HeightPercent
+                        .ToString(
+                            "0.#",
+                            CultureInfo.InvariantCulture);
+
+                    <div class="report-chart__item"
+                         title="@point.FullLabel: @Money(point.Revenue) · @point.OrderCount đơn">
+                        <div class="report-chart__value">
+                            @point.Revenue.ToString("N0", culture)
+                        </div>
+                        <div class="report-chart__track">
+                            <span style="@($"--report-bar-height:{height}%")"></span>
+                        </div>
+                        <small>@point.Label</small>
+                    </div>
+                }
+            </div>
+        }
+    </section>
+
+    <section class="card report-panel">
+        <header class="report-panel__heading">
+            <div>
+                <span class="eyebrow">TRẠNG THÁI</span>
+                <h2>Cơ cấu đơn hàng</h2>
+                <p>Dựa trên @Model.CreatedOrderCount đơn được tạo.</p>
+            </div>
+        </header>
+
+        <div class="report-status-list">
+            @foreach (var status in Model.Statuses)
+            {
+                var width = status.Percent
+                    .ToString(
+                        "0.#",
+                        CultureInfo.InvariantCulture);
+
+                <div class="report-status">
+                    <div class="report-status__heading">
+                        <span class="customer-order-status @status.CssClass">
+                            @status.Name
+                        </span>
+                        <strong>
+                            @status.Count.ToString("N0", culture)
+                            <small>@status.Percent.ToString("0.#")%</small>
+                        </strong>
+                    </div>
+                    <div class="report-status__track">
+                        <span class="@status.CssClass"
+                              style="@($"--report-status-width:{width}%")"></span>
+                    </div>
+                </div>
+            }
+        </div>
+
+        <div class="report-customer-summary">
+            <i class="bi bi-people"></i>
+            <div>
+                <strong>
+                    @Model.CompletedCustomerCount.ToString("N0", culture)
+                    khách hàng
+                </strong>
+                <span>
+                    Có đơn hoàn thành trong kỳ báo cáo
+                </span>
+            </div>
+        </div>
+    </section>
+</div>
+
+<div class="report-grid">
+    <section class="card report-panel">
+        <header class="report-panel__heading">
+            <div>
+                <span class="eyebrow">SẢN PHẨM</span>
+                <h2>Sản phẩm bán chạy</h2>
+                <p>Xếp hạng theo tổng số lượng đã hoàn thành.</p>
+            </div>
+        </header>
+
+        <div class="table-wrap">
+            <table class="data-table report-table">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Sản phẩm</th>
+                        <th>Đã bán</th>
+                        <th>Số đơn</th>
+                        <th>Doanh thu</th>
+                    </tr>
+                </thead>
+                <tbody>
+                @if (Model.TopProducts.Count == 0)
+                {
+                    <tr>
+                        <td colspan="5">
+                            <div class="report-table-empty">
+                                Chưa có sản phẩm hoàn thành trong kỳ.
+                            </div>
+                        </td>
+                    </tr>
+                }
+                else
+                {
+                    @for (var index = 0;
+                          index < Model.TopProducts.Count;
+                          index++)
+                    {
+                        var item = Model.TopProducts[index];
+
+                        <tr>
+                            <td>
+                                <span class="report-rank">
+                                    @(index + 1)
+                                </span>
+                            </td>
+                            <td>
+                                <div class="stacked-text">
+                                    @if (item.ProductId.HasValue)
+                                    {
+                                        <a asp-controller="Products"
+                                           asp-action="Edit"
+                                           asp-route-id="@item.ProductId">
+                                            <strong>@item.ProductName</strong>
+                                        </a>
+                                    }
+                                    else
+                                    {
+                                        <strong>@item.ProductName</strong>
+                                    }
+                                    <small>
+                                        @item.SkuSummary ·
+                                        @item.RevenueSharePercent.ToString("0.#")%
+                                        doanh thu
+                                    </small>
+                                </div>
+                            </td>
+                            <td>
+                                <strong>
+                                    @item.Quantity.ToString("N0", culture)
+                                </strong>
+                            </td>
+                            <td>
+                                @item.OrderCount.ToString("N0", culture)
+                            </td>
+                            <td>
+                                <strong>@Money(item.Revenue)</strong>
+                            </td>
+                        </tr>
+                    }
+                }
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <section class="card report-panel">
+        <header class="report-panel__heading">
+            <div>
+                <span class="eyebrow">KHÁCH HÀNG</span>
+                <h2>Khách hàng nổi bật</h2>
+                <p>Xếp hạng theo doanh thu đơn hoàn thành.</p>
+            </div>
+        </header>
+
+        <div class="table-wrap">
+            <table class="data-table report-table">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Khách hàng</th>
+                        <th>Số đơn</th>
+                        <th>Sản phẩm</th>
+                        <th>Doanh thu</th>
+                    </tr>
+                </thead>
+                <tbody>
+                @if (Model.TopCustomers.Count == 0)
+                {
+                    <tr>
+                        <td colspan="5">
+                            <div class="report-table-empty">
+                                Chưa có khách hàng phát sinh doanh thu.
+                            </div>
+                        </td>
+                    </tr>
+                }
+                else
+                {
+                    @for (var index = 0;
+                          index < Model.TopCustomers.Count;
+                          index++)
+                    {
+                        var customer = Model.TopCustomers[index];
+
+                        <tr>
+                            <td>
+                                <span class="report-rank">
+                                    @(index + 1)
+                                </span>
+                            </td>
+                            <td>
+                                <div class="stacked-text">
+                                    <strong>@customer.CustomerName</strong>
+                                    <small>@customer.Contact</small>
+                                </div>
+                            </td>
+                            <td>
+                                @customer.OrderCount.ToString("N0", culture)
+                            </td>
+                            <td>
+                                @customer.Quantity.ToString("N0", culture)
+                            </td>
+                            <td>
+                                <strong>@Money(customer.Revenue)</strong>
+                            </td>
+                        </tr>
+                    }
+                }
+                </tbody>
+            </table>
+        </div>
+    </section>
+</div>
+
+<section class="card report-panel">
+    <header class="report-panel__heading">
+        <div>
+            <span class="eyebrow">ĐƠN GẦN ĐÂY</span>
+            <h2>Đơn hoàn thành mới nhất</h2>
+            <p>Tối đa 8 đơn trong khoảng báo cáo.</p>
+        </div>
+
+        <a class="btn btn-light"
+           asp-controller="Orders"
+           asp-action="Index">
+            Xem tất cả đơn
+        </a>
+    </header>
+
+    <div class="table-wrap">
+        <table class="data-table report-table">
+            <thead>
+                <tr>
+                    <th>Mã đơn</th>
+                    <th>Hoàn thành</th>
+                    <th>Khách hàng</th>
+                    <th>Số lượng</th>
+                    <th>Tổng tiền</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+            @if (Model.RecentCompletedOrders.Count == 0)
+            {
+                <tr>
+                    <td colspan="6">
+                        <div class="report-table-empty">
+                            Chưa có đơn hoàn thành trong kỳ.
+                        </div>
+                    </td>
+                </tr>
+            }
+            else
+            {
+                @foreach (var order in Model.RecentCompletedOrders)
+                {
+                    <tr>
+                        <td><strong>@order.OrderNumber</strong></td>
+                        <td>
+                            @order.CompletedAt.ToString("dd/MM/yyyy HH:mm")
+                        </td>
+                        <td>@order.CustomerName</td>
+                        <td>
+                            @order.TotalQuantity.ToString("N0", culture)
+                        </td>
+                        <td>
+                            <strong>
+                                @order.TotalAmount.ToString("N0", culture)
+                                @order.CurrencyCode
+                            </strong>
+                        </td>
+                        <td class="table-actions">
+                            <a class="icon-btn"
+                               asp-controller="Orders"
+                               asp-action="Details"
+                               asp-route-id="@order.Id"
+                               title="Xem đơn hàng">
+                                <i class="bi bi-eye"></i>
+                            </a>
+                        </td>
+                    </tr>
+                }
+            }
+            </tbody>
+        </table>
+    </div>
+</section>
