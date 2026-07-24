@@ -79,7 +79,9 @@
             <p class="product-summary__subtitle">@Model.ShortDescription</p>
 
             <div class="product-rating-placeholder">
-                <span>Thông tin sản phẩm đã được xác minh từ hệ thống quản trị</span>
+                <a href="#danh-gia">
+                    Xem đánh giá từ khách đã mua hàng
+                </a>
             </div>
 
             <div class="product-price-box">
@@ -242,6 +244,10 @@
         </aside>
     </div>
 </section>
+
+@await Component.InvokeAsync(
+    "ProductReviews",
+    new { productId = Model.Id })
 
 @if (Model.RelatedProducts.Count > 0)
 {

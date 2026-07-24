@@ -1,0 +1,134 @@
+﻿@model AdminReviewDetailsViewModel
+@{
+    ViewData["Title"] = "Chi tiết đánh giá";
+    ViewData["Description"] =
+        $"Đơn {Model.OrderNumber} · {Model.CreatedAt.ToLocalTime():dd/MM/yyyy HH:mm}";
+}
+
+@section PageActions {
+    <a class="btn btn-light"
+       asp-action="Index">
+        <i class="bi bi-arrow-left"></i> Danh sách đánh giá
+    </a>
+}
+
+<div class="admin-review-layout">
+    <div class="admin-review-main">
+        <section class="card panel admin-review-panel">
+            <div class="admin-review-product">
+                <div class="admin-review-product__image">
+                    @if (!string.IsNullOrWhiteSpace(Model.ImageUrl))
+                    {
+                        <img src="@Model.ImageUrl"
+                             alt="@Model.ProductName" />
+                    }
+                    else
+                    {
+                        <span>Mây Home</span>
+                    }
+                </div>
+
+                <div>
+                    <small>Sản phẩm được đánh giá</small>
+                    <h2>@Model.ProductName</h2>
+                    @if (!string.IsNullOrWhiteSpace(Model.VariantName))
+                    {
+                        <p>@Model.VariantName</p>
+                    }
+
+                    @if (!string.IsNullOrWhiteSpace(Model.ProductSlug))
+                    {
+                        <a asp-area=""
+                           asp-controller="Home"
+                           asp-action="Details"
+                           asp-route-slug="@Model.ProductSlug"
+                           asp-fragment="danh-gia"
+                           target="_blank">
+                            Xem trang sản phẩm
+                        </a>
+                    }
+                </div>
+            </div>
+        </section>
+
+        <section class="card panel admin-review-panel">
+            <div class="admin-review-meta">
+                <div>
+                    <small>Khách hàng</small>
+                    <strong>@Model.CustomerName</strong>
+                    <span>@Model.CustomerEmail</span>
+                </div>
+
+                <div>
+                    <small>Trạng thái</small>
+                    <span class="review-status @Model.StatusClass">
+                        @Model.StatusName
+                    </span>
+                </div>
+            </div>
+
+            <div class="admin-review-stars"
+                 aria-label="@Model.Rating sao">
+                @for (var star = 1; star <= 5; star++)
+                {
+                    <i class="@(star <= Model.Rating ? "is-filled" : "")">★</i>
+                }
+            </div>
+
+            @if (!string.IsNullOrWhiteSpace(Model.Title))
+            {
+                <h2 class="admin-review-title">@Model.Title</h2>
+            }
+
+            <p class="admin-review-comment">@Model.Comment</p>
+        </section>
+    </div>
+
+    <aside class="card panel admin-review-moderation">
+        <h2>Duyệt đánh giá</h2>
+
+        <form asp-action="Moderate"
+              method="post">
+            <input type="hidden"
+                   name="id"
+                   value="@Model.Id" />
+
+            <label>
+                <span>Trạng thái</span>
+                <select class="form-select"
+                        name="status"
+                        required>
+                    @foreach (var option in Model.StatusOptions)
+                    {
+                        <option value="@option.Value"
+                                selected="@option.Selected">
+                            @option.Text
+                        </option>
+                    }
+                </select>
+            </label>
+
+            <label>
+                <span>Phản hồi của cửa hàng</span>
+                <textarea class="form-control"
+                          name="adminReply"
+                          rows="7"
+                          maxlength="1000"
+                          placeholder="Không bắt buộc">@Model.AdminReply</textarea>
+            </label>
+
+            <button class="btn btn-primary"
+                    type="submit">
+                Lưu kết quả duyệt
+            </button>
+        </form>
+
+        <div class="admin-review-policy">
+            <strong>Quy tắc hiển thị</strong>
+            <p>
+                Chỉ đánh giá ở trạng thái “Đã duyệt” mới xuất hiện
+                trên trang chi tiết sản phẩm.
+            </p>
+        </div>
+    </aside>
+</div>

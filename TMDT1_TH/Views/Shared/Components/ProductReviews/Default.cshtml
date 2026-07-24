@@ -1,0 +1,89 @@
+﻿@model TMDT1_TH.ViewModels.Storefront.StoreProductReviewsViewModel
+
+<section class="store-section product-reviews"
+         id="danh-gia">
+    <div class="store-container">
+        <div class="section-heading product-reviews__heading">
+            <div>
+                <span class="eyebrow">ĐÁNH GIÁ ĐÃ MUA HÀNG</span>
+                <h2>Nhận xét từ khách hàng</h2>
+            </div>
+
+            @if (Model.ReviewCount > 0)
+            {
+                <div class="review-summary">
+                    <strong>@Model.AverageRating.ToString("0.0")</strong>
+                    <span class="review-stars"
+                          aria-label="@Model.AverageRating sao">
+                        @for (var star = 1; star <= 5; star++)
+                        {
+                            <i class="@(star <= Math.Round(Model.AverageRating) ? "is-filled" : "")">★</i>
+                        }
+                    </span>
+                    <small>@Model.ReviewCount đánh giá đã duyệt</small>
+                </div>
+            }
+        </div>
+
+        @if (Model.Items.Count == 0)
+        {
+            <div class="review-empty">
+                <h3>Chưa có đánh giá được duyệt</h3>
+                <p>
+                    Những nhận xét từ khách đã mua hàng sẽ xuất hiện tại đây.
+                </p>
+            </div>
+        }
+        else
+        {
+            <div class="product-review-list">
+                @foreach (var item in Model.Items)
+                {
+                    <article class="product-review-item">
+                        <div class="product-review-item__head">
+                            <div>
+                                <strong>@item.CustomerDisplayName</strong>
+                                <span class="verified-purchase-badge">
+                                    ✓ Đã mua hàng
+                                </span>
+                            </div>
+                            <time>
+                                @item.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy")
+                            </time>
+                        </div>
+
+                        <div class="review-stars"
+                             aria-label="@item.Rating sao">
+                            @for (var star = 1; star <= 5; star++)
+                            {
+                                <i class="@(star <= item.Rating ? "is-filled" : "")">★</i>
+                            }
+                        </div>
+
+                        @if (!string.IsNullOrWhiteSpace(item.Title))
+                        {
+                            <h3>@item.Title</h3>
+                        }
+
+                        @if (!string.IsNullOrWhiteSpace(item.VariantName))
+                        {
+                            <small class="review-variant">
+                                Phân loại: @item.VariantName
+                            </small>
+                        }
+
+                        <p>@item.Comment</p>
+
+                        @if (!string.IsNullOrWhiteSpace(item.AdminReply))
+                        {
+                            <div class="review-admin-reply">
+                                <strong>Phản hồi từ Mây Home</strong>
+                                <p>@item.AdminReply</p>
+                            </div>
+                        }
+                    </article>
+                }
+            </div>
+        }
+    </div>
+</section>

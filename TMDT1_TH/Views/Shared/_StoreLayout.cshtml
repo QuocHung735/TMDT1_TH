@@ -13,6 +13,7 @@
     <link rel="stylesheet" href="~/store/css/cart.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/store/css/checkout.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/store/css/account.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/store/css/reviews.css" asp-append-version="true" />
 </head>
 <body>
     <div class="store-announcement">
@@ -46,6 +47,10 @@
                     <a asp-area=""
                        asp-controller="MyOrders"
                        asp-action="Index">Đơn hàng</a>
+
+                    <a asp-area=""
+                       asp-controller="MyReviews"
+                       asp-action="Index">Đánh giá</a>
 
                     @if (User.IsInRole("Admin"))
                     {
@@ -121,6 +126,7 @@
                 @if (authenticated)
                 {
                     <a asp-controller="MyOrders" asp-action="Index">Đơn hàng của tôi</a>
+                    <a asp-controller="MyReviews" asp-action="Index">Đánh giá của tôi</a>
                     <a asp-controller="Account" asp-action="Profile">Thông tin cá nhân</a>
                 }
                 else

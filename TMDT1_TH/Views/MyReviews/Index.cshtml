@@ -1,0 +1,132 @@
+﻿@model TMDT1_TH.ViewModels.Storefront.CustomerReviewsPageViewModel
+@{
+    Layout = "_StoreLayout";
+    ViewData["Title"] = "Đánh giá của tôi";
+}
+
+<section class="account-page account-page--reviews">
+    <div class="store-container">
+        <div class="order-page-heading">
+            <div>
+                <span class="eyebrow">TÀI KHOẢN</span>
+                <h1>Đánh giá của tôi</h1>
+                <p>
+                    Chỉ sản phẩm trong đơn đã hoàn thành mới có thể được đánh giá.
+                </p>
+            </div>
+            <a class="store-button store-button--ghost"
+               asp-controller="MyOrders"
+               asp-action="Index">Đơn hàng của tôi</a>
+        </div>
+
+        @if (TempData["ReviewMessage"] is string message)
+        {
+            <div class="account-success">@message</div>
+        }
+
+        <section class="review-account-stats">
+            <div>
+                <strong>@Model.ReviewableCount</strong>
+                <span>Chờ bạn đánh giá</span>
+            </div>
+            <div>
+                <strong>@Model.PendingCount</strong>
+                <span>Đang chờ duyệt</span>
+            </div>
+            <div>
+                <strong>@Model.ApprovedCount</strong>
+                <span>Đã được hiển thị</span>
+            </div>
+        </section>
+
+        @if (Model.Items.Count == 0)
+        {
+            <div class="store-empty">
+                <h3>Chưa có sản phẩm có thể đánh giá</h3>
+                <p>
+                    Sản phẩm sẽ xuất hiện tại đây sau khi đơn hàng được hoàn thành.
+                </p>
+                <a class="store-button store-button--primary"
+                   asp-controller="Home"
+                   asp-action="Catalog">Tiếp tục mua sắm</a>
+            </div>
+        }
+        else
+        {
+            <div class="customer-review-list">
+                @foreach (var item in Model.Items)
+                {
+                    <article class="customer-review-card">
+                        <div class="customer-review-card__image">
+                            @if (!string.IsNullOrWhiteSpace(item.ImageUrl))
+                            {
+                                <img src="@item.ImageUrl"
+                                     alt="@item.ProductName" />
+                            }
+                            else
+                            {
+                                <span>Mây Home</span>
+                            }
+                        </div>
+
+                        <div class="customer-review-card__content">
+                            <small>
+                                Đơn @item.OrderNumber ·
+                                Hoàn thành @item.CompletedAt.ToLocalTime().ToString("dd/MM/yyyy")
+                            </small>
+                            <h2>@item.ProductName</h2>
+
+                            @if (!string.IsNullOrWhiteSpace(item.VariantName))
+                            {
+                                <p>@item.VariantName</p>
+                            }
+
+                            @if (item.CanReview)
+                            {
+                                <span class="review-status is-reviewable">
+                                    Chưa đánh giá
+                                </span>
+                            }
+                            else
+                            {
+                                <div class="review-existing">
+                                    <span class="review-stars"
+                                          aria-label="@item.Rating sao">
+                                        @for (var star = 1; star <= 5; star++)
+                                        {
+                                            <i class="@(star <= item.Rating.GetValueOrDefault() ? "is-filled" : "")">★</i>
+                                        }
+                                    </span>
+                                    <span class="review-status @item.StatusClass">
+                                        @item.StatusName
+                                    </span>
+                                </div>
+                            }
+                        </div>
+
+                        <div class="customer-review-card__action">
+                            @if (item.CanReview)
+                            {
+                                <a class="store-button store-button--primary"
+                                   asp-action="Create"
+                                   asp-route-orderItemId="@item.OrderItemId">
+                                    Viết đánh giá
+                                </a>
+                            }
+                            else if (!string.IsNullOrWhiteSpace(item.ProductSlug))
+                            {
+                                <a class="store-button store-button--ghost"
+                                   asp-controller="Home"
+                                   asp-action="Details"
+                                   asp-route-slug="@item.ProductSlug"
+                                   asp-fragment="danh-gia">
+                                    Xem sản phẩm
+                                </a>
+                            }
+                        </div>
+                    </article>
+                }
+            </div>
+        }
+    </div>
+</section>

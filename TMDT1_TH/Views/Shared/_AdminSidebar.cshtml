@@ -57,6 +57,12 @@
            asp-action="Index">
             <i class="bi bi-receipt"></i><span>Đơn hàng</span>
         </a>
+        <a class="admin-nav__link @(controller == "Reviews" ? "is-active" : "")"
+           asp-area="Admin"
+           asp-controller="Reviews"
+           asp-action="Index">
+            <i class="bi bi-star"></i><span>Đánh giá</span>
+        </a>
         <a class="admin-nav__link @(controller == "Pricing" ? "is-active" : "")"
            asp-area="Admin"
            asp-controller="Pricing"

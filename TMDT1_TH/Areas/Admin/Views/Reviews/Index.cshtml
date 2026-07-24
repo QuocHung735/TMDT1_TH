@@ -1,0 +1,166 @@
+﻿@using TMDT1_TH.Domain.Enums
+@using TMDT1_TH.ViewModels.Storefront
+@model AdminReviewsViewModel
+@{
+    ViewData["Title"] = "Đánh giá sản phẩm";
+    ViewData["Description"] =
+        "Duyệt, ẩn và phản hồi nhận xét từ khách đã mua hàng.";
+}
+
+<section class="segmented-stats">
+    <a class="@(!Model.Status.HasValue ? "is-active" : "")"
+       asp-action="Index">
+        <strong>@Model.TotalCount</strong>
+        <span>Tất cả</span>
+    </a>
+    <a class="@(Model.Status == ProductReviewStatus.Pending ? "is-active" : "")"
+       asp-action="Index"
+       asp-route-status="@ProductReviewStatus.Pending">
+        <strong>@Model.PendingCount</strong>
+        <span>Chờ duyệt</span>
+    </a>
+    <a class="@(Model.Status == ProductReviewStatus.Approved ? "is-active" : "")"
+       asp-action="Index"
+       asp-route-status="@ProductReviewStatus.Approved">
+        <strong>@Model.ApprovedCount</strong>
+        <span>Đã duyệt</span>
+    </a>
+    <a class="@(Model.Status == ProductReviewStatus.Rejected ? "is-active" : "")"
+       asp-action="Index"
+       asp-route-status="@ProductReviewStatus.Rejected">
+        <strong>@Model.RejectedCount</strong>
+        <span>Từ chối</span>
+    </a>
+    <a class="@(Model.Status == ProductReviewStatus.Hidden ? "is-active" : "")"
+       asp-action="Index"
+       asp-route-status="@ProductReviewStatus.Hidden">
+        <strong>@Model.HiddenCount</strong>
+        <span>Đã ẩn</span>
+    </a>
+</section>
+
+<section class="card panel">
+    <form method="get"
+          class="toolbar toolbar--wrap">
+        <label class="field-search">
+            <i class="bi bi-search"></i>
+            <input type="search"
+                   name="q"
+                   value="@Model.Query"
+                   placeholder="Sản phẩm, khách hàng, mã đơn, nội dung..." />
+        </label>
+
+        <div class="toolbar__filters">
+            <select class="form-select"
+                    name="status">
+                <option value="">Tất cả trạng thái</option>
+                @foreach (var reviewStatus in Enum.GetValues<ProductReviewStatus>())
+                {
+                    <option value="@((int)reviewStatus)"
+                            selected="@(Model.Status == reviewStatus)">
+                        @ProductReviewDisplay.StatusName(reviewStatus)
+                    </option>
+                }
+            </select>
+
+            <select class="form-select"
+                    name="rating">
+                <option value="">Tất cả số sao</option>
+                @for (var star = 5; star >= 1; star--)
+                {
+                    <option value="@star"
+                            selected="@(Model.Rating == star)">
+                        @star sao
+                    </option>
+                }
+            </select>
+
+            <button class="btn btn-light"
+                    type="submit">
+                <i class="bi bi-funnel"></i> Lọc
+            </button>
+
+            <a class="btn btn-light"
+               asp-action="Index">
+                <i class="bi bi-arrow-counterclockwise"></i>
+            </a>
+        </div>
+    </form>
+
+    <div class="table-wrap">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Sản phẩm</th>
+                    <th>Khách hàng</th>
+                    <th>Đánh giá</th>
+                    <th>Nội dung</th>
+                    <th>Trạng thái</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+            @if (Model.Items.Count == 0)
+            {
+                <tr>
+                    <td colspan="6">
+                        <div class="admin-review-empty">
+                            Chưa có đánh giá phù hợp.
+                        </div>
+                    </td>
+                </tr>
+            }
+            else
+            {
+                @foreach (var review in Model.Items)
+                {
+                    <tr>
+                        <td>
+                            <div class="stacked-text">
+                                <strong>@review.ProductName</strong>
+                                <small>
+                                    @(review.VariantName ?? "Sản phẩm đơn")
+                                    · @review.OrderNumber
+                                </small>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="stacked-text">
+                                <strong>@review.CustomerName</strong>
+                                <small>
+                                    @review.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm")
+                                </small>
+                            </div>
+                        </td>
+                        <td>
+                            <span class="admin-review-stars"
+                                  aria-label="@review.Rating sao">
+                                @for (var star = 1; star <= 5; star++)
+                                {
+                                    <i class="@(star <= review.Rating ? "is-filled" : "")">★</i>
+                                }
+                            </span>
+                        </td>
+                        <td class="admin-review-preview">
+                            @review.CommentPreview
+                        </td>
+                        <td>
+                            <span class="review-status @review.StatusClass">
+                                @review.StatusName
+                            </span>
+                        </td>
+                        <td class="table-actions">
+                            <a class="icon-btn"
+                               asp-action="Details"
+                               asp-route-id="@review.Id"
+                               title="Xem và duyệt">
+                                <i class="bi bi-eye"></i>
+                            </a>
+                        </td>
+                    </tr>
+                }
+            }
+            </tbody>
+        </table>
+    </div>
+</section>

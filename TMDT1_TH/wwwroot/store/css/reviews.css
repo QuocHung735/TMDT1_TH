@@ -1,0 +1,423 @@
+﻿/* Đánh giá sản phẩm đã mua hàng */
+.product-rating-placeholder a {
+    color: var(--store-primary);
+    font-size: 13px;
+    font-weight: 800;
+}
+
+.review-stars {
+    display: inline-flex;
+    gap: 2px;
+    color: #d7d1df;
+    line-height: 1;
+}
+
+.review-stars i {
+    font-style: normal;
+}
+
+.review-stars i.is-filled {
+    color: #f2a928;
+}
+
+.review-status {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 6px 10px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 800;
+    white-space: nowrap;
+}
+
+.review-status.is-reviewable {
+    color: #654bd2;
+    background: #eee9ff;
+}
+
+.review-status.is-pending {
+    color: #936300;
+    background: #fff4d0;
+}
+
+.review-status.is-approved {
+    color: #176e58;
+    background: #e4f7f0;
+}
+
+.review-status.is-rejected {
+    color: #a4384c;
+    background: #ffeaee;
+}
+
+.review-status.is-hidden {
+    color: #5e5967;
+    background: #eceaf0;
+}
+
+.verified-purchase-badge {
+    display: inline-flex;
+    align-items: center;
+    width: fit-content;
+    padding: 5px 9px;
+    color: #176e58;
+    background: #e5f8f1;
+    border-radius: 999px;
+    font-size: 10px;
+    font-weight: 800;
+}
+
+.review-account-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 14px;
+    margin-bottom: 24px;
+}
+
+.review-account-stats div {
+    padding: 20px;
+    background: #fff;
+    border: 1px solid var(--store-border);
+    border-radius: 16px;
+}
+
+.review-account-stats strong,
+.review-account-stats span {
+    display: block;
+}
+
+.review-account-stats strong {
+    color: var(--store-primary);
+    font-size: 28px;
+}
+
+.review-account-stats span {
+    margin-top: 4px;
+    color: var(--store-muted);
+    font-size: 12px;
+}
+
+.customer-review-list {
+    display: grid;
+    gap: 16px;
+}
+
+.customer-review-card {
+    display: grid;
+    grid-template-columns: 96px minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 18px;
+    padding: 19px;
+    background: #fff;
+    border: 1px solid var(--store-border);
+    border-radius: 18px;
+    box-shadow: 0 8px 24px rgba(36, 30, 65, .05);
+}
+
+.customer-review-card__image,
+.review-product-card__image {
+    display: grid;
+    overflow: hidden;
+    place-items: center;
+    color: #938aa7;
+    background: #f2effa;
+    border-radius: 14px;
+    font-size: 10px;
+    font-weight: 800;
+}
+
+.customer-review-card__image {
+    width: 96px;
+    height: 96px;
+}
+
+.customer-review-card__image img,
+.review-product-card__image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.customer-review-card__content small,
+.customer-review-card__content h2,
+.customer-review-card__content p {
+    display: block;
+    margin: 0;
+}
+
+.customer-review-card__content small {
+    color: var(--store-muted);
+    font-size: 11px;
+}
+
+.customer-review-card__content h2 {
+    margin-top: 6px;
+    font-size: 17px;
+}
+
+.customer-review-card__content p {
+    margin: 4px 0 10px;
+    color: var(--store-muted);
+    font-size: 12px;
+}
+
+.review-existing {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.review-create-layout {
+    display: grid;
+    grid-template-columns: 340px minmax(0, 650px);
+    align-items: start;
+    justify-content: center;
+    gap: 26px;
+}
+
+.review-product-card {
+    padding: 24px;
+    background: #fff;
+    border: 1px solid var(--store-border);
+    border-radius: 21px;
+    box-shadow: var(--store-shadow);
+}
+
+.review-product-card__image {
+    width: 100%;
+    height: 260px;
+    margin-bottom: 18px;
+}
+
+.review-product-card small,
+.review-product-card h1,
+.review-product-card p {
+    margin: 0;
+}
+
+.review-product-card small {
+    color: var(--store-muted);
+}
+
+.review-product-card h1 {
+    margin-top: 7px;
+    font-size: 23px;
+}
+
+.review-product-card p {
+    margin: 5px 0 15px;
+    color: var(--store-muted);
+}
+
+.review-create-form textarea {
+    width: 100%;
+    padding: 13px 14px;
+    resize: vertical;
+    color: var(--store-text);
+    background: #fff;
+    border: 1px solid var(--store-border);
+    border-radius: 12px;
+    outline: none;
+}
+
+.review-create-form textarea:focus {
+    border-color: #9988ef;
+    box-shadow: 0 0 0 4px rgba(116, 92, 245, .09);
+}
+
+.review-rating-field {
+    margin: 20px 0 0;
+    padding: 0;
+    border: 0;
+}
+
+.review-rating-field legend {
+    margin-bottom: 8px;
+    font-size: 13px;
+    font-weight: 800;
+}
+
+.review-rating-input {
+    display: flex;
+    flex-direction: row-reverse;
+    justify-content: flex-end;
+    gap: 5px;
+}
+
+.review-rating-input input {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.review-rating-input label {
+    color: #ddd6e7;
+    cursor: pointer;
+    font-size: 35px;
+    line-height: 1;
+    transition: color .15s ease, transform .15s ease;
+}
+
+.review-rating-input label:hover,
+.review-rating-input label:hover ~ label,
+.review-rating-input input:checked ~ label {
+    color: #f2a928;
+}
+
+.review-rating-input label:hover {
+    transform: translateY(-2px);
+}
+
+.review-form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+.product-reviews {
+    background: #f8f6fc;
+}
+
+.product-reviews__heading {
+    align-items: end;
+}
+
+.review-summary {
+    display: grid;
+    justify-items: end;
+    gap: 5px;
+}
+
+.review-summary strong {
+    color: var(--store-primary);
+    font-size: 40px;
+    line-height: 1;
+}
+
+.review-summary small {
+    color: var(--store-muted);
+    font-size: 11px;
+}
+
+.review-empty {
+    padding: 45px;
+    background: #fff;
+    border: 1px dashed var(--store-border);
+    border-radius: 18px;
+    text-align: center;
+}
+
+.review-empty h3,
+.review-empty p {
+    margin: 0;
+}
+
+.review-empty p {
+    margin-top: 7px;
+    color: var(--store-muted);
+}
+
+.product-review-list {
+    display: grid;
+    gap: 15px;
+}
+
+.product-review-item {
+    padding: 22px;
+    background: #fff;
+    border: 1px solid var(--store-border);
+    border-radius: 18px;
+}
+
+.product-review-item__head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 15px;
+    margin-bottom: 11px;
+}
+
+.product-review-item__head > div {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+}
+
+.product-review-item__head time {
+    color: var(--store-muted);
+    font-size: 11px;
+}
+
+.product-review-item h3 {
+    margin: 11px 0 5px;
+    font-size: 16px;
+}
+
+.product-review-item > p {
+    margin: 10px 0 0;
+    color: #514b5f;
+    line-height: 1.75;
+    white-space: pre-line;
+}
+
+.review-variant {
+    display: block;
+    margin-top: 8px;
+    color: var(--store-muted);
+}
+
+.review-admin-reply {
+    margin-top: 17px;
+    padding: 15px;
+    background: #f2effd;
+    border-left: 4px solid var(--store-primary);
+    border-radius: 10px;
+}
+
+.review-admin-reply p {
+    margin: 5px 0 0;
+    color: var(--store-muted);
+    line-height: 1.65;
+}
+
+@media (max-width: 850px) {
+    .review-create-layout {
+        grid-template-columns: 1fr;
+    }
+
+    .review-product-card {
+        max-width: none;
+    }
+}
+
+@media (max-width: 680px) {
+    .review-account-stats {
+        grid-template-columns: 1fr;
+    }
+
+    .customer-review-card {
+        grid-template-columns: 72px 1fr;
+    }
+
+    .customer-review-card__image {
+        width: 72px;
+        height: 72px;
+    }
+
+    .customer-review-card__action {
+        grid-column: 2;
+    }
+
+    .product-reviews__heading,
+    .product-review-item__head {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .review-summary {
+        justify-items: start;
+    }
+}

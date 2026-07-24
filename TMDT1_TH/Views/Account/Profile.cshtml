@@ -13,6 +13,8 @@
                asp-action="Profile">Thông tin cá nhân</a>
             <a asp-controller="MyOrders"
                asp-action="Index">Đơn hàng của tôi</a>
+            <a asp-controller="MyReviews"
+               asp-action="Index">Đánh giá của tôi</a>
             <a asp-controller="Account"
                asp-action="ChangePassword">Đổi mật khẩu</a>
             @if (User.IsInRole("Admin"))
