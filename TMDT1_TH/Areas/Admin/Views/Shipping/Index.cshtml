@@ -171,7 +171,9 @@
         </div>
 
         <form asp-action="@(Model.CarrierForm.IsEdit ? "EditCarrier" : "CreateCarrier")"
-              method="post">
+              method="post"
+              data-auto-code-form="carrier"
+              data-auto-code-edit="@Model.CarrierForm.IsEdit.ToString().ToLowerInvariant()">
             <input asp-for="CarrierForm.Id"
                    type="hidden" />
 
@@ -184,7 +186,13 @@
                     <input asp-for="CarrierForm.Code"
                            class="form-control"
                            maxlength="30"
-                           placeholder="VD: GHN" />
+                           readonly
+                           aria-readonly="true"
+                           data-auto-code-target="carrier"
+                           placeholder="Tự động từ tên đơn vị" />
+                    <small>
+                        Hệ thống tự bỏ dấu, viết hoa và thêm số khi mã bị trùng.
+                    </small>
                     <small asp-validation-for="CarrierForm.Code"></small>
                 </label>
 
@@ -193,6 +201,7 @@
                     <input asp-for="CarrierForm.Name"
                            class="form-control"
                            maxlength="150"
+                           data-auto-code-source="carrier"
                            placeholder="Tên đơn vị giao nhận" />
                     <small asp-validation-for="CarrierForm.Name"></small>
                 </label>
@@ -232,7 +241,11 @@
                            class="form-control"
                            type="number"
                            min="0"
-                           max="9999" />
+                           max="9999"
+                           readonly="@(!Model.CarrierForm.IsEdit ? "readonly" : null)" />
+                    <small>
+                        Khi tạo mới, hệ thống tự lấy thứ tự tiếp theo.
+                    </small>
                     <small asp-validation-for="CarrierForm.DisplayOrder"></small>
                 </label>
 
@@ -381,7 +394,9 @@
         </div>
 
         <form asp-action="@(Model.ServiceForm.IsEdit ? "EditService" : "CreateService")"
-              method="post">
+              method="post"
+              data-auto-code-form="service"
+              data-auto-code-edit="@Model.ServiceForm.IsEdit.ToString().ToLowerInvariant()">
             <input asp-for="ServiceForm.Id"
                    type="hidden" />
 
@@ -404,7 +419,13 @@
                     <input asp-for="ServiceForm.Code"
                            class="form-control"
                            maxlength="30"
-                           placeholder="VD: STANDARD" />
+                           readonly
+                           aria-readonly="true"
+                           data-auto-code-target="service"
+                           placeholder="Tự động từ tên dịch vụ" />
+                    <small>
+                        Mã chỉ cần duy nhất trong đơn vị giao nhận đang chọn.
+                    </small>
                     <small asp-validation-for="ServiceForm.Code"></small>
                 </label>
 
@@ -412,7 +433,8 @@
                     <span>@Html.DisplayNameFor(x => x.ServiceForm.Name)</span>
                     <input asp-for="ServiceForm.Name"
                            class="form-control"
-                           maxlength="150" />
+                           maxlength="150"
+                           data-auto-code-source="service" />
                     <small asp-validation-for="ServiceForm.Name"></small>
                 </label>
 
@@ -441,7 +463,11 @@
                            class="form-control"
                            type="number"
                            min="0"
-                           max="9999" />
+                           max="9999"
+                           readonly="@(!Model.ServiceForm.IsEdit ? "readonly" : null)" />
+                    <small>
+                        Khi tạo mới, hệ thống tự lấy thứ tự tiếp theo của đơn vị.
+                    </small>
                     <small asp-validation-for="ServiceForm.DisplayOrder"></small>
                 </label>
 
@@ -494,6 +520,52 @@
 @section Scripts {
     <script>
         (() => {
+            const normalizeCode = value =>
+                value
+                    .replace(/[đĐ]/g, "D")
+                    .normalize("NFD")
+                    .replace(/[\u0300-\u036f]/g, "")
+                    .toUpperCase()
+                    .replace(/[^A-Z0-9]+/g, "-")
+                    .replace(/^-+|-+$/g, "")
+                    .slice(0, 30)
+                    .replace(/-+$/g, "");
+
+            const bindAutomaticCode = type => {
+                const form =
+                    document.querySelector(
+                        `[data-auto-code-form="${type}"]`);
+
+                if (!form ||
+                    form.dataset.autoCodeEdit === "true") {
+                    return;
+                }
+
+                const source =
+                    form.querySelector(
+                        `[data-auto-code-source="${type}"]`);
+
+                const target =
+                    form.querySelector(
+                        `[data-auto-code-target="${type}"]`);
+
+                if (!source || !target) return;
+
+                const update = () => {
+                    target.value =
+                        normalizeCode(source.value);
+                };
+
+                source.addEventListener(
+                    "input",
+                    update);
+
+                update();
+            };
+
+            bindAutomaticCode("carrier");
+            bindAutomaticCode("service");
+
             const carrierLink =
                 document.querySelector("[data-open-carrier-form]");
             const serviceLink =

@@ -220,6 +220,8 @@ public sealed class OrdersController(
                             x.Name,
                             x.BaseFee,
                             x.EstimatedMaxDays,
+                            CarrierCode =
+                                x.ShippingCarrier.Code,
                             CarrierName =
                                 x.ShippingCarrier.Name,
                             TrackingUrlTemplate =
@@ -257,6 +259,16 @@ public sealed class OrdersController(
                     : DateTime.UtcNow.AddDays(
                         service.EstimatedMaxDays);
 
+            if (string.IsNullOrWhiteSpace(
+                    trackingNumber) &&
+                IsInternalCarrier(
+                    service.CarrierCode))
+            {
+                trackingNumber =
+                    GenerateInternalTrackingNumber(
+                        order);
+            }
+
             order.TrackingNumber =
                 trackingNumber;
             order.TrackingUrl =
@@ -266,6 +278,18 @@ public sealed class OrdersController(
         }
         else
         {
+            if (string.IsNullOrWhiteSpace(
+                    trackingNumber) &&
+                IsInternalCarrier(
+                    order.ShippingService
+                        ?.ShippingCarrier
+                        .Code))
+            {
+                trackingNumber =
+                    GenerateInternalTrackingNumber(
+                        order);
+            }
+
             order.TrackingNumber =
                 trackingNumber;
 
@@ -395,10 +419,23 @@ public sealed class OrdersController(
                 }
 
                 if (string.IsNullOrWhiteSpace(
+                        order.TrackingNumber) &&
+                    IsInternalCarrier(
+                        order.ShippingService
+                            ?.ShippingCarrier
+                            .Code))
+                {
+                    order.TrackingNumber =
+                        GenerateInternalTrackingNumber(
+                            order);
+                }
+
+                if (string.IsNullOrWhiteSpace(
                         order.TrackingNumber))
                 {
                     TempData["Error"] =
-                        "Hãy nhập mã vận đơn trước khi chuyển sang Đang giao.";
+                        "Đơn vị giao nhận bên ngoài chưa có mã vận đơn. " +
+                        "Hãy lấy mã từ hệ thống của đơn vị vận chuyển và nhập trước khi chuyển sang Đang giao.";
 
                     await transaction.RollbackAsync();
 
@@ -794,6 +831,25 @@ public sealed class OrdersController(
             ShippingServiceOptions =
                 shippingOptions
         };
+    }
+
+    private static bool IsInternalCarrier(
+        string? carrierCode)
+    {
+        return string.Equals(
+            carrierCode,
+            "MAYHOME",
+            StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static string
+        GenerateInternalTrackingNumber(
+            Order order)
+    {
+        // Id đơn hàng là duy nhất nên mã này không bị trùng.
+        // Ví dụ: MHV-260724-000123.
+        return
+            $"MHV-{DateTime.UtcNow:yyMMdd}-{order.Id:D6}";
     }
 
     private static string? BuildTrackingUrl(

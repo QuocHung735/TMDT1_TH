@@ -1,4 +1,6 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using System.Globalization;
+using System.Text;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using TMDT1_TH.Areas.Admin.ViewModels;
@@ -86,6 +88,15 @@ public sealed class ShippingController(
         carrierForm.Id = null;
         NormalizeCarrier(carrierForm);
 
+        carrierForm.Code =
+            await GenerateUniqueCarrierCodeAsync(
+                carrierForm.Name,
+                cancellationToken);
+
+        carrierForm.DisplayOrder =
+            await GetNextCarrierDisplayOrderAsync(
+                cancellationToken);
+
         ModelState.Clear();
         TryValidateModel(carrierForm, "CarrierForm");
 
@@ -165,6 +176,22 @@ public sealed class ShippingController(
         }
 
         NormalizeCarrier(carrierForm);
+
+        var storedCarrierCode =
+            await _db.ShippingCarriers
+                .AsNoTracking()
+                .Where(x =>
+                    x.Id == carrierForm.Id.Value)
+                .Select(x => x.Code)
+                .FirstOrDefaultAsync(
+                    cancellationToken);
+
+        if (storedCarrierCode is null)
+            return NotFound();
+
+        // Mã là định danh ổn định: không cho sửa hoặc giả mạo
+        // sau khi đơn vị giao nhận đã được tạo.
+        carrierForm.Code = storedCarrierCode;
 
         ModelState.Clear();
         TryValidateModel(carrierForm, "CarrierForm");
@@ -268,6 +295,17 @@ public sealed class ShippingController(
         serviceForm.Id = null;
         NormalizeService(serviceForm);
 
+        serviceForm.Code =
+            await GenerateUniqueServiceCodeAsync(
+                serviceForm.Name,
+                serviceForm.ShippingCarrierId,
+                cancellationToken);
+
+        serviceForm.DisplayOrder =
+            await GetNextServiceDisplayOrderAsync(
+                serviceForm.ShippingCarrierId,
+                cancellationToken);
+
         ModelState.Clear();
         TryValidateModel(serviceForm, "ServiceForm");
 
@@ -351,6 +389,22 @@ public sealed class ShippingController(
         }
 
         NormalizeService(serviceForm);
+
+        var storedServiceCode =
+            await _db.ShippingServices
+                .AsNoTracking()
+                .Where(x =>
+                    x.Id == serviceForm.Id.Value)
+                .Select(x => x.Code)
+                .FirstOrDefaultAsync(
+                    cancellationToken);
+
+        if (storedServiceCode is null)
+            return NotFound();
+
+        // Giữ nguyên mã dịch vụ sau khi tạo để các đơn hàng
+        // và cấu hình liên quan luôn có định danh ổn định.
+        serviceForm.Code = storedServiceCode;
 
         ModelState.Clear();
         TryValidateModel(serviceForm, "ServiceForm");
@@ -566,6 +620,38 @@ public sealed class ShippingController(
             })
             .ToListAsync(cancellationToken);
 
+        if (!carrierForm.IsEdit &&
+            carrierForm.DisplayOrder <= 0)
+        {
+            carrierForm.DisplayOrder =
+                await GetNextCarrierDisplayOrderAsync(
+                    cancellationToken);
+        }
+
+        if (!serviceForm.IsEdit)
+        {
+            if (!serviceForm.ShippingCarrierId.HasValue)
+            {
+                serviceForm.ShippingCarrierId =
+                    await _db.ShippingCarriers
+                        .AsNoTracking()
+                        .Where(x => x.IsActive)
+                        .OrderBy(x => x.DisplayOrder)
+                        .ThenBy(x => x.Name)
+                        .Select(x => (int?)x.Id)
+                        .FirstOrDefaultAsync(
+                            cancellationToken);
+            }
+
+            if (serviceForm.DisplayOrder <= 0)
+            {
+                serviceForm.DisplayOrder =
+                    await GetNextServiceDisplayOrderAsync(
+                        serviceForm.ShippingCarrierId,
+                        cancellationToken);
+            }
+        }
+
         return new ShippingManagementViewModel
         {
             Query = queryText,
@@ -770,6 +856,194 @@ public sealed class ShippingController(
 
         form.Description =
             Clean(form.Description);
+    }
+
+    private async Task<string>
+        GenerateUniqueCarrierCodeAsync(
+            string? name,
+            CancellationToken cancellationToken)
+    {
+        var baseCode = BuildAutomaticCode(
+            name,
+            "DON-VI");
+
+        var candidate = baseCode;
+        var suffix = 2;
+
+        while (await _db.ShippingCarriers
+                   .AsNoTracking()
+                   .AnyAsync(
+                       x => x.Code == candidate,
+                       cancellationToken))
+        {
+            candidate = AddNumericSuffix(
+                baseCode,
+                suffix++);
+        }
+
+        return candidate;
+    }
+
+    private async Task<string>
+        GenerateUniqueServiceCodeAsync(
+            string? name,
+            int? shippingCarrierId,
+            CancellationToken cancellationToken)
+    {
+        var baseCode = BuildAutomaticCode(
+            name,
+            "DICH-VU");
+
+        var candidate = baseCode;
+        var suffix = 2;
+
+        while (shippingCarrierId.HasValue &&
+               await _db.ShippingServices
+                   .AsNoTracking()
+                   .AnyAsync(
+                       x =>
+                           x.ShippingCarrierId ==
+                           shippingCarrierId.Value &&
+                           x.Code == candidate,
+                       cancellationToken))
+        {
+            candidate = AddNumericSuffix(
+                baseCode,
+                suffix++);
+        }
+
+        return candidate;
+    }
+
+    private async Task<int>
+        GetNextCarrierDisplayOrderAsync(
+            CancellationToken cancellationToken)
+    {
+        var maximum =
+            await _db.ShippingCarriers
+                .AsNoTracking()
+                .Select(x =>
+                    (int?)x.DisplayOrder)
+                .MaxAsync(cancellationToken)
+            ?? 0;
+
+        return Math.Min(
+            maximum + 1,
+            9999);
+    }
+
+    private async Task<int>
+        GetNextServiceDisplayOrderAsync(
+            int? shippingCarrierId,
+            CancellationToken cancellationToken)
+    {
+        if (!shippingCarrierId.HasValue)
+            return 1;
+
+        var maximum =
+            await _db.ShippingServices
+                .AsNoTracking()
+                .Where(x =>
+                    x.ShippingCarrierId ==
+                    shippingCarrierId.Value)
+                .Select(x =>
+                    (int?)x.DisplayOrder)
+                .MaxAsync(cancellationToken)
+            ?? 0;
+
+        return Math.Min(
+            maximum + 1,
+            9999);
+    }
+
+    private static string BuildAutomaticCode(
+        string? value,
+        string fallback)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            return fallback;
+
+        var normalized =
+            value.Trim()
+                .Replace('đ', 'd')
+                .Replace('Đ', 'D')
+                .Normalize(
+                    NormalizationForm.FormD);
+
+        var result = new StringBuilder();
+        var pendingSeparator = false;
+
+        foreach (var character in normalized)
+        {
+            var category =
+                CharUnicodeInfo.GetUnicodeCategory(
+                    character);
+
+            if (category ==
+                UnicodeCategory.NonSpacingMark)
+            {
+                continue;
+            }
+
+            var upper =
+                char.ToUpperInvariant(
+                    character);
+
+            var isAsciiLetter =
+                upper is >= 'A' and <= 'Z';
+
+            var isDigit =
+                upper is >= '0' and <= '9';
+
+            if (isAsciiLetter || isDigit)
+            {
+                if (pendingSeparator &&
+                    result.Length > 0 &&
+                    result[^1] != '-')
+                {
+                    result.Append('-');
+                }
+
+                result.Append(upper);
+                pendingSeparator = false;
+            }
+            else
+            {
+                pendingSeparator = true;
+            }
+        }
+
+        var code =
+            result.ToString()
+                .Trim('-');
+
+        if (string.IsNullOrWhiteSpace(code))
+            code = fallback;
+
+        if (code.Length > 30)
+        {
+            code = code[..30]
+                .TrimEnd('-');
+        }
+
+        return code;
+    }
+
+    private static string AddNumericSuffix(
+        string baseCode,
+        int number)
+    {
+        var suffix = $"-{number}";
+        var maximumBaseLength =
+            30 - suffix.Length;
+
+        var shortenedBase =
+            baseCode.Length > maximumBaseLength
+                ? baseCode[..maximumBaseLength]
+                    .TrimEnd('-')
+                : baseCode;
+
+        return shortenedBase + suffix;
     }
 
     private static bool IsSafeHttpUrl(string value)

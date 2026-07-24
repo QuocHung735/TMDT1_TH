@@ -41,7 +41,7 @@ public sealed class ShippingCarrierFormViewModel
     [RegularExpression(
         @"^[A-Za-z0-9_-]+$",
         ErrorMessage = "Mã chỉ gồm chữ, số, dấu gạch ngang hoặc gạch dưới.")]
-    [Display(Name = "Mã đơn vị")]
+    [Display(Name = "Mã đơn vị (tự động)")]
     public string Code { get; set; } = string.Empty;
 
     [Required(ErrorMessage = "Vui lòng nhập tên đơn vị giao nhận.")]
@@ -86,7 +86,7 @@ public sealed class ShippingServiceFormViewModel
     [RegularExpression(
         @"^[A-Za-z0-9_-]+$",
         ErrorMessage = "Mã chỉ gồm chữ, số, dấu gạch ngang hoặc gạch dưới.")]
-    [Display(Name = "Mã dịch vụ")]
+    [Display(Name = "Mã dịch vụ (tự động)")]
     public string Code { get; set; } = string.Empty;
 
     [Required(ErrorMessage = "Vui lòng nhập tên dịch vụ.")]

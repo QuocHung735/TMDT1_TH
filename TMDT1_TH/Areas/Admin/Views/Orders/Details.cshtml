@@ -212,7 +212,13 @@
                            name="trackingNumber"
                            value="@Model.TrackingNumber"
                            maxlength="100"
-                           placeholder="Nhập mã từ đơn vị giao nhận" />
+                           placeholder="Mây Home tự sinh; đơn vị ngoài nhập mã được cấp" />
+                    <small>
+                        Với Mây Home Delivery, để trống rồi bấm
+                        “Lưu thông tin giao nhận”, hệ thống sẽ tự sinh mã.
+                        Với đơn vị bên ngoài, nhập mã lấy từ website hoặc
+                        ứng dụng của đơn vị vận chuyển.
+                    </small>
                 </label>
 
                 <label>
@@ -246,8 +252,9 @@
             {
                 <div class="admin-shipment-warning">
                     <i class="bi bi-exclamation-triangle"></i>
-                    Cần lưu mã vận đơn trước khi chuyển đơn sang
-                    “Đang giao hàng”.
+                    Mây Home Delivery sẽ tự sinh mã khi lưu hoặc
+                    chuyển sang “Đang giao hàng”. Với đơn vị bên ngoài,
+                    cần nhập mã do đơn vị vận chuyển cung cấp.
                 </div>
             }
         </section>
