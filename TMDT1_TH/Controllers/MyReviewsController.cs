@@ -132,9 +132,13 @@ public sealed class MyReviewsController(
         return View(BuildCreateModel(context));
     }
 
+    // Route "gui" tách riêng khỏi GET "tao/{orderItemId}" để form
+    // không sinh nhầm URL và bị lỗi 405. Route "tao" được giữ lại
+    // để tương thích với form cũ còn trong cache.
+    [HttpPost("gui")]
     [HttpPost("tao")]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Create(
+    public async Task<IActionResult> Submit(
         CreateProductReviewViewModel model)
     {
         model.Title = NullIfWhiteSpace(model.Title);
@@ -147,12 +151,18 @@ public sealed class MyReviewsController(
             await LoadPurchasedItemAsync(model.OrderItemId);
 
         if (context is null)
-            return NotFound();
+        {
+            ModelState.AddModelError(
+                string.Empty,
+                "Không tìm thấy sản phẩm hợp lệ trong đơn hàng đã hoàn thành.");
+
+            return View("Create", model);
+        }
 
         ApplyPurchasedItem(model, context);
 
         if (!ModelState.IsValid)
-            return View(model);
+            return View("Create", model);
 
         var exists = await _db.ProductReviews
             .AsNoTracking()
@@ -164,7 +174,7 @@ public sealed class MyReviewsController(
                 string.Empty,
                 "Sản phẩm trong đơn này đã được đánh giá.");
 
-            return View(model);
+            return View("Create", model);
         }
 
         var user =
@@ -182,7 +192,12 @@ public sealed class MyReviewsController(
             Rating = model.Rating,
             Title = model.Title,
             Comment = model.Comment,
-            CustomerDisplayName = user.FullName,
+            CustomerDisplayName =
+                string.IsNullOrWhiteSpace(user.FullName)
+                    ? user.Email
+                        ?? user.UserName
+                        ?? "Khách hàng"
+                    : user.FullName,
             Status = ProductReviewStatus.Pending,
             CreatedBy = user.Email
                 ?? user.UserName
@@ -210,7 +225,7 @@ public sealed class MyReviewsController(
                 string.Empty,
                 "Không thể lưu đánh giá hoặc sản phẩm đã được đánh giá.");
 
-            return View(model);
+            return View("Create", model);
         }
     }
 

@@ -32,10 +32,14 @@
             </div>
         </aside>
 
-        <form asp-action="Create"
+        <form asp-controller="MyReviews"
+              asp-action="Submit"
               method="post"
               class="account-card review-create-form">
-            <input asp-for="OrderItemId" type="hidden" />
+            @Html.AntiForgeryToken()
+
+            <input asp-for="OrderItemId"
+                   type="hidden" />
 
             <span class="eyebrow">ĐÁNH GIÁ SẢN PHẨM</span>
             <h2>Chia sẻ trải nghiệm của bạn</h2>
@@ -43,11 +47,12 @@
                 Đánh giá sẽ được Admin kiểm tra trước khi hiển thị công khai.
             </p>
 
-            <div asp-validation-summary="ModelOnly"
+            <div asp-validation-summary="All"
                  class="account-validation"></div>
 
             <fieldset class="review-rating-field">
                 <legend>@Html.DisplayNameFor(x => x.Rating)</legend>
+
                 <div class="review-rating-input">
                     @for (var rating = 5; rating >= 1; rating--)
                     {
@@ -55,33 +60,50 @@
                                id="rating-@rating"
                                asp-for="Rating"
                                value="@rating" />
+
                         <label for="rating-@rating"
                                title="@rating sao">★</label>
                     }
                 </div>
+
                 <small asp-validation-for="Rating"></small>
             </fieldset>
 
             <label class="account-field">
-                <span>@Html.DisplayNameFor(x => x.Title)</span>
+                <span>
+                    @Html.DisplayNameFor(x => x.Title)
+                    <small>(không bắt buộc)</small>
+                </span>
+
                 <input asp-for="Title"
                        maxlength="150"
                        placeholder="Ví dụ: Sản phẩm dùng rất tốt" />
+
                 <small asp-validation-for="Title"></small>
             </label>
 
             <label class="account-field">
                 <span>@Html.DisplayNameFor(x => x.Comment)</span>
+
                 <textarea asp-for="Comment"
                           rows="7"
                           maxlength="2000"
-                          placeholder="Hãy mô tả chất lượng, đóng gói và trải nghiệm sử dụng..."></textarea>
+                          required
+                          placeholder="Chia sẻ trải nghiệm của bạn về sản phẩm..."></textarea>
+
+                <small>
+                    Chỉ cần nhập nội dung; không yêu cầu số ký tự tối thiểu.
+                </small>
+
                 <small asp-validation-for="Comment"></small>
             </label>
 
             <div class="review-form-actions">
                 <a class="store-button store-button--ghost"
-                   asp-action="Index">Quay lại</a>
+                   asp-action="Index">
+                    Quay lại
+                </a>
+
                 <button class="store-button store-button--primary"
                         type="submit">
                     Gửi đánh giá

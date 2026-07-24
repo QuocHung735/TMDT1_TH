@@ -33,7 +33,10 @@ public sealed class CustomerReviewListItemViewModel
 
 public sealed class CreateProductReviewViewModel
 {
-    [Required]
+    [Range(
+        1,
+        int.MaxValue,
+        ErrorMessage = "Thiếu sản phẩm cần đánh giá.")]
     public int OrderItemId { get; set; }
 
     public string OrderNumber { get; set; } = string.Empty;
@@ -57,8 +60,7 @@ public sealed class CreateProductReviewViewModel
     [Required(ErrorMessage = "Vui lòng nhập nội dung đánh giá.")]
     [StringLength(
         2000,
-        MinimumLength = 20,
-        ErrorMessage = "Nội dung đánh giá cần từ 20 đến 2000 ký tự.")]
+        ErrorMessage = "Nội dung đánh giá không được vượt quá 2000 ký tự.")]
     [Display(Name = "Nội dung đánh giá")]
     public string Comment { get; set; } = string.Empty;
 }
