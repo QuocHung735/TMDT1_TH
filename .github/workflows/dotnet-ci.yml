@@ -1,4 +1,4 @@
-name: .NET CI
+﻿name: .NET CI
 
 on:
   push:
@@ -20,7 +20,9 @@ env:
   DOTNET_NOLOGO: true
   DOTNET_CLI_TELEMETRY_OPTOUT: true
   DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
+  SOLUTION_FILE: TMDT1_TH.sln
   PROJECT_FILE: TMDT1_TH/TMDT1_TH.csproj
+  TEST_PROJECT: TMDT1_TH.Tests/TMDT1_TH.Tests.csproj
   EF_TOOLS_VERSION: 8.0.29
 
 jobs:
@@ -42,14 +44,21 @@ jobs:
         run: dotnet --info
 
       - name: Restore NuGet packages
-        run: dotnet restore "$PROJECT_FILE"
+        run: dotnet restore "$SOLUTION_FILE"
 
       - name: Build Release
         run: >
-          dotnet build "$PROJECT_FILE"
+          dotnet build "$SOLUTION_FILE"
           --configuration Release
           --no-restore
           -p:ContinuousIntegrationBuild=true
+
+      - name: Run automated tests
+        run: >
+          dotnet test "$TEST_PROJECT"
+          --configuration Release
+          --no-build
+          --logger "console;verbosity=normal"
 
       - name: Install matching EF Core tools
         run: >
@@ -71,3 +80,4 @@ jobs:
           mkdir -p artifacts
           ./.dotnet-tools/dotnet-ef migrations script             --idempotent             --output artifacts/migrations.sql             --project "$PROJECT_FILE"             --startup-project "$PROJECT_FILE"             --configuration Release             --no-build
           test -s artifacts/migrations.sql
+
