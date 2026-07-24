@@ -248,7 +248,7 @@
                 <div class="form-grid form-grid--3">
                     <label class="form-field"><span>Mua tối thiểu</span><input asp-for="MinPurchaseQuantity" type="number" min="1" step="1" /><span asp-validation-for="MinPurchaseQuantity"></span></label>
                     <label class="form-field"><span>Mua tối đa mỗi đơn</span><input asp-for="MaxPurchaseQuantity" type="number" min="1" step="1" placeholder="Không giới hạn" /><span asp-validation-for="MaxPurchaseQuantity"></span></label>
-                    <label class="form-field"><span>Thị trường giá <em>* khi có giá</em></span><select asp-for="MarketId" asp-items="Model.MarketOptions" data-product-market data-selected-markets="@string.Join(",", Model.MarketIds)"><option value="">Chọn thị trường</option></select><span asp-validation-for="MarketId"></span></label>
+                    <label class="form-field"><span>Thị trường giá <em>* khi có giá</em></span><select asp-for="MarketId" asp-items="Model.MarketOptions" data-product-market><option value="">Chọn thị trường</option></select><span asp-validation-for="MarketId"></span></label>
                 </div>
                 <div class="form-grid form-grid--3">
                     <label class="form-field"><span>Bắt đầu áp dụng</span><input id="ValidFrom" name="ValidFrom" type="datetime-local" value="@validFromValue" /><span asp-validation-for="ValidFrom"></span></label>
@@ -319,11 +319,9 @@
 
 @section Scripts {
     <script src="~/admin/js/product-editor.js" asp-append-version="true"></script>
-    <script src="~/admin/js/product-multi-market.js" asp-append-version="true"></script>
     <script src="~/admin/js/product-save-hotfix.js" asp-append-version="true"></script>
     <script src="~/admin/js/product-form-simplified.js" asp-append-version="true"></script>
 }
-
 
 
 

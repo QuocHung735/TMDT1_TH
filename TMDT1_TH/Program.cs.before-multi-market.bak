@@ -5,7 +5,6 @@ using TMDT1_TH.Data.Database;
 using TMDT1_TH.Data.Identity;
 using TMDT1_TH.Domain.Identity;
 using TMDT1_TH.Infrastructure.Cart;
-using TMDT1_TH.Infrastructure.Pricing;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -75,11 +74,7 @@ builder.Services.AddSession(options =>
 });
 
 builder.Services.AddScoped<CartSessionStore>();
-builder.Services.AddScoped<MultiMarketPriceFilter>();
-builder.Services.AddControllersWithViews(options =>
-{
-    options.Filters.AddService<MultiMarketPriceFilter>();
-});
+builder.Services.AddControllersWithViews();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
@@ -147,4 +142,3 @@ await IdentitySeeder.SeedAsync(
     app.Logger);
 
 app.Run();
-

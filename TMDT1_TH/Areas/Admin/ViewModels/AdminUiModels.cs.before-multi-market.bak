@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc.ModelBinding.Validation;
 using Microsoft.AspNetCore.Mvc.Rendering;
@@ -148,8 +148,6 @@ public sealed class ProductEditorViewModel
 
     public int? MarketId { get; set; }
 
-    public List<int> MarketIds { get; set; } = new();
-
     [Range(typeof(decimal), "0", "999999999999", ErrorMessage = "Giá vốn không hợp lệ.")]
     public decimal CostPrice { get; set; }
 
@@ -250,4 +248,3 @@ public sealed class PricingViewModel
 }
 public sealed record PriceScheduleRow(int Id, string Product, string Variant, string Market, string CostPrice, string ListPrice, string SalePrice, string Period, string Status);
 public sealed record PriceHistoryRow(string Product, string Variant, string Market, string PriceType, string OldPrice, string NewPrice, string Change, string User, string Time, string Tone);
-
