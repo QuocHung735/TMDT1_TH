@@ -1,0 +1,70 @@
+﻿@using System.Globalization
+@model TMDT1_TH.ViewModels.Storefront.StoreProductCardViewModel
+@{
+    var culture = CultureInfo.GetCultureInfo("vi-VN");
+}
+<article class="product-card">
+    <a class="product-card__media"
+       asp-controller="Home"
+       asp-action="Details"
+       asp-route-slug="@Model.Slug">
+        @if (!string.IsNullOrWhiteSpace(Model.ImageUrl))
+        {
+            <img src="@Model.ImageUrl" alt="@Model.Name" loading="lazy" />
+        }
+        else
+        {
+            <span class="product-card__placeholder">Mây Home</span>
+        }
+
+        @if (Model.DiscountPercent.HasValue)
+        {
+            <span class="product-card__discount">-@Model.DiscountPercent%</span>
+        }
+
+        @if (Model.IsFeatured)
+        {
+            <span class="product-card__featured">Nổi bật</span>
+        }
+    </a>
+
+    <div class="product-card__body">
+        <p class="product-card__meta">@Model.BrandName · @Model.CategoryName</p>
+        <h3>
+            <a asp-controller="Home"
+               asp-action="Details"
+               asp-route-slug="@Model.Slug">@Model.Name</a>
+        </h3>
+
+        <div class="product-card__price">
+            @if (Model.HasPrice)
+            {
+                <strong>
+                    @Model.PriceMin!.Value.ToString("N0", culture)
+                    @Model.CurrencyCode
+                    @if (Model.HasPriceRange)
+                    {
+                        <span> – @Model.PriceMax!.Value.ToString("N0", culture) @Model.CurrencyCode</span>
+                    }
+                </strong>
+
+                @if (Model.ListPrice.HasValue &&
+                     Model.ListPrice.Value > Model.PriceMin!.Value)
+                {
+                    <del>@Model.ListPrice.Value.ToString("N0", culture) @Model.CurrencyCode</del>
+                }
+            }
+            else
+            {
+                <strong class="product-card__contact">Liên hệ</strong>
+            }
+        </div>
+
+        <div class="product-card__footer">
+            <span>@(Model.HasVariants ? "Nhiều lựa chọn" : Model.Sku)</span>
+            <span class="@(Model.StockQuantity > 0 ? "is-in-stock" : "is-out-stock")">
+                @(Model.StockQuantity > 0 ? $"Còn {Model.StockQuantity}" : "Tạm hết")
+            </span>
+        </div>
+    </div>
+</article>

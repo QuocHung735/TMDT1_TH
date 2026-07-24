@@ -1,0 +1,143 @@
+﻿@model TMDT1_TH.ViewModels.Storefront.StoreHomeViewModel
+@{
+    Layout = "_StoreLayout";
+    ViewData["Title"] = "Đồ gia dụng cho căn nhà tiện nghi";
+}
+
+<section class="store-hero">
+    <div class="store-container store-hero__grid">
+        <div class="store-hero__content">
+            <span class="eyebrow">MÂY HOME · GIA DỤNG</span>
+            <h1>Chọn đúng đồ dùng,<br />nhẹ việc mỗi ngày.</h1>
+            <p>
+                Sản phẩm được lấy trực tiếp từ hệ thống quản trị, hiển thị đúng giá
+                đang áp dụng và tồn kho thực tế.
+            </p>
+            <div class="store-hero__actions">
+                <a class="store-button store-button--primary"
+                   asp-controller="Home"
+                   asp-action="Catalog">Khám phá sản phẩm</a>
+                <a class="store-button store-button--ghost"
+                   asp-controller="Home"
+                   asp-action="Catalog"
+                   asp-route-sort="newest">Xem hàng mới</a>
+            </div>
+            <div class="store-hero__facts">
+                <span><b>Giá thật</b><small>Theo lịch giá hiện hành</small></span>
+                <span><b>Tồn kho thật</b><small>Theo từng SKU biến thể</small></span>
+                <span><b>Thông tin rõ</b><small>Nguồn gốc và bảo hành</small></span>
+            </div>
+        </div>
+
+        <div class="store-hero__visual" aria-label="Minh họa đồ gia dụng">
+            <div class="appliance-shape appliance-shape--main">
+                <span>NỒI CHIÊN</span>
+                <b>Không dầu</b>
+            </div>
+            <div class="appliance-shape appliance-shape--small">
+                <span>MÁY XAY</span>
+                <b>Tiện lợi</b>
+            </div>
+            <div class="hero-price-card">
+                <small>Thị trường áp dụng</small>
+                <strong>@Model.MarketName</strong>
+                <span>Đơn vị: @Model.CurrencyCode</span>
+            </div>
+        </div>
+    </div>
+</section>
+
+@if (Model.Categories.Count > 0)
+{
+    <section class="store-section">
+        <div class="store-container">
+            <div class="section-heading">
+                <div>
+                    <span class="eyebrow">DANH MỤC</span>
+                    <h2>Mua sắm theo nhu cầu</h2>
+                </div>
+                <a asp-controller="Home" asp-action="Catalog">Xem tất cả</a>
+            </div>
+
+            <div class="category-grid">
+                @foreach (var item in Model.Categories)
+                {
+                    <a class="category-card"
+                       asp-controller="Home"
+                       asp-action="Catalog"
+                       asp-route-category="@item.Slug">
+                        <span class="category-card__icon">
+                            @if (!string.IsNullOrWhiteSpace(item.ImageUrl))
+                            {
+                                <img src="@item.ImageUrl" alt="@item.Name" loading="lazy" />
+                            }
+                            else
+                            {
+                                <b>@item.Name.Substring(0, 1).ToUpperInvariant()</b>
+                            }
+                        </span>
+                        <strong>@item.Name</strong>
+                        <small>@item.ProductCount sản phẩm</small>
+                    </a>
+                }
+            </div>
+        </div>
+    </section>
+}
+
+@if (Model.FeaturedProducts.Count > 0)
+{
+    <section class="store-section store-section--tinted">
+        <div class="store-container">
+            <div class="section-heading">
+                <div>
+                    <span class="eyebrow">GỢI Ý HÔM NAY</span>
+                    <h2>Sản phẩm nổi bật</h2>
+                </div>
+                <a asp-controller="Home" asp-action="Catalog">Xem thêm</a>
+            </div>
+
+            <div class="product-grid">
+                @foreach (var item in Model.FeaturedProducts)
+                {
+                    <partial name="_StoreProductCard" model="item" />
+                }
+            </div>
+        </div>
+    </section>
+}
+
+<section class="store-section">
+    <div class="store-container">
+        <div class="section-heading">
+            <div>
+                <span class="eyebrow">VỪA CẬP NHẬT</span>
+                <h2>Sản phẩm mới</h2>
+            </div>
+            <a asp-controller="Home"
+               asp-action="Catalog"
+               asp-route-sort="newest">Xem tất cả</a>
+        </div>
+
+        @if (Model.LatestProducts.Count > 0)
+        {
+            <div class="product-grid">
+                @foreach (var item in Model.LatestProducts)
+                {
+                    <partial name="_StoreProductCard" model="item" />
+                }
+            </div>
+        }
+        else
+        {
+            <div class="store-empty">
+                <h3>Chưa có sản phẩm đang bán</h3>
+                <p>Hãy bật trạng thái Đang bán và tạo lịch giá trong khu vực quản trị.</p>
+                <a class="store-button store-button--primary"
+                   asp-area="Admin"
+                   asp-controller="Products"
+                   asp-action="Index">Mở quản trị sản phẩm</a>
+            </div>
+        }
+    </div>
+</section>

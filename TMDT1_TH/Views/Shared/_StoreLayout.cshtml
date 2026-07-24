@@ -1,0 +1,99 @@
+﻿@{
+    var title = ViewData["Title"] as string ?? "Mây Home";
+}
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>@title - Mây Home</title>
+    <meta name="description" content="Mây Home - Đồ gia dụng tiện nghi cho mọi gia đình." />
+    <link rel="stylesheet" href="~/store/css/store.css" asp-append-version="true" />
+</head>
+<body>
+    <div class="store-announcement">
+        Miễn phí giao hàng cho đơn đủ điều kiện · Đổi trả theo chính sách cửa hàng
+    </div>
+
+    <header class="store-header">
+        <div class="store-container store-header__inner">
+            <a class="store-brand" asp-controller="Home" asp-action="Index">
+                <span class="store-brand__mark">M</span>
+                <span>
+                    <strong>Mây Home</strong>
+                    <small>GIA DỤNG</small>
+                </span>
+            </a>
+
+            <form class="store-search"
+                  asp-controller="Home"
+                  asp-action="Catalog"
+                  method="get">
+                <input type="search"
+                       name="q"
+                       value="@Context.Request.Query["q"]"
+                       placeholder="Tìm nồi chiên, máy xay, đồ dùng nhà bếp..." />
+                <button type="submit" aria-label="Tìm kiếm">Tìm kiếm</button>
+            </form>
+
+            <nav class="store-actions" aria-label="Tài khoản và quản trị">
+                <a asp-area="Admin"
+                   asp-controller="Dashboard"
+                   asp-action="Index">Quản trị</a>
+                <span class="store-cart-preview" title="Giỏ hàng được triển khai ở bước 6">
+                    Giỏ hàng <b>0</b>
+                </span>
+            </nav>
+        </div>
+
+        <nav class="store-nav" aria-label="Điều hướng chính">
+            <div class="store-container store-nav__inner">
+                <a asp-controller="Home" asp-action="Index">Trang chủ</a>
+                <a asp-controller="Home" asp-action="Catalog">Tất cả sản phẩm</a>
+                <a asp-controller="Home" asp-action="Catalog" asp-route-sort="newest">Sản phẩm mới</a>
+                <a asp-controller="Home" asp-action="Catalog" asp-route-sort="price-asc">Giá tốt</a>
+            </div>
+        </nav>
+    </header>
+
+    <main>
+        @RenderBody()
+    </main>
+
+    <footer class="store-footer">
+        <div class="store-container store-footer__grid">
+            <section>
+                <a class="store-brand store-brand--footer"
+                   asp-controller="Home"
+                   asp-action="Index">
+                    <span class="store-brand__mark">M</span>
+                    <span><strong>Mây Home</strong><small>GIA DỤNG</small></span>
+                </a>
+                <p>Không gian mua sắm đồ gia dụng rõ nguồn gốc, giá minh bạch và dễ lựa chọn.</p>
+            </section>
+            <section>
+                <h3>Mua sắm</h3>
+                <a asp-controller="Home" asp-action="Catalog">Tất cả sản phẩm</a>
+                <a asp-controller="Home" asp-action="Catalog" asp-route-sort="newest">Sản phẩm mới</a>
+            </section>
+            <section>
+                <h3>Thông tin</h3>
+                <span>Chính sách giao hàng</span>
+                <span>Chính sách đổi trả</span>
+                <span>Bảo hành sản phẩm</span>
+            </section>
+            <section>
+                <h3>Liên hệ</h3>
+                <span>Hỗ trợ trong giờ hành chính</span>
+                <span>Thông tin liên hệ sẽ cấu hình ở bước cài đặt cửa hàng.</span>
+            </section>
+        </div>
+        <div class="store-footer__bottom">
+            <div class="store-container">© @DateTime.Now.Year Mây Home.</div>
+        </div>
+    </footer>
+
+    <script src="~/store/js/store.js" asp-append-version="true"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

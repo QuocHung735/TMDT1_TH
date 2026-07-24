@@ -1,0 +1,242 @@
+﻿@using System.Globalization
+@using System.Text.Json
+@model TMDT1_TH.ViewModels.Storefront.StoreProductDetailsViewModel
+@{
+    Layout = "_StoreLayout";
+    ViewData["Title"] = Model.Name;
+    var culture = CultureInfo.GetCultureInfo("vi-VN");
+    var primaryImage = Model.Images.FirstOrDefault(x => x.IsPrimary)
+        ?? Model.Images.FirstOrDefault();
+    var variantJson = JsonSerializer.Serialize(
+        Model.Variants,
+        new JsonSerializerOptions
+        {
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+        });
+}
+
+<section class="product-breadcrumb">
+    <div class="store-container">
+        <a asp-controller="Home" asp-action="Index">Trang chủ</a>
+        <span>/</span>
+        <a asp-controller="Home"
+           asp-action="Catalog"
+           asp-route-category="@Model.CategorySlug">@Model.CategoryName</a>
+        <span>/</span>
+        <strong>@Model.Name</strong>
+    </div>
+</section>
+
+<section class="store-section product-detail">
+    <div class="store-container product-detail__grid"
+         data-product-details
+         data-has-variants="@Model.HasVariants.ToString().ToLowerInvariant()"
+         data-currency="@Model.CurrencyCode">
+        <div class="product-gallery">
+            <div class="product-gallery__main">
+                @if (primaryImage is not null)
+                {
+                    <img src="@primaryImage.Url"
+                         alt="@primaryImage.AltText"
+                         data-main-product-image />
+                }
+                else
+                {
+                    <div class="product-gallery__placeholder" data-main-product-image>
+                        Mây Home
+                    </div>
+                }
+            </div>
+
+            @if (Model.Images.Count > 1)
+            {
+                <div class="product-gallery__thumbs">
+                    @foreach (var image in Model.Images)
+                    {
+                        <button type="button"
+                                class="@(image == primaryImage ? "is-active" : "")"
+                                data-gallery-image="@image.Url"
+                                aria-label="Xem ảnh @image.AltText">
+                            <img src="@image.Url" alt="@image.AltText" />
+                        </button>
+                    }
+                </div>
+            }
+        </div>
+
+        <div class="product-summary">
+            <p class="product-summary__brand">@Model.BrandName · @Model.CategoryName</p>
+            <h1>@Model.Name</h1>
+            <p class="product-summary__subtitle">@Model.ShortDescription</p>
+
+            <div class="product-rating-placeholder">
+                <span>Thông tin sản phẩm đã được xác minh từ hệ thống quản trị</span>
+            </div>
+
+            <div class="product-price-box">
+                <div class="product-price-box__sale" data-sale-price>
+                    @if (!Model.HasVariants && Model.SalePrice.HasValue)
+                    {
+                        @Model.SalePrice.Value.ToString("N0", culture)
+                        <span>@Model.CurrencyCode</span>
+                    }
+                    else if (Model.HasVariants)
+                    {
+                        <span>Chọn phân loại để xem giá</span>
+                    }
+                    else
+                    {
+                        <span>Liên hệ để nhận giá</span>
+                    }
+                </div>
+
+                <del data-list-price
+                     hidden="@(!Model.ListPrice.HasValue ||
+                               !Model.SalePrice.HasValue ||
+                               Model.ListPrice <= Model.SalePrice)">
+                    @Model.ListPrice?.ToString("N0", culture) @Model.CurrencyCode
+                </del>
+            </div>
+
+            <dl class="product-quick-info">
+                <div><dt>SKU</dt><dd data-product-sku>@Model.Sku</dd></div>
+                @if (!string.IsNullOrWhiteSpace(Model.ModelNumber))
+                {
+                    <div><dt>Model</dt><dd>@Model.ModelNumber</dd></div>
+                }
+                <div><dt>Tồn kho</dt><dd data-product-stock>@Model.StockQuantity</dd></div>
+                <div><dt>Bảo hành</dt><dd>@(Model.WarrantyMonths.HasValue ? $"{Model.WarrantyMonths} tháng" : "Theo chính sách")</dd></div>
+            </dl>
+
+            @if (Model.HasVariants)
+            {
+                <div class="variant-selector">
+                    @foreach (var option in Model.Options)
+                    {
+                        <fieldset data-option-id="@option.Id">
+                            <legend>@option.Name: <b data-selected-option-name>Chưa chọn</b></legend>
+                            <div class="variant-selector__values">
+                                @foreach (var value in option.Values)
+                                {
+                                    <button type="button"
+                                            disabled="@(!value.IsAvailable)"
+                                            data-option-value-id="@value.Id"
+                                            data-option-value-name="@value.Value">
+                                        @if (!string.IsNullOrWhiteSpace(value.ColorCode))
+                                        {
+                                            <i style="--option-color:@value.ColorCode"></i>
+                                        }
+                                        <span>@value.Value</span>
+                                    </button>
+                                }
+                            </div>
+                        </fieldset>
+                    }
+                </div>
+            }
+
+            <div class="quantity-control">
+                <span>Số lượng</span>
+                <div>
+                    <button type="button" data-quantity-minus aria-label="Giảm số lượng">−</button>
+                    <input type="number"
+                           value="@Model.MinPurchaseQuantity"
+                           min="@Model.MinPurchaseQuantity"
+                           max="@(Model.MaxPurchaseQuantity ?? Math.Max(Model.StockQuantity, Model.MinPurchaseQuantity))"
+                           data-quantity-input />
+                    <button type="button" data-quantity-plus aria-label="Tăng số lượng">+</button>
+                </div>
+                <small>
+                    Tối thiểu @Model.MinPurchaseQuantity
+                    @if (Model.MaxPurchaseQuantity.HasValue)
+                    {
+                        <span>· Tối đa @Model.MaxPurchaseQuantity</span>
+                    }
+                </small>
+            </div>
+
+            <div class="product-purchase-actions">
+                <button class="store-button store-button--primary store-button--large"
+                        type="button"
+                        disabled
+                        data-add-to-cart>
+                    Giỏ hàng triển khai ở bước 6
+                </button>
+                <a class="store-button store-button--ghost store-button--large"
+                   asp-controller="Home"
+                   asp-action="Catalog">Tiếp tục xem hàng</a>
+            </div>
+
+            <div class="product-assurance">
+                <span><b>Giá minh bạch</b><small>Theo lịch giá đang hiệu lực</small></span>
+                <span><b>Tồn kho theo SKU</b><small>Cập nhật từ quản trị</small></span>
+                <span><b>Thông tin rõ ràng</b><small>Nguồn gốc và nhà sản xuất</small></span>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="store-section product-information">
+    <div class="store-container product-information__grid">
+        <article>
+            <span class="eyebrow">CHI TIẾT</span>
+            <h2>Mô tả sản phẩm</h2>
+            <div class="product-description">
+                @if (!string.IsNullOrWhiteSpace(Model.Description))
+                {
+                    @foreach (var paragraph in Model.Description
+                        .Split('\n', StringSplitOptions.RemoveEmptyEntries))
+                    {
+                        <p>@paragraph</p>
+                    }
+                }
+                else
+                {
+                    <p>Thông tin chi tiết đang được cập nhật.</p>
+                }
+            </div>
+        </article>
+
+        <aside>
+            <h3>Thông tin hàng hóa</h3>
+            <dl class="specification-list">
+                <div><dt>Thương hiệu</dt><dd>@Model.BrandName</dd></div>
+                <div><dt>Xuất xứ</dt><dd>@(Model.CountryOfOrigin ?? "Đang cập nhật")</dd></div>
+                <div><dt>Nhà sản xuất</dt><dd>@(Model.ManufacturerName ?? "Đang cập nhật")</dd></div>
+                <div><dt>Khối lượng</dt><dd>@(Model.Weight.HasValue ? $"{Model.Weight:N0} g" : "Đang cập nhật")</dd></div>
+                <div><dt>Đơn vị bán</dt><dd>@Model.Unit</dd></div>
+
+                @foreach (var item in Model.Specifications)
+                {
+                    <div><dt>@item.Name</dt><dd>@item.Value</dd></div>
+                }
+            </dl>
+        </aside>
+    </div>
+</section>
+
+@if (Model.RelatedProducts.Count > 0)
+{
+    <section class="store-section store-section--tinted">
+        <div class="store-container">
+            <div class="section-heading">
+                <div>
+                    <span class="eyebrow">CÙNG DANH MỤC</span>
+                    <h2>Có thể bạn sẽ thích</h2>
+                </div>
+            </div>
+            <div class="product-grid">
+                @foreach (var item in Model.RelatedProducts)
+                {
+                    <partial name="_StoreProductCard" model="item" />
+                }
+            </div>
+        </div>
+    </section>
+}
+
+<script id="store-variant-data" type="application/json">@Html.Raw(variantJson)</script>
+
+@section Scripts {
+    <script src="~/store/js/product-details.js" asp-append-version="true"></script>
+}

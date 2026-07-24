@@ -1,0 +1,155 @@
+﻿@model TMDT1_TH.ViewModels.Storefront.StoreCatalogViewModel
+@{
+    Layout = "_StoreLayout";
+    ViewData["Title"] = "Tất cả sản phẩm";
+
+    string BuildPageUrl(int targetPage)
+    {
+        return Url.Action("Catalog", "Home", new
+        {
+            q = Model.Query,
+            category = Model.CategorySlug,
+            brand = Model.BrandSlug,
+            sort = Model.Sort,
+            page = targetPage
+        }) ?? "#";
+    }
+}
+
+<section class="catalog-head">
+    <div class="store-container">
+        <div>
+            <span class="eyebrow">MÂY HOME</span>
+            <h1>Tất cả sản phẩm</h1>
+            <p>@Model.TotalItems sản phẩm phù hợp với bộ lọc hiện tại.</p>
+        </div>
+    </div>
+</section>
+
+<section class="store-section catalog-section">
+    <div class="store-container catalog-layout">
+        <aside class="catalog-filter">
+            <form asp-controller="Home" asp-action="Catalog" method="get">
+                <input type="hidden" name="q" value="@Model.Query" />
+                <input type="hidden" name="sort" value="@Model.Sort" />
+
+                <div class="filter-group">
+                    <h3>Danh mục</h3>
+                    <label class="filter-option">
+                        <input type="radio"
+                               name="category"
+                               value=""
+                               checked="@(string.IsNullOrWhiteSpace(Model.CategorySlug))" />
+                        <span>Tất cả danh mục</span>
+                    </label>
+                    @foreach (var item in Model.Categories)
+                    {
+                        <label class="filter-option">
+                            <input type="radio"
+                                   name="category"
+                                   value="@item.Slug"
+                                   checked="@(Model.CategorySlug == item.Slug)" />
+                            <span>@item.Name</span>
+                            <small>@item.Count</small>
+                        </label>
+                    }
+                </div>
+
+                <div class="filter-group">
+                    <h3>Thương hiệu</h3>
+                    <label class="filter-option">
+                        <input type="radio"
+                               name="brand"
+                               value=""
+                               checked="@(string.IsNullOrWhiteSpace(Model.BrandSlug))" />
+                        <span>Tất cả thương hiệu</span>
+                    </label>
+                    @foreach (var item in Model.Brands)
+                    {
+                        <label class="filter-option">
+                            <input type="radio"
+                                   name="brand"
+                                   value="@item.Slug"
+                                   checked="@(Model.BrandSlug == item.Slug)" />
+                            <span>@item.Name</span>
+                            <small>@item.Count</small>
+                        </label>
+                    }
+                </div>
+
+                <button class="store-button store-button--primary store-button--full"
+                        type="submit">Áp dụng bộ lọc</button>
+                <a class="filter-reset"
+                   asp-controller="Home"
+                   asp-action="Catalog">Xóa bộ lọc</a>
+            </form>
+        </aside>
+
+        <div class="catalog-content">
+            <div class="catalog-toolbar">
+                <form class="catalog-search"
+                      asp-controller="Home"
+                      asp-action="Catalog"
+                      method="get">
+                    <input type="hidden" name="category" value="@Model.CategorySlug" />
+                    <input type="hidden" name="brand" value="@Model.BrandSlug" />
+                    <input type="hidden" name="sort" value="@Model.Sort" />
+                    <input type="search"
+                           name="q"
+                           value="@Model.Query"
+                           placeholder="Tìm theo tên, SKU, model..." />
+                    <button type="submit">Tìm</button>
+                </form>
+
+                <form asp-controller="Home" asp-action="Catalog" method="get">
+                    <input type="hidden" name="q" value="@Model.Query" />
+                    <input type="hidden" name="category" value="@Model.CategorySlug" />
+                    <input type="hidden" name="brand" value="@Model.BrandSlug" />
+                    <select name="sort" onchange="this.form.submit()" aria-label="Sắp xếp">
+                        <option value="newest" selected="@(Model.Sort == "newest")">Mới nhất</option>
+                        <option value="price-asc" selected="@(Model.Sort == "price-asc")">Giá tăng dần</option>
+                        <option value="price-desc" selected="@(Model.Sort == "price-desc")">Giá giảm dần</option>
+                        <option value="name" selected="@(Model.Sort == "name")">Tên A–Z</option>
+                    </select>
+                </form>
+            </div>
+
+            @if (Model.Products.Count > 0)
+            {
+                <div class="product-grid product-grid--catalog">
+                    @foreach (var item in Model.Products)
+                    {
+                        <partial name="_StoreProductCard" model="item" />
+                    }
+                </div>
+
+                @if (Model.TotalPages > 1)
+                {
+                    <nav class="pagination" aria-label="Phân trang">
+                        <a class="@(Model.Page <= 1 ? "is-disabled" : "")"
+                           href="@BuildPageUrl(Model.Page - 1)">Trước</a>
+
+                        @for (var pageNumber = 1; pageNumber <= Model.TotalPages; pageNumber++)
+                        {
+                            <a class="@(pageNumber == Model.Page ? "is-active" : "")"
+                               href="@BuildPageUrl(pageNumber)">@pageNumber</a>
+                        }
+
+                        <a class="@(Model.Page >= Model.TotalPages ? "is-disabled" : "")"
+                           href="@BuildPageUrl(Model.Page + 1)">Sau</a>
+                    </nav>
+                }
+            }
+            else
+            {
+                <div class="store-empty">
+                    <h3>Không tìm thấy sản phẩm</h3>
+                    <p>Hãy thử từ khóa khác hoặc xóa bớt bộ lọc.</p>
+                    <a class="store-button store-button--primary"
+                       asp-controller="Home"
+                       asp-action="Catalog">Xem toàn bộ sản phẩm</a>
+                </div>
+            }
+        </div>
+    </div>
+</section>
