@@ -1,4 +1,6 @@
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc.ModelBinding.Validation;
 using Microsoft.AspNetCore.Mvc.Rendering;
 
 namespace TMDT1_TH.Areas.Admin.ViewModels;
@@ -102,9 +104,14 @@ public sealed class BrandFormViewModel
     [Url(ErrorMessage = "Website chưa đúng định dạng URL.")]
     public string? WebsiteUrl { get; set; }
 
-    [StringLength(500, ErrorMessage = "Đường dẫn logo tối đa 500 ký tự.")]
-    [Display(Name = "Đường dẫn logo")]
+    [ValidateNever]
     public string? LogoUrl { get; set; }
+
+    [Display(Name = "Tệp logo")]
+    public IFormFile? LogoFile { get; set; }
+
+    [Display(Name = "Xóa logo hiện tại")]
+    public bool RemoveLogo { get; set; }
 
     [StringLength(1500, ErrorMessage = "Mô tả tối đa 1.500 ký tự.")]
     public string? Description { get; set; }
