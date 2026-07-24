@@ -37,4 +37,10 @@ public sealed class Promotion : AuditableEntity
 
     public ICollection<PromotionBrand> Brands { get; set; }
         = new List<PromotionBrand>();
+
+    public ICollection<PromotionRedemption> Redemptions { get; set; }
+        = new List<PromotionRedemption>();
 }
+
+
+

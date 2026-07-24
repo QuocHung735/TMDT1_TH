@@ -14,9 +14,12 @@ namespace TMDT1_TH.Areas.Admin.Controllers;
 [Area("Admin")]
 public sealed class OrdersController(
     ApplicationDbContext db,
+    PromotionService promotionService,
     ILogger<OrdersController> logger) : Controller
 {
     private readonly ApplicationDbContext _db = db;
+    private readonly PromotionService _promotionService =
+        promotionService;
     private readonly ILogger<OrdersController> _logger = logger;
 
     public async Task<IActionResult> Index(
@@ -391,6 +394,11 @@ public sealed class OrdersController(
                 await RestoreStockAsync(
                     order.Items);
 
+                await _promotionService.TryReleaseForOrderAsync(
+                    order.Id,
+                    DateTime.UtcNow,
+                    cancellationReason,
+                    User.Identity?.Name ?? "Admin");
                 order.CancelledAt =
                     DateTime.UtcNow;
                 order.CancellationReason =
@@ -906,4 +914,7 @@ public sealed class OrdersController(
             : value.Trim();
     }
 }
+
+
+
 

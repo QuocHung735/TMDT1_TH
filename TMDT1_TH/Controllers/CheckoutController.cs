@@ -329,6 +329,20 @@ public sealed class CheckoutController(
                     ?? "Storefront"
             };
 
+
+
+            if (promotion.PromotionId.HasValue)
+            {
+                order.PromotionRedemption =
+                    _promotionService.CreateRedemption(
+                        order,
+                        promotion,
+                        DateTime.UtcNow,
+                        currentUser.Email
+                        ?? currentUser.UserName
+                        ?? "Storefront");
+            }
+
             foreach (var line in
                      resolution.Items)
             {
@@ -1191,6 +1205,10 @@ public sealed class CheckoutController(
             new(null, error);
     }
 }
+
+
+
+
 
 
 

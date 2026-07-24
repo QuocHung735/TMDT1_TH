@@ -2,6 +2,8 @@
 using TMDT1_TH.Data;
 using TMDT1_TH.Domain.Enums;
 
+using TMDT1_TH.Domain.Entities;
+
 namespace TMDT1_TH.Infrastructure.Pricing;
 
 public sealed class PromotionService(
@@ -186,6 +188,75 @@ public sealed class PromotionService(
         return true;
     }
 
+    public PromotionRedemption CreateRedemption(
+        Order order,
+        PromotionResolution promotion,
+        DateTime redeemedAtUtc,
+        string actor)
+    {
+        if (!promotion.PromotionId.HasValue ||
+            string.IsNullOrWhiteSpace(promotion.Code) ||
+            string.IsNullOrWhiteSpace(promotion.Name) ||
+            promotion.DiscountAmount <= 0)
+        {
+            throw new InvalidOperationException(
+                "Không thể tạo lịch sử cho khuyến mãi không hợp lệ.");
+        }
+
+        return new PromotionRedemption
+        {
+            PromotionId = promotion.PromotionId.Value,
+            Order = order,
+            CustomerUserId = order.CustomerUserId,
+            PromotionCode = promotion.Code,
+            PromotionName = promotion.Name,
+            DiscountAmount = promotion.DiscountAmount,
+            RedeemedAt = redeemedAtUtc,
+            IsReleased = false,
+            CreatedBy = actor
+        };
+    }
+
+    public async Task<bool> TryReleaseForOrderAsync(
+        int orderId,
+        DateTime releasedAtUtc,
+        string releaseReason,
+        string actor,
+        CancellationToken cancellationToken = default)
+    {
+        var redemption = await _db.PromotionRedemptions
+            .Include(x => x.Promotion)
+            .FirstOrDefaultAsync(
+                x => x.OrderId == orderId,
+                cancellationToken);
+
+        if (redemption is null ||
+            redemption.IsReleased)
+        {
+            return false;
+        }
+
+        if (redemption.Promotion.UsedCount > 0)
+        {
+            redemption.Promotion.UsedCount--;
+        }
+
+        redemption.Promotion.UpdatedBy = actor;
+
+        redemption.IsReleased = true;
+        redemption.ReleasedAt = releasedAtUtc;
+        redemption.ReleaseReason =
+            string.IsNullOrWhiteSpace(releaseReason)
+                ? "Đơn hàng đã bị hủy."
+                : releaseReason.Trim()[
+                    ..Math.Min(
+                        releaseReason.Trim().Length,
+                        500)];
+
+        redemption.UpdatedBy = actor;
+
+        return true;
+    }
     public static string? NormalizeCode(string? code)
     {
         return string.IsNullOrWhiteSpace(code)
@@ -349,3 +420,7 @@ public sealed record PromotionResolution(
             scopeName,
             null);
 }
+
+
+
+

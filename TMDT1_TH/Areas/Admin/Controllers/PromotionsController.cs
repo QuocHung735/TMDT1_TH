@@ -100,6 +100,124 @@ public sealed class PromotionsController(
                 openModal));
     }
 
+    [HttpGet]
+    public async Task<IActionResult> Redemptions(
+        string? q,
+        string? state)
+    {
+        q = string.IsNullOrWhiteSpace(q)
+            ? null
+            : q.Trim();
+
+        state = string.IsNullOrWhiteSpace(state)
+            ? null
+            : state.Trim().ToLowerInvariant();
+
+        var baseQuery =
+            _db.PromotionRedemptions
+                .AsNoTracking();
+
+        var totalCount =
+            await baseQuery.CountAsync();
+
+        var activeCount =
+            await baseQuery.CountAsync(x =>
+                !x.IsReleased);
+
+        var releasedCount =
+            await baseQuery.CountAsync(x =>
+                x.IsReleased);
+
+        var totalDiscountAmount =
+            await baseQuery.SumAsync(x =>
+                (decimal?)x.DiscountAmount)
+            ?? 0;
+
+        var releasedDiscountAmount =
+            await baseQuery
+                .Where(x => x.IsReleased)
+                .SumAsync(x =>
+                    (decimal?)x.DiscountAmount)
+            ?? 0;
+
+        var query =
+            _db.PromotionRedemptions
+                .AsNoTracking()
+                .Include(x => x.Order)
+                .AsQueryable();
+
+        if (q is not null)
+        {
+            query = query.Where(x =>
+                x.PromotionCode.Contains(q) ||
+                x.PromotionName.Contains(q) ||
+                x.Order.OrderNumber.Contains(q) ||
+                x.Order.CustomerName.Contains(q) ||
+                (x.Order.CustomerEmail != null &&
+                 x.Order.CustomerEmail.Contains(q)));
+        }
+
+        if (state == "active")
+        {
+            query = query.Where(x =>
+                !x.IsReleased);
+        }
+        else if (state == "released")
+        {
+            query = query.Where(x =>
+                x.IsReleased);
+        }
+
+        var items = await query
+            .OrderByDescending(x =>
+                x.RedeemedAt)
+            .Take(500)
+            .Select(x =>
+                new PromotionRedemptionListItem
+                {
+                    Id = x.Id,
+                    PromotionCode =
+                        x.PromotionCode,
+                    PromotionName =
+                        x.PromotionName,
+                    OrderId =
+                        x.OrderId,
+                    OrderNumber =
+                        x.Order.OrderNumber,
+                    CustomerName =
+                        x.Order.CustomerName,
+                    CustomerEmail =
+                        x.Order.CustomerEmail,
+                    DiscountAmount =
+                        x.DiscountAmount,
+                    CurrencyCode =
+                        x.Order.CurrencyCode,
+                    RedeemedAt =
+                        x.RedeemedAt,
+                    IsReleased =
+                        x.IsReleased,
+                    ReleasedAt =
+                        x.ReleasedAt,
+                    ReleaseReason =
+                        x.ReleaseReason
+                })
+            .ToListAsync();
+
+        return View(
+            new PromotionRedemptionHistoryViewModel
+            {
+                Query = q,
+                State = state,
+                TotalCount = totalCount,
+                ActiveCount = activeCount,
+                ReleasedCount = releasedCount,
+                TotalDiscountAmount =
+                    totalDiscountAmount,
+                ReleasedDiscountAmount =
+                    releasedDiscountAmount,
+                Items = items
+            });
+    }
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Save(
@@ -760,4 +878,6 @@ public sealed class PromotionsController(
     private string CurrentUserName() =>
         User.Identity?.Name ?? "Admin";
 }
+
+
 

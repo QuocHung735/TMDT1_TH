@@ -58,7 +58,11 @@ public sealed class Order : AuditableEntity
     public ApplicationUser? CustomerUser { get; set; }
     public Market Market { get; set; } = null!;
     public ShippingService? ShippingService { get; set; }
+    public PromotionRedemption? PromotionRedemption { get; set; }
     public ICollection<OrderItem> Items { get; set; } =
         new List<OrderItem>();
 }
+
+
+
 

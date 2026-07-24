@@ -28,6 +28,8 @@ public class ApplicationDbContext(
     public DbSet<PromotionProduct> PromotionProducts => Set<PromotionProduct>();
     public DbSet<PromotionCategory> PromotionCategories => Set<PromotionCategory>();
     public DbSet<PromotionBrand> PromotionBrands => Set<PromotionBrand>();
+    public DbSet<PromotionRedemption> PromotionRedemptions =>
+        Set<PromotionRedemption>();
     public DbSet<Order> Orders => Set<Order>();
     public DbSet<OrderItem> OrderItems => Set<OrderItem>();
     public DbSet<ProductReview> ProductReviews => Set<ProductReview>();
@@ -80,5 +82,8 @@ public class ApplicationDbContext(
         }
     }
 }
+
+
+
 
 
