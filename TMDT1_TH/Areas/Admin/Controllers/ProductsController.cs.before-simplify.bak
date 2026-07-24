@@ -754,17 +754,22 @@ public class ProductsController : Controller
             if (forbidden is not null)
                 ModelState.AddModelError(nameof(model.Name), $"Tên sản phẩm không nên chứa nội dung quảng cáo hoặc tên nền tảng: “{forbidden}”.");
 
-            if (string.IsNullOrWhiteSpace(model.Description))
-                ModelState.AddModelError(
-                    nameof(model.Description),
-                    "Vui lòng nhập mô tả sản phẩm.");
+            if (string.IsNullOrWhiteSpace(model.Description) || model.Description.Trim().Length < 110)
+                ModelState.AddModelError(nameof(model.Description), "Sản phẩm đang bán cần mô tả chi tiết tối thiểu 110 ký tự.");
             if (string.IsNullOrWhiteSpace(model.CountryOfOrigin))
                 ModelState.AddModelError(nameof(model.CountryOfOrigin), "Vui lòng nhập xuất xứ sản phẩm.");
             if (string.IsNullOrWhiteSpace(model.ManufacturerName))
                 ModelState.AddModelError(nameof(model.ManufacturerName), "Vui lòng nhập tên nhà sản xuất hoặc đơn vị chịu trách nhiệm.");
             if (string.IsNullOrWhiteSpace(model.ManufacturerAddress))
                 ModelState.AddModelError(nameof(model.ManufacturerAddress), "Vui lòng nhập địa chỉ nhà sản xuất hoặc đơn vị chịu trách nhiệm.");
-            
+            if (!model.Weight.HasValue || model.Weight.Value <= 0)
+                ModelState.AddModelError(nameof(model.Weight), "Sản phẩm đang bán cần khối lượng đóng gói lớn hơn 0.");
+            if (!model.PackageLengthCm.HasValue || model.PackageLengthCm.Value <= 0 ||
+                !model.PackageWidthCm.HasValue || model.PackageWidthCm.Value <= 0 ||
+                !model.PackageHeightCm.HasValue || model.PackageHeightCm.Value <= 0)
+            {
+                ModelState.AddModelError(nameof(model.PackageLengthCm), "Vui lòng nhập đủ kích thước kiện hàng lớn hơn 0.");
+            }
         }
 
         if (!model.HasVariants)
@@ -808,7 +813,8 @@ public class ProductsController : Controller
 
             if (publishing || HasPrice(variant.CostPrice, variant.ListPrice, variant.SalePrice))
                 ValidateVariantPrice(variant, index);
-            
+            if (publishing && (!variant.Weight.HasValue || variant.Weight.Value <= 0))
+                ModelState.AddModelError($"Variants[{index}].Weight", "Khối lượng biến thể phải lớn hơn 0.");
 
             if (model.MarketId.HasValue && variant.Id.HasValue && HasCompletePrice(variant.CostPrice, variant.ListPrice, variant.SalePrice))
             {
@@ -995,13 +1001,8 @@ public class ProductsController : Controller
         product.Unit = model.Unit.Trim();
         product.CategoryId = model.CategoryId!.Value;
         product.BrandId = model.BrandId!.Value;
-        var description = NullIfWhiteSpace(model.Description);
-        product.Description = description;
-        product.ShortDescription = description is null
-            ? null
-            : description[..Math.Min(
-                description.Length,
-                600)];
+        product.ShortDescription = NullIfWhiteSpace(model.ShortDescription);
+        product.Description = NullIfWhiteSpace(model.Description);
         product.CountryOfOrigin = NullIfWhiteSpace(model.CountryOfOrigin);
         product.ManufacturerName = NullIfWhiteSpace(model.ManufacturerName);
         product.ManufacturerAddress = NullIfWhiteSpace(model.ManufacturerAddress);
@@ -1013,10 +1014,10 @@ public class ProductsController : Controller
         product.LowStockThreshold = model.LowStockThreshold;
         product.MinPurchaseQuantity = model.MinPurchaseQuantity;
         product.MaxPurchaseQuantity = model.MaxPurchaseQuantity;
-        product.Weight = null;
-        product.PackageLengthCm = null;
-        product.PackageWidthCm = null;
-        product.PackageHeightCm = null;
+        product.Weight = model.Weight;
+        product.PackageLengthCm = model.PackageLengthCm;
+        product.PackageWidthCm = model.PackageWidthCm;
+        product.PackageHeightCm = model.PackageHeightCm;
         product.UpdatedBy = CurrentUserName();
     }
 
@@ -1211,7 +1212,7 @@ public class ProductsController : Controller
             entity.StockQuantity = row.StockQuantity;
             entity.LowStockThreshold = row.LowStockThreshold;
             entity.SortOrder = index;
-            entity.Weight = null;
+            entity.Weight = row.Weight ?? model.Weight;
             entity.IsDefault = row.IsDefault && row.IsActive;
             entity.IsActive = row.IsActive;
             entity.IsDeleted = false;
@@ -1580,15 +1581,19 @@ public class ProductsController : Controller
         var issues = new List<string>();
         if (product.Name.Trim().Length < 10)
             issues.Add("Tên sản phẩm quá ngắn");
-        if (string.IsNullOrWhiteSpace(product.Description))
-            issues.Add("Thiếu mô tả sản phẩm");
+        if (string.IsNullOrWhiteSpace(product.Description) || product.Description.Trim().Length < 110)
+            issues.Add("Mô tả chi tiết chưa đủ 110 ký tự");
         if (product.Images.Count == 0)
             issues.Add("Chưa có hình ảnh");
         if (string.IsNullOrWhiteSpace(product.CountryOfOrigin))
             issues.Add("Thiếu xuất xứ");
         if (string.IsNullOrWhiteSpace(product.ManufacturerName) || string.IsNullOrWhiteSpace(product.ManufacturerAddress))
             issues.Add("Thiếu thông tin nhà sản xuất");
-        
+        if (!product.Weight.HasValue || product.Weight.Value <= 0 ||
+            !product.PackageLengthCm.HasValue || product.PackageLengthCm.Value <= 0 ||
+            !product.PackageWidthCm.HasValue || product.PackageWidthCm.Value <= 0 ||
+            !product.PackageHeightCm.HasValue || product.PackageHeightCm.Value <= 0)
+            issues.Add("Thiếu khối lượng hoặc kích thước kiện hàng");
 
         if (product.HasVariants)
         {
@@ -1615,20 +1620,17 @@ public class ProductsController : Controller
         var checks = new[]
         {
             product.Name.Trim().Length >= 10,
-            
-            !string.IsNullOrWhiteSpace(product.Description),
+            !string.IsNullOrWhiteSpace(product.ShortDescription),
+            !string.IsNullOrWhiteSpace(product.Description) && product.Description.Trim().Length >= 110,
             product.Images.Count >= 1,
             product.Images.Count >= 3,
             !string.IsNullOrWhiteSpace(product.CountryOfOrigin),
             !string.IsNullOrWhiteSpace(product.ManufacturerName),
-            
+            product.Weight.HasValue && product.Weight.Value > 0,
+            product.PackageLengthCm.HasValue && product.PackageLengthCm.Value > 0 && product.PackageWidthCm.HasValue && product.PackageWidthCm.Value > 0 && product.PackageHeightCm.HasValue && product.PackageHeightCm.Value > 0,
             GetListingIssues(product, marketId, now).All(x => !x.Contains("giá", StringComparison.OrdinalIgnoreCase))
         };
-        return checks.Length == 0
-            ? 0
-            : (int)Math.Round(
-                checks.Count(x => x) * 100d /
-                checks.Length);
+        return checks.Count(x => x) * 10;
     }
 
     private async Task EnsureSystemManagedProductCodesAsync(ProductEditorViewModel model)
@@ -2024,5 +2026,4 @@ public class ProductsController : Controller
     private sealed record OptionDefinition(string Name, IReadOnlyList<string> Values);
     private sealed record VariantSyncResult(ProductVariant Entity, ProductVariantEditorItem Row);
 }
-
 

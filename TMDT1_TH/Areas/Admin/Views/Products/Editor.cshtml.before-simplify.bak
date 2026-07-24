@@ -34,7 +34,7 @@
         <a href="#general" class="editor-step is-active"><span>1</span><div><strong>Thông tin chung</strong><small>Tên, phân loại và mô tả</small></div></a>
         <a href="#media" class="editor-step"><span>2</span><div><strong>Hình ảnh</strong><small>Tối đa 9 ảnh sản phẩm</small></div></a>
         <a href="#variants" class="editor-step"><span>3</span><div><strong>Phân loại & SKU</strong><small>Giá và kho từng biến thể</small></div></a>
-        <a href="#logistics" class="editor-step"><span>4</span><div><strong>Giá bán</strong><small>Kích thước, thị trường, lịch giá</small></div></a>
+        <a href="#logistics" class="editor-step"><span>4</span><div><strong>Vận chuyển & giá</strong><small>Kích thước, thị trường, lịch giá</small></div></a>
         <a href="#compliance" class="editor-step"><span>5</span><div><strong>Thông tin bắt buộc</strong><small>Xuất xứ, nhà sản xuất</small></div></a>
         <a href="#publish" class="editor-step"><span>6</span><div><strong>Đăng bán</strong><small>Trạng thái và độ hoàn thiện</small></div></a>
     </aside>
@@ -114,9 +114,11 @@
                     <label class="form-field"><span>Thương hiệu <em>*</em></span><select asp-for="BrandId" asp-items="Model.BrandOptions" data-product-brand><option value="">Chọn thương hiệu</option></select><span asp-validation-for="BrandId"></span></label>
                 </div>
 
+                <label class="form-field"><span>Mô tả ngắn</span><textarea asp-for="ShortDescription" rows="3" maxlength="600" placeholder="Tóm tắt lợi ích chính, dung tích, công suất hoặc chất liệu."></textarea><span asp-validation-for="ShortDescription"></span></label>
                 <label class="form-field">
-                    <span>Mô tả <em>* khi đăng bán</em></span>
+                    <span>Mô tả chi tiết <em>* khi đăng bán</em></span>
                     <textarea asp-for="Description" rows="9" data-description-input placeholder="Mô tả công dụng, chất liệu, hướng dẫn sử dụng, lưu ý an toàn, phụ kiện đi kèm và nội dung trong hộp..."></textarea>
+                    <small><span data-description-count>0</span> ký tự · Nên có ít nhất 110 ký tự và nêu rõ “Trong hộp có gì”.</small>
                     <span asp-validation-for="Description"></span>
                 </label>
             </div>
@@ -235,8 +237,8 @@
 
         <section class="card form-section" id="logistics">
             <div class="form-section__header">
-                <div><span class="section-number">4</span><h2>Giá bán và lịch giá</h2></div>
-                <p>Thiết lập thị trường, thời gian áp dụng và giá bán sản phẩm.</p>
+                <div><span class="section-number">4</span><h2>Vận chuyển và lịch giá</h2></div>
+                <p>Thông tin đóng gói được dùng để tính phí vận chuyển; lịch giá áp dụng cho thị trường đã chọn.</p>
             </div>
             <div class="form-section__body form-stack">
                 <div class="form-grid form-grid--4">
@@ -320,9 +322,7 @@
 @section Scripts {
     <script src="~/admin/js/product-editor.js" asp-append-version="true"></script>
     <script src="~/admin/js/product-save-hotfix.js" asp-append-version="true"></script>
-    <script src="~/admin/js/product-form-simplified.js" asp-append-version="true"></script>
 }
-
 
 
 
