@@ -1,5 +1,6 @@
 ﻿@{
     var title = ViewData["Title"] as string ?? "Mây Home";
+    var authenticated = User.Identity?.IsAuthenticated == true;
 }
 <!DOCTYPE html>
 <html lang="vi">
@@ -11,6 +12,7 @@
     <link rel="stylesheet" href="~/store/css/store.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/store/css/cart.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/store/css/checkout.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/store/css/account.css" asp-append-version="true" />
 </head>
 <body>
     <div class="store-announcement">
@@ -38,10 +40,42 @@
                 <button type="submit" aria-label="Tìm kiếm">Tìm kiếm</button>
             </form>
 
-            <nav class="store-actions" aria-label="Tài khoản và quản trị">
-                <a asp-area="Admin"
-                   asp-controller="Dashboard"
-                   asp-action="Index">Quản trị</a>
+            <nav class="store-actions" aria-label="Tài khoản và giỏ hàng">
+                @if (authenticated)
+                {
+                    <a asp-area=""
+                       asp-controller="MyOrders"
+                       asp-action="Index">Đơn hàng</a>
+
+                    @if (User.IsInRole("Admin"))
+                    {
+                        <a asp-area="Admin"
+                           asp-controller="Dashboard"
+                           asp-action="Index">Quản trị</a>
+                    }
+
+                    <a asp-area=""
+                       asp-controller="Account"
+                       asp-action="Profile">Tài khoản</a>
+
+                    <form asp-area=""
+                          asp-controller="Account"
+                          asp-action="Logout"
+                          method="post"
+                          class="store-logout-form">
+                        <button type="submit">Đăng xuất</button>
+                    </form>
+                }
+                else
+                {
+                    <a asp-area=""
+                       asp-controller="Account"
+                       asp-action="Login">Đăng nhập</a>
+                    <a asp-area=""
+                       asp-controller="Account"
+                       asp-action="Register">Đăng ký</a>
+                }
+
                 <a class="store-cart-preview"
                    asp-area=""
                    asp-controller="Cart"
@@ -83,10 +117,17 @@
                 <a asp-controller="Home" asp-action="Catalog" asp-route-sort="newest">Sản phẩm mới</a>
             </section>
             <section>
-                <h3>Thông tin</h3>
-                <span>Chính sách giao hàng</span>
-                <span>Chính sách đổi trả</span>
-                <span>Bảo hành sản phẩm</span>
+                <h3>Tài khoản</h3>
+                @if (authenticated)
+                {
+                    <a asp-controller="MyOrders" asp-action="Index">Đơn hàng của tôi</a>
+                    <a asp-controller="Account" asp-action="Profile">Thông tin cá nhân</a>
+                }
+                else
+                {
+                    <a asp-controller="Account" asp-action="Login">Đăng nhập</a>
+                    <a asp-controller="Account" asp-action="Register">Đăng ký</a>
+                }
             </section>
             <section>
                 <h3>Liên hệ</h3>

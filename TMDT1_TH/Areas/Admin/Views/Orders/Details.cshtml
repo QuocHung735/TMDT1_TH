@@ -1,0 +1,170 @@
+﻿@using System.Globalization
+@model AdminOrderDetailsViewModel
+@{
+    ViewData["Title"] = $"Đơn {Model.OrderNumber}";
+    ViewData["Description"] =
+        $"Đặt lúc {Model.CreatedAt.ToLocalTime():dd/MM/yyyy HH:mm}";
+    var culture = CultureInfo.GetCultureInfo("vi-VN");
+}
+
+@section PageActions {
+    <a class="btn btn-light"
+       asp-action="Index">
+        <i class="bi bi-arrow-left"></i> Danh sách đơn
+    </a>
+}
+
+<div class="admin-order-layout">
+    <div class="admin-order-main">
+        <section class="card panel admin-order-panel">
+            <div class="admin-order-panel__head">
+                <h2>Thông tin đơn hàng</h2>
+                <span class="customer-order-status @Model.StatusClass">
+                    @Model.StatusName
+                </span>
+            </div>
+
+            <dl class="admin-order-info">
+                <div><dt>Khách hàng</dt><dd>@Model.CustomerName</dd></div>
+                <div><dt>Điện thoại</dt><dd>@Model.CustomerPhone</dd></div>
+                @if (!string.IsNullOrWhiteSpace(Model.CustomerEmail))
+                {
+                    <div><dt>Email</dt><dd>@Model.CustomerEmail</dd></div>
+                }
+                <div><dt>Địa chỉ</dt><dd>@Model.ShippingAddress</dd></div>
+                @if (!string.IsNullOrWhiteSpace(Model.CustomerNote))
+                {
+                    <div><dt>Ghi chú</dt><dd>@Model.CustomerNote</dd></div>
+                }
+                <div><dt>Thanh toán</dt><dd>@Model.PaymentStatusName</dd></div>
+            </dl>
+
+            @if (!string.IsNullOrWhiteSpace(Model.CancellationReason))
+            {
+                <div class="admin-order-cancel-note">
+                    <strong>Lý do hủy</strong>
+                    <p>@Model.CancellationReason</p>
+                </div>
+            }
+        </section>
+
+        <section class="card panel admin-order-panel">
+            <h2>Sản phẩm</h2>
+            <div class="table-wrap">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Sản phẩm</th>
+                            <th>SKU</th>
+                            <th>Đơn giá</th>
+                            <th>Số lượng</th>
+                            <th>Thành tiền</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    @foreach (var item in Model.Items)
+                    {
+                        <tr>
+                            <td>
+                                <div class="product-cell">
+                                    @if (!string.IsNullOrWhiteSpace(item.ImageUrl))
+                                    {
+                                        <img class="product-thumb product-thumb--large"
+                                             src="@item.ImageUrl"
+                                             alt="@item.ProductName" />
+                                    }
+                                    <span class="stacked-text">
+                                        <strong>@item.ProductName</strong>
+                                        <small>@item.VariantName</small>
+                                    </span>
+                                </div>
+                            </td>
+                            <td>@item.Sku</td>
+                            <td>@item.UnitPrice.ToString("N0", culture) @Model.CurrencyCode</td>
+                            <td>@item.Quantity</td>
+                            <td>
+                                <strong>
+                                    @item.LineTotal.ToString("N0", culture)
+                                    @Model.CurrencyCode
+                                </strong>
+                            </td>
+                        </tr>
+                    }
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </div>
+
+    <aside class="card panel admin-order-side">
+        <h2>Tổng thanh toán</h2>
+        <dl class="admin-order-totals">
+            <div><dt>Tạm tính</dt><dd>@Model.Subtotal.ToString("N0", culture) @Model.CurrencyCode</dd></div>
+            <div><dt>Vận chuyển</dt><dd>@Model.ShippingFee.ToString("N0", culture) @Model.CurrencyCode</dd></div>
+            <div><dt>Giảm giá</dt><dd>-@Model.DiscountAmount.ToString("N0", culture) @Model.CurrencyCode</dd></div>
+            <div class="is-total"><dt>Tổng cộng</dt><dd>@Model.TotalAmount.ToString("N0", culture) @Model.CurrencyCode</dd></div>
+        </dl>
+
+        @if (Model.NextStatusOptions.Count > 0)
+        {
+            <form asp-action="ChangeStatus"
+                  method="post"
+                  class="admin-order-status-form">
+                <input type="hidden" name="id" value="@Model.Id" />
+
+                <label>
+                    <span>Chuyển trạng thái</span>
+                    <select class="form-select"
+                            name="nextStatus"
+                            required
+                            data-order-next-status>
+                        <option value="">Chọn trạng thái</option>
+                        @foreach (var option in Model.NextStatusOptions)
+                        {
+                            <option value="@option.Value">@option.Text</option>
+                        }
+                    </select>
+                </label>
+
+                <label data-cancellation-reason hidden>
+                    <span>Lý do hủy đơn</span>
+                    <textarea class="form-control"
+                              name="cancellationReason"
+                              rows="4"
+                              maxlength="500"></textarea>
+                </label>
+
+                <button class="btn btn-primary"
+                        type="submit">
+                    Cập nhật đơn hàng
+                </button>
+            </form>
+        }
+        else
+        {
+            <p class="admin-order-final">
+                Đơn hàng đã ở trạng thái cuối cùng.
+            </p>
+        }
+    </aside>
+</div>
+
+@section Scripts {
+    <script>
+        (() => {
+            const select = document.querySelector("[data-order-next-status]");
+            const reason = document.querySelector("[data-cancellation-reason]");
+            if (!select || !reason) return;
+
+            const update = () => {
+                const isCancelled = select.value === "6";
+                reason.hidden = !isCancelled;
+                const textarea = reason.querySelector("textarea");
+                if (textarea) textarea.required = isCancelled;
+            };
+
+            select.addEventListener("change", update);
+            update();
+        })();
+    </script>
+}

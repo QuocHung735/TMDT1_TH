@@ -1,0 +1,152 @@
+﻿/* Quản trị đơn hàng */
+.segmented-stats a {
+    color: inherit;
+    text-decoration: none;
+}
+
+.admin-order-empty {
+    padding: 48px;
+    color: var(--text-secondary);
+    text-align: center;
+}
+
+.admin-order-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 350px;
+    align-items: start;
+    gap: 22px;
+}
+
+.admin-order-main {
+    display: grid;
+    gap: 18px;
+}
+
+.admin-order-panel,
+.admin-order-side {
+    padding: 22px;
+}
+
+.admin-order-panel h2,
+.admin-order-side h2 {
+    margin-top: 0;
+}
+
+.admin-order-panel__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 15px;
+}
+
+.admin-order-info,
+.admin-order-totals {
+    margin: 0;
+}
+
+.admin-order-info div,
+.admin-order-totals div {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+}
+
+.admin-order-info dt,
+.admin-order-totals dt {
+    color: var(--text-secondary);
+}
+
+.admin-order-info dd,
+.admin-order-totals dd {
+    margin: 0;
+    text-align: right;
+}
+
+.admin-order-cancel-note {
+    margin-top: 18px;
+    padding: 14px;
+    color: #a13248;
+    background: #fff0f3;
+    border: 1px solid #efbcc6;
+    border-radius: 12px;
+}
+
+.admin-order-side {
+    position: sticky;
+    top: 88px;
+}
+
+.admin-order-totals .is-total {
+    align-items: end;
+    padding-top: 17px;
+    border-bottom: 0;
+}
+
+.admin-order-totals .is-total dd {
+    color: var(--primary);
+    font-size: 20px;
+    font-weight: 800;
+}
+
+.admin-order-status-form {
+    display: grid;
+    gap: 14px;
+    margin-top: 23px;
+    padding-top: 20px;
+    border-top: 1px solid var(--border);
+}
+
+.admin-order-status-form label > span {
+    display: block;
+    margin-bottom: 6px;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.admin-order-status-form textarea {
+    width: 100%;
+    resize: vertical;
+}
+
+.admin-order-final {
+    margin-top: 22px;
+    padding: 14px;
+    color: var(--text-secondary);
+    background: var(--surface-muted);
+    border-radius: 12px;
+}
+
+.profile-menu form {
+    margin: 0;
+}
+
+.profile-menu form button {
+    display: flex;
+    width: 100%;
+    align-items: center;
+    gap: 9px;
+    padding: 9px 11px;
+    color: inherit;
+    background: transparent;
+    border: 0;
+    border-radius: 8px;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+}
+
+.profile-menu form button:hover {
+    background: var(--surface-muted);
+}
+
+@media (max-width: 1050px) {
+    .admin-order-layout {
+        grid-template-columns: 1fr;
+    }
+
+    .admin-order-side {
+        position: static;
+    }
+}

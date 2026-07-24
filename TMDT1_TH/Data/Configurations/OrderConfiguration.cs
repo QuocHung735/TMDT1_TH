@@ -65,8 +65,14 @@ public sealed class OrderConfiguration : IEntityTypeConfiguration<Order>
 
         builder.HasIndex(x => x.OrderNumber).IsUnique();
         builder.HasIndex(x => x.PublicToken).IsUnique();
+        builder.HasIndex(x => x.CustomerUserId);
         builder.HasIndex(x => new { x.Status, x.CreatedAt });
         builder.HasIndex(x => new { x.CustomerPhone, x.CreatedAt });
+
+        builder.HasOne(x => x.CustomerUser)
+            .WithMany(x => x.Orders)
+            .HasForeignKey(x => x.CustomerUserId)
+            .OnDelete(DeleteBehavior.NoAction);
 
         builder.HasOne(x => x.Market)
             .WithMany()

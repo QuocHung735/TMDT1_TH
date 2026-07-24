@@ -1,20 +1,64 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using TMDT1_TH.Data;
 using TMDT1_TH.Data.Database;
+using TMDT1_TH.Data.Identity;
+using TMDT1_TH.Domain.Identity;
 using TMDT1_TH.Infrastructure.Cart;
 
 var builder = WebApplication.CreateBuilder(args);
 
-var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
-    ?? throw new InvalidOperationException("Chưa cấu hình ConnectionStrings:DefaultConnection trong appsettings.json.");
+var connectionString =
+    builder.Configuration.GetConnectionString("DefaultConnection")
+    ?? throw new InvalidOperationException(
+        "Chưa cấu hình ConnectionStrings:DefaultConnection trong appsettings.json.");
 
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(connectionString, sqlOptions =>
     {
-        // Không bật EnableRetryOnFailure tại đây vì luồng lưu sản phẩm
-        // sử dụng transaction do ứng dụng chủ động tạo.
-        sqlOptions.MigrationsAssembly(typeof(ApplicationDbContext).Assembly.FullName);
+        sqlOptions.MigrationsAssembly(
+            typeof(ApplicationDbContext).Assembly.FullName);
     }));
+
+builder.Services
+    .AddIdentity<ApplicationUser, IdentityRole<int>>(options =>
+    {
+        options.User.RequireUniqueEmail = true;
+        options.Password.RequiredLength = 8;
+        options.Password.RequireDigit = true;
+        options.Password.RequireLowercase = true;
+        options.Password.RequireUppercase = true;
+        options.Password.RequireNonAlphanumeric = true;
+        options.Lockout.AllowedForNewUsers = true;
+        options.Lockout.MaxFailedAccessAttempts = 5;
+        options.Lockout.DefaultLockoutTimeSpan =
+            TimeSpan.FromMinutes(15);
+        options.SignIn.RequireConfirmedAccount = false;
+        options.SignIn.RequireConfirmedEmail = false;
+    })
+    .AddEntityFrameworkStores<ApplicationDbContext>()
+    .AddDefaultTokenProviders();
+
+builder.Services.ConfigureApplicationCookie(options =>
+{
+    options.Cookie.Name = ".MayHome.Identity";
+    options.Cookie.HttpOnly = true;
+    options.Cookie.IsEssential = true;
+    options.Cookie.SameSite = SameSiteMode.Lax;
+    options.Cookie.SecurePolicy =
+        CookieSecurePolicy.SameAsRequest;
+    options.LoginPath = "/tai-khoan/dang-nhap";
+    options.AccessDeniedPath = "/tai-khoan/tu-choi";
+    options.ExpireTimeSpan = TimeSpan.FromDays(14);
+    options.SlidingExpiration = true;
+});
+
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy(
+        "AdminOnly",
+        policy => policy.RequireRole("Admin"));
+});
 
 builder.Services.AddDistributedMemoryCache();
 builder.Services.AddHttpContextAccessor();
@@ -24,7 +68,8 @@ builder.Services.AddSession(options =>
     options.Cookie.HttpOnly = true;
     options.Cookie.IsEssential = true;
     options.Cookie.SameSite = SameSiteMode.Lax;
-    options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
+    options.Cookie.SecurePolicy =
+        CookieSecurePolicy.SameAsRequest;
     options.IdleTimeout = TimeSpan.FromDays(7);
 });
 
@@ -50,11 +95,14 @@ app.UseHttpsRedirection();
 app.UseStaticFiles();
 app.UseRouting();
 app.UseSession();
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllerRoute(
-    name: "areas",
-    pattern: "{area:exists}/{controller=Dashboard}/{action=Index}/{id?}");
+        name: "areas",
+        pattern:
+            "{area:exists}/{controller=Dashboard}/{action=Index}/{id?}")
+    .RequireAuthorization("AdminOnly");
 
 app.MapControllerRoute(
     name: "default",
@@ -62,10 +110,17 @@ app.MapControllerRoute(
 
 app.MapControllers();
 
-// Tự bổ sung các cột/bảng marketplace còn thiếu trước khi controller truy vấn dữ liệu.
-await MarketplaceProductSchemaInstaller.EnsureUpgradedAsync(app.Services, app.Logger);
+await MarketplaceProductSchemaInstaller.EnsureUpgradedAsync(
+    app.Services,
+    app.Logger);
 
-// Cài/cập nhật trigger kiểm tra chồng lịch và ghi lịch sử giá.
-await DatabaseTriggerInstaller.TryInstallAsync(app.Services, app.Logger);
+await DatabaseTriggerInstaller.TryInstallAsync(
+    app.Services,
+    app.Logger);
+
+await IdentitySeeder.SeedAsync(
+    app.Services,
+    app.Configuration,
+    app.Logger);
 
 app.Run();

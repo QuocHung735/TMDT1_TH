@@ -1,0 +1,63 @@
+﻿@model TMDT1_TH.ViewModels.Account.ProfileViewModel
+@{
+    Layout = "_StoreLayout";
+    ViewData["Title"] = "Tài khoản của tôi";
+}
+
+<section class="account-page account-page--profile">
+    <div class="store-container account-profile-layout">
+        <aside class="account-menu">
+            <h2>Tài khoản</h2>
+            <a class="is-active"
+               asp-controller="Account"
+               asp-action="Profile">Thông tin cá nhân</a>
+            <a asp-controller="MyOrders"
+               asp-action="Index">Đơn hàng của tôi</a>
+            <a asp-controller="Account"
+               asp-action="ChangePassword">Đổi mật khẩu</a>
+            @if (User.IsInRole("Admin"))
+            {
+                <a asp-area="Admin"
+                   asp-controller="Dashboard"
+                   asp-action="Index">Trang quản trị</a>
+            }
+        </aside>
+
+        <form asp-action="Profile"
+              method="post"
+              class="account-card">
+            <h1>Thông tin cá nhân</h1>
+
+            @if (TempData["AccountMessage"] is string message)
+            {
+                <div class="account-success">@message</div>
+            }
+
+            <div asp-validation-summary="ModelOnly"
+                 class="account-validation"></div>
+
+            <label class="account-field">
+                <span>@Html.DisplayNameFor(x => x.FullName)</span>
+                <input asp-for="FullName" />
+                <small asp-validation-for="FullName"></small>
+            </label>
+
+            <label class="account-field">
+                <span>@Html.DisplayNameFor(x => x.Email)</span>
+                <input asp-for="Email" readonly />
+            </label>
+
+            <label class="account-field">
+                <span>@Html.DisplayNameFor(x => x.PhoneNumber)</span>
+                <input asp-for="PhoneNumber"
+                       autocomplete="tel" />
+                <small asp-validation-for="PhoneNumber"></small>
+            </label>
+
+            <button class="store-button store-button--primary"
+                    type="submit">
+                Lưu thay đổi
+            </button>
+        </form>
+    </div>
+</section>

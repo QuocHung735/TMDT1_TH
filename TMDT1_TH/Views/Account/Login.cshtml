@@ -1,0 +1,68 @@
+﻿@model TMDT1_TH.ViewModels.Account.LoginViewModel
+@{
+    Layout = "_StoreLayout";
+    ViewData["Title"] = "Đăng nhập";
+}
+
+<section class="account-page">
+    <div class="store-container account-shell">
+        <div class="account-intro">
+            <span class="eyebrow">TÀI KHOẢN MÂY HOME</span>
+            <h1>Đăng nhập để theo dõi đơn hàng</h1>
+            <p>
+                Giỏ hàng vẫn được giữ trong trình duyệt. Sau khi đăng nhập,
+                bạn có thể tiếp tục thanh toán và xem toàn bộ trạng thái đơn.
+            </p>
+            <ul>
+                <li>Xem lịch sử và chi tiết từng đơn hàng.</li>
+                <li>Theo dõi xác nhận, chuẩn bị và giao hàng.</li>
+                <li>Thông tin người nhận được điền sẵn khi thanh toán.</li>
+            </ul>
+        </div>
+
+        <form asp-action="Login"
+              method="post"
+              class="account-card">
+            <input asp-for="ReturnUrl" type="hidden" />
+
+            <h2>Đăng nhập</h2>
+            <p class="account-card__lead">
+                Sử dụng email và mật khẩu đã đăng ký.
+            </p>
+
+            <div asp-validation-summary="ModelOnly"
+                 class="account-validation"></div>
+
+            <label class="account-field">
+                <span>@Html.DisplayNameFor(x => x.Email)</span>
+                <input asp-for="Email"
+                       autocomplete="email"
+                       autofocus />
+                <small asp-validation-for="Email"></small>
+            </label>
+
+            <label class="account-field">
+                <span>@Html.DisplayNameFor(x => x.Password)</span>
+                <input asp-for="Password"
+                       autocomplete="current-password" />
+                <small asp-validation-for="Password"></small>
+            </label>
+
+            <label class="account-check">
+                <input asp-for="RememberMe" />
+                <span>@Html.DisplayNameFor(x => x.RememberMe)</span>
+            </label>
+
+            <button class="store-button store-button--primary store-button--full store-button--large"
+                    type="submit">
+                Đăng nhập
+            </button>
+
+            <p class="account-switch">
+                Chưa có tài khoản?
+                <a asp-action="Register"
+                   asp-route-returnUrl="@Model.ReturnUrl">Đăng ký ngay</a>
+            </p>
+        </form>
+    </div>
+</section>

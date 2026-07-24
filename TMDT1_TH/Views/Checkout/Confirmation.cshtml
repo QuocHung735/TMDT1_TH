@@ -125,7 +125,17 @@
                 <strong>@Model.TotalAmount.ToString("N0", culture) @Model.CurrencyCode</strong>
             </div>
 
-            <a class="store-button store-button--primary store-button--full"
+            @if (User.Identity?.IsAuthenticated == true)
+            {
+                <a class="store-button store-button--primary store-button--full"
+                   asp-controller="MyOrders"
+                   asp-action="Details"
+                   asp-route-orderNumber="@Model.OrderNumber">
+                    Theo dõi đơn hàng
+                </a>
+            }
+
+            <a class="store-button store-button--ghost store-button--full"
                asp-controller="Home"
                asp-action="Catalog">Tiếp tục mua sắm</a>
         </aside>

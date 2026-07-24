@@ -1,0 +1,98 @@
+﻿@using System.Globalization
+@model TMDT1_TH.ViewModels.Storefront.CustomerOrderListViewModel
+@{
+    Layout = "_StoreLayout";
+    ViewData["Title"] = "Đơn hàng của tôi";
+    var culture = CultureInfo.GetCultureInfo("vi-VN");
+}
+
+<section class="account-page account-page--orders">
+    <div class="store-container">
+        <div class="order-page-heading">
+            <div>
+                <span class="eyebrow">TÀI KHOẢN</span>
+                <h1>Đơn hàng của tôi</h1>
+                <p>Theo dõi trạng thái các đơn đã đặt bằng tài khoản này.</p>
+            </div>
+            <a class="store-button store-button--ghost"
+               asp-controller="Home"
+               asp-action="Catalog">Tiếp tục mua sắm</a>
+        </div>
+
+        @if (TempData["AccountMessage"] is string message)
+        {
+            <div class="account-success">@message</div>
+        }
+
+        @if (Model.Items.Count == 0)
+        {
+            <div class="store-empty">
+                <h3>Chưa có đơn hàng</h3>
+                <p>
+                    Các đơn mới được đặt sau khi đăng nhập sẽ xuất hiện tại đây.
+                </p>
+                <a class="store-button store-button--primary"
+                   asp-controller="Home"
+                   asp-action="Catalog">Khám phá sản phẩm</a>
+            </div>
+        }
+        else
+        {
+            <div class="customer-orders">
+                @foreach (var order in Model.Items)
+                {
+                    <article class="customer-order-card">
+                        <div class="customer-order-card__head">
+                            <div>
+                                <small>Mã đơn</small>
+                                <strong>@order.OrderNumber</strong>
+                            </div>
+                            <span class="customer-order-status @order.StatusClass">
+                                @order.StatusName
+                            </span>
+                        </div>
+
+                        <div class="customer-order-card__body">
+                            <div class="customer-order-thumb">
+                                @if (!string.IsNullOrWhiteSpace(order.FirstImageUrl))
+                                {
+                                    <img src="@order.FirstImageUrl"
+                                         alt="@order.FirstProductName" />
+                                }
+                                else
+                                {
+                                    <span>Mây Home</span>
+                                }
+                            </div>
+                            <div>
+                                <h2>@order.FirstProductName</h2>
+                                @if (order.AdditionalItemCount > 0)
+                                {
+                                    <p>Và @order.AdditionalItemCount sản phẩm khác</p>
+                                }
+                                <small>
+                                    Đặt lúc @order.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm")
+                                    · @order.TotalQuantity sản phẩm
+                                </small>
+                            </div>
+                            <div class="customer-order-card__total">
+                                <small>Tổng thanh toán</small>
+                                <strong>
+                                    @order.TotalAmount.ToString("N0", culture)
+                                    @order.CurrencyCode
+                                </strong>
+                            </div>
+                        </div>
+
+                        <div class="customer-order-card__foot">
+                            <a asp-action="Details"
+                               asp-route-orderNumber="@order.OrderNumber">
+                                Xem chi tiết và theo dõi
+                            </a>
+                        </div>
+                    </article>
+                }
+            </div>
+        }
+    </div>
+</section>

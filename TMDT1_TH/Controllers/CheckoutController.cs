@@ -1,22 +1,28 @@
 ﻿using System.Data;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using TMDT1_TH.Data;
 using TMDT1_TH.Domain.Entities;
 using TMDT1_TH.Domain.Enums;
 using TMDT1_TH.Infrastructure.Cart;
+using TMDT1_TH.Domain.Identity;
 using TMDT1_TH.ViewModels.Storefront;
 
 namespace TMDT1_TH.Controllers;
 
+[Authorize]
 [Route("thanh-toan")]
 public sealed class CheckoutController(
     ApplicationDbContext db,
     CartSessionStore cartStore,
+    UserManager<ApplicationUser> userManager,
     ILogger<CheckoutController> logger) : Controller
 {
     private readonly ApplicationDbContext _db = db;
     private readonly CartSessionStore _cartStore = cartStore;
+    private readonly UserManager<ApplicationUser> _userManager = userManager;
     private readonly ILogger<CheckoutController> _logger = logger;
 
     [HttpGet("")]
@@ -37,7 +43,18 @@ public sealed class CheckoutController(
             return RedirectToAction("Index", "Cart");
         }
 
-        return View(BuildCheckoutViewModel(new StoreCheckoutViewModel(), resolution));
+        var user = await _userManager.GetUserAsync(User);
+        if (user is null)
+            return Challenge();
+
+        var checkoutModel = new StoreCheckoutViewModel
+        {
+            CustomerName = user.FullName,
+            CustomerEmail = user.Email,
+            CustomerPhone = user.PhoneNumber ?? string.Empty
+        };
+
+        return View(BuildCheckoutViewModel(checkoutModel, resolution));
     }
 
     [HttpPost("")]
@@ -65,6 +82,10 @@ public sealed class CheckoutController(
                 "Index",
                 BuildCheckoutViewModel(model, invalidResolution));
         }
+
+        var currentUser = await _userManager.GetUserAsync(User);
+        if (currentUser is null || !currentUser.IsActive)
+            return Challenge();
 
         try
         {
@@ -106,6 +127,7 @@ public sealed class CheckoutController(
             {
                 OrderNumber = await CreateOrderNumberAsync(),
                 PublicToken = Guid.NewGuid(),
+                CustomerUserId = currentUser.Id,
                 MarketId = resolution.MarketId,
                 CurrencyCode = resolution.CurrencyCode,
                 Status = OrderStatus.Pending,
@@ -127,7 +149,9 @@ public sealed class CheckoutController(
                 UserAgent = string.IsNullOrWhiteSpace(userAgent)
                     ? null
                     : userAgent[..Math.Min(userAgent.Length, 500)],
-                CreatedBy = "Storefront"
+                CreatedBy = currentUser.Email
+                    ?? currentUser.UserName
+                    ?? "Storefront"
             };
 
             foreach (var line in resolution.Items)
@@ -145,7 +169,9 @@ public sealed class CheckoutController(
                     UnitPrice = line.UnitPrice,
                     Quantity = line.Quantity,
                     LineTotal = line.LineTotal,
-                    CreatedBy = "Storefront"
+                    CreatedBy = currentUser.Email
+                        ?? currentUser.UserName
+                        ?? "Storefront"
                 });
             }
 
@@ -186,6 +212,7 @@ public sealed class CheckoutController(
         }
     }
 
+    [AllowAnonymous]
     [HttpGet("/don-hang/{orderNumber}/{publicToken:guid}")]
     public async Task<IActionResult> Confirmation(
         string orderNumber,

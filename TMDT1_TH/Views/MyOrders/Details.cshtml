@@ -1,0 +1,152 @@
+﻿@using System.Globalization
+@model TMDT1_TH.ViewModels.Storefront.CustomerOrderDetailsViewModel
+@{
+    Layout = "_StoreLayout";
+    ViewData["Title"] = $"Đơn hàng {Model.OrderNumber}";
+    var culture = CultureInfo.GetCultureInfo("vi-VN");
+    var steps = new[]
+    {
+        "Đã đặt hàng",
+        "Đã xác nhận",
+        "Đang chuẩn bị",
+        "Đang giao",
+        "Hoàn thành"
+    };
+}
+
+<section class="account-page account-page--orders">
+    <div class="store-container">
+        <div class="order-page-heading">
+            <div>
+                <a class="order-back-link"
+                   asp-action="Index">← Tất cả đơn hàng</a>
+                <h1>@Model.OrderNumber</h1>
+                <p>
+                    Đặt lúc
+                    @Model.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm")
+                </p>
+            </div>
+            <span class="customer-order-status @Model.StatusClass">
+                @Model.StatusName
+            </span>
+        </div>
+
+        @if (Model.IsCancelled)
+        {
+            <div class="order-cancelled-box">
+                <strong>Đơn hàng đã bị hủy</strong>
+                <p>
+                    @(string.IsNullOrWhiteSpace(Model.CancellationReason)
+                        ? "Không có lý do hủy được ghi nhận."
+                        : Model.CancellationReason)
+                </p>
+            </div>
+        }
+        else
+        {
+            <section class="order-tracking-card">
+                <h2>Tiến trình đơn hàng</h2>
+                <div class="order-tracking">
+                    @for (var index = 0; index < steps.Length; index++)
+                    {
+                        var step = index + 1;
+                        var active = step <= Model.ProgressStep;
+                        <div class="order-track-step @(active ? "is-active" : "")">
+                            <span>@(active ? "✓" : step)</span>
+                            <strong>@steps[index]</strong>
+                        </div>
+                    }
+                </div>
+            </section>
+        }
+
+        <div class="customer-order-layout">
+            <div class="customer-order-main">
+                <section class="checkout-card">
+                    <h2>Sản phẩm</h2>
+                    <div class="confirmation-items">
+                        @foreach (var item in Model.Items)
+                        {
+                            <article class="checkout-item">
+                                <div class="checkout-item__image">
+                                    @if (!string.IsNullOrWhiteSpace(item.ImageUrl))
+                                    {
+                                        <img src="@item.ImageUrl"
+                                             alt="@item.ProductName" />
+                                    }
+                                    else
+                                    {
+                                        <span>Mây Home</span>
+                                    }
+                                </div>
+                                <div>
+                                    <b>@item.ProductName</b>
+                                    @if (!string.IsNullOrWhiteSpace(item.VariantName))
+                                    {
+                                        <small>@item.VariantName</small>
+                                    }
+                                    <small>@item.Sku · SL @item.Quantity @item.Unit</small>
+                                </div>
+                                <strong>
+                                    @item.LineTotal.ToString("N0", culture)
+                                    @Model.CurrencyCode
+                                </strong>
+                            </article>
+                        }
+                    </div>
+                </section>
+
+                <section class="checkout-card">
+                    <h2>Thông tin nhận hàng</h2>
+                    <dl class="order-recipient">
+                        <div><dt>Người nhận</dt><dd>@Model.CustomerName</dd></div>
+                        <div><dt>Điện thoại</dt><dd>@Model.CustomerPhone</dd></div>
+                        @if (!string.IsNullOrWhiteSpace(Model.CustomerEmail))
+                        {
+                            <div><dt>Email</dt><dd>@Model.CustomerEmail</dd></div>
+                        }
+                        <div><dt>Địa chỉ</dt><dd>@Model.ShippingAddress</dd></div>
+                        @if (!string.IsNullOrWhiteSpace(Model.CustomerNote))
+                        {
+                            <div><dt>Ghi chú</dt><dd>@Model.CustomerNote</dd></div>
+                        }
+                    </dl>
+                </section>
+            </div>
+
+            <aside class="checkout-summary">
+                <h2>Thanh toán</h2>
+                <dl class="order-recipient">
+                    <div><dt>Phương thức</dt><dd>@Model.PaymentMethodName</dd></div>
+                    <div><dt>Trạng thái</dt><dd>@Model.PaymentStatusName</dd></div>
+                </dl>
+
+                <dl class="checkout-totals">
+                    <div>
+                        <dt>Tạm tính</dt>
+                        <dd>@Model.Subtotal.ToString("N0", culture) @Model.CurrencyCode</dd>
+                    </div>
+                    <div>
+                        <dt>Vận chuyển</dt>
+                        <dd>@(Model.ShippingFee == 0 ? "Miễn phí" : $"{Model.ShippingFee:N0} {Model.CurrencyCode}")</dd>
+                    </div>
+                    @if (Model.DiscountAmount > 0)
+                    {
+                        <div>
+                            <dt>Giảm giá</dt>
+                            <dd>-@Model.DiscountAmount.ToString("N0", culture) @Model.CurrencyCode</dd>
+                        </div>
+                    }
+                </dl>
+
+                <div class="checkout-total">
+                    <span>Tổng thanh toán</span>
+                    <strong>
+                        @Model.TotalAmount.ToString("N0", culture)
+                        @Model.CurrencyCode
+                    </strong>
+                </div>
+            </aside>
+        </div>
+    </div>
+</section>

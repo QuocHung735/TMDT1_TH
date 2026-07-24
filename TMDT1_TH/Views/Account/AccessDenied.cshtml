@@ -1,0 +1,19 @@
+﻿@{
+    Layout = "_StoreLayout";
+    ViewData["Title"] = "Không có quyền truy cập";
+}
+
+<section class="account-page">
+    <div class="store-container">
+        <div class="access-denied-card">
+            <span>403</span>
+            <h1>Bạn không có quyền truy cập trang này</h1>
+            <p>
+                Khu vực quản trị chỉ dành cho tài khoản có vai trò Admin.
+            </p>
+            <a class="store-button store-button--primary"
+               asp-controller="Home"
+               asp-action="Index">Về trang chủ</a>
+        </div>
+    </div>
+</section>

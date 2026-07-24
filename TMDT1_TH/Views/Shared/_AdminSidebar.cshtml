@@ -1,10 +1,18 @@
-@{
-    var controller = ViewContext.RouteData.Values["controller"]?.ToString() ?? string.Empty;
+﻿@{
+    var controller =
+        ViewContext.RouteData.Values["controller"]?.ToString()
+        ?? string.Empty;
 }
 <aside class="admin-sidebar" data-sidebar>
-    <a class="brand" asp-area="Admin" asp-controller="Dashboard" asp-action="Index" aria-label="Mây Home Commerce">
+    <a class="brand"
+       asp-area="Admin"
+       asp-controller="Dashboard"
+       asp-action="Index"
+       aria-label="Mây Home Commerce">
         <span class="brand__mark">M</span>
-        <span class="brand__text"><strong>Mây Home</strong><small>Gia dụng</small></span>
+        <span class="brand__text">
+            <strong>Mây Home</strong><small>Gia dụng</small>
+        </span>
     </a>
 
     <div class="workspace-chip">
@@ -15,42 +23,65 @@
 
     <nav class="admin-nav" aria-label="Menu quản trị">
         <p class="admin-nav__label">Tổng quan</p>
-        <a class="admin-nav__link @(controller == "Dashboard" ? "is-active" : "")" asp-area="Admin" asp-controller="Dashboard" asp-action="Index">
+        <a class="admin-nav__link @(controller == "Dashboard" ? "is-active" : "")"
+           asp-area="Admin"
+           asp-controller="Dashboard"
+           asp-action="Index">
             <i class="bi bi-grid-1x2"></i><span>Tổng quan</span>
         </a>
 
         <p class="admin-nav__label">Sản phẩm</p>
-        <a class="admin-nav__link @(controller == "Categories" ? "is-active" : "")" asp-area="Admin" asp-controller="Categories" asp-action="Index">
+        <a class="admin-nav__link @(controller == "Categories" ? "is-active" : "")"
+           asp-area="Admin"
+           asp-controller="Categories"
+           asp-action="Index">
             <i class="bi bi-diagram-3"></i><span>Danh mục</span>
         </a>
-        <a class="admin-nav__link @(controller == "Brands" ? "is-active" : "")" asp-area="Admin" asp-controller="Brands" asp-action="Index">
+        <a class="admin-nav__link @(controller == "Brands" ? "is-active" : "")"
+           asp-area="Admin"
+           asp-controller="Brands"
+           asp-action="Index">
             <i class="bi bi-patch-check"></i><span>Thương hiệu</span>
         </a>
-        <a class="admin-nav__link @(controller == "Products" ? "is-active" : "")" asp-area="Admin" asp-controller="Products" asp-action="Index">
+        <a class="admin-nav__link @(controller == "Products" ? "is-active" : "")"
+           asp-area="Admin"
+           asp-controller="Products"
+           asp-action="Index">
             <i class="bi bi-box-seam"></i><span>Sản phẩm</span>
         </a>
 
         <p class="admin-nav__label">Kinh doanh</p>
-        <a class="admin-nav__link @(controller == "Pricing" ? "is-active" : "")" asp-area="Admin" asp-controller="Pricing" asp-action="Index">
+        <a class="admin-nav__link @(controller == "Orders" ? "is-active" : "")"
+           asp-area="Admin"
+           asp-controller="Orders"
+           asp-action="Index">
+            <i class="bi bi-receipt"></i><span>Đơn hàng</span>
+        </a>
+        <a class="admin-nav__link @(controller == "Pricing" ? "is-active" : "")"
+           asp-area="Admin"
+           asp-controller="Pricing"
+           asp-action="Index">
             <i class="bi bi-tags"></i><span>Quản lý giá</span>
         </a>
-        <a class="admin-nav__link @(controller == "Markets" ? "is-active" : "")" asp-area="Admin" asp-controller="Markets" asp-action="Index">
+        <a class="admin-nav__link @(controller == "Markets" ? "is-active" : "")"
+           asp-area="Admin"
+           asp-controller="Markets"
+           asp-action="Index">
             <i class="bi bi-globe-asia-australia"></i><span>Thị trường</span>
         </a>
 
-        <p class="admin-nav__label">Hệ thống</p>
-        <a class="admin-nav__link" href="#">
-            <i class="bi bi-people"></i><span>Nhân sự & quyền</span>
-        </a>
-        <a class="admin-nav__link" href="#">
-            <i class="bi bi-gear"></i><span>Cài đặt</span>
+        <p class="admin-nav__label">Cửa hàng</p>
+        <a class="admin-nav__link"
+           asp-area=""
+           asp-controller="Home"
+           asp-action="Index">
+            <i class="bi bi-shop-window"></i><span>Xem cửa hàng</span>
         </a>
     </nav>
 
     <div class="sidebar-help">
-        <span class="sidebar-help__icon"><i class="bi bi-stars"></i></span>
-        <strong>Trợ giúp nhanh</strong>
-        <p>Xem hướng dẫn quản lý đồ gia dụng, biến thể và giá.</p>
-        <button type="button" class="btn btn-light btn-sm">Mở hướng dẫn</button>
+        <span class="sidebar-help__icon"><i class="bi bi-shield-check"></i></span>
+        <strong>Khu vực Admin</strong>
+        <p>Chỉ tài khoản thuộc vai trò Admin mới truy cập được.</p>
     </div>
 </aside>

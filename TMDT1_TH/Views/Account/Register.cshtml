@@ -1,0 +1,86 @@
+﻿@model TMDT1_TH.ViewModels.Account.RegisterViewModel
+@{
+    Layout = "_StoreLayout";
+    ViewData["Title"] = "Đăng ký";
+}
+
+<section class="account-page">
+    <div class="store-container account-shell">
+        <div class="account-intro">
+            <span class="eyebrow">THÀNH VIÊN MÂY HOME</span>
+            <h1>Tạo tài khoản khách hàng</h1>
+            <p>
+                Tài khoản mới luôn được gán vai trò Customer.
+                Người đăng ký không thể tự cấp quyền Admin.
+            </p>
+            <div class="account-security-note">
+                Mật khẩu cần ít nhất 8 ký tự, có chữ hoa, chữ thường,
+                chữ số và ký tự đặc biệt.
+            </div>
+        </div>
+
+        <form asp-action="Register"
+              method="post"
+              class="account-card">
+            <input asp-for="ReturnUrl" type="hidden" />
+
+            <h2>Đăng ký</h2>
+            <p class="account-card__lead">
+                Thông tin này sẽ được điền sẵn khi đặt hàng.
+            </p>
+
+            <div asp-validation-summary="ModelOnly"
+                 class="account-validation"></div>
+
+            <label class="account-field">
+                <span>@Html.DisplayNameFor(x => x.FullName)</span>
+                <input asp-for="FullName"
+                       autocomplete="name"
+                       autofocus />
+                <small asp-validation-for="FullName"></small>
+            </label>
+
+            <label class="account-field">
+                <span>@Html.DisplayNameFor(x => x.Email)</span>
+                <input asp-for="Email"
+                       autocomplete="email" />
+                <small asp-validation-for="Email"></small>
+            </label>
+
+            <label class="account-field">
+                <span>@Html.DisplayNameFor(x => x.PhoneNumber)</span>
+                <input asp-for="PhoneNumber"
+                       autocomplete="tel"
+                       inputmode="tel" />
+                <small asp-validation-for="PhoneNumber"></small>
+            </label>
+
+            <div class="account-grid">
+                <label class="account-field">
+                    <span>@Html.DisplayNameFor(x => x.Password)</span>
+                    <input asp-for="Password"
+                           autocomplete="new-password" />
+                    <small asp-validation-for="Password"></small>
+                </label>
+
+                <label class="account-field">
+                    <span>@Html.DisplayNameFor(x => x.ConfirmPassword)</span>
+                    <input asp-for="ConfirmPassword"
+                           autocomplete="new-password" />
+                    <small asp-validation-for="ConfirmPassword"></small>
+                </label>
+            </div>
+
+            <button class="store-button store-button--primary store-button--full store-button--large"
+                    type="submit">
+                Tạo tài khoản
+            </button>
+
+            <p class="account-switch">
+                Đã có tài khoản?
+                <a asp-action="Login"
+                   asp-route-returnUrl="@Model.ReturnUrl">Đăng nhập</a>
+            </p>
+        </form>
+    </div>
+</section>
