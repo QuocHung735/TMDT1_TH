@@ -2001,6 +2001,14 @@ public class ProductsController : Controller
 
     private static string GetDatabaseMessage(DbUpdateException exception)
     {
+        var databaseMessage = exception.InnerException?.Message ?? exception.Message;
+        if (databaseMessage.Contains(
+                "UX_Products_BrandId_ModelNumber",
+                StringComparison.OrdinalIgnoreCase))
+        {
+            return "Mã model đã tồn tại trong cùng thương hiệu. Vui lòng tải lại trang và thử lưu lại.";
+        }
+
         var message = exception.InnerException?.Message ?? exception.Message;
         if (message.Contains("IX_Products_Sku", StringComparison.OrdinalIgnoreCase))
             return "Mã sản phẩm đã tồn tại.";

@@ -1,4 +1,4 @@
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using TMDT1_TH.Domain.Entities;
 
@@ -43,6 +43,12 @@ public class ProductConfiguration : IEntityTypeConfiguration<Product>
         builder.HasIndex(x => x.Sku)
             .IsUnique()
             .HasFilter("[IsDeleted] = 0");
+
+        builder.HasIndex(x => new { x.BrandId, x.ModelNumber })
+            .IsUnique()
+            .HasFilter("[ModelNumber] IS NOT NULL AND [IsDeleted] = 0")
+            .HasDatabaseName("UX_Products_BrandId_ModelNumber");
+
         builder.HasIndex(x => new { x.CategoryId, x.Status });
         builder.HasIndex(x => new { x.BrandId, x.Status });
         builder.HasQueryFilter(x => !x.IsDeleted);
