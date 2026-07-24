@@ -77,6 +77,7 @@ builder.Services.AddSession(options =>
 builder.Services.AddScoped<CartSessionStore>();
 builder.Services.AddScoped<MultiMarketPriceFilter>();
 builder.Services.AddScoped<PromotionService>();
+builder.Services.AddScoped<PromotionCartPreviewResolver>();
 builder.Services.AddControllersWithViews(options =>
 {
     options.Filters.AddService<MultiMarketPriceFilter>();
@@ -148,5 +149,6 @@ await IdentitySeeder.SeedAsync(
     app.Logger);
 
 app.Run();
+
 
 

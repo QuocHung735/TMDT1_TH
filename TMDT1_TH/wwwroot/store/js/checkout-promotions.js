@@ -50,6 +50,8 @@
         Number(
             discountOutput.dataset.discount || 0);
 
+    let appliedCode = null;
+
     const formatMoney = value =>
         new Intl.NumberFormat("vi-VN")
             .format(Math.max(0, value));
@@ -64,6 +66,9 @@
     };
 
     const updateTotals = () => {
+        discountOutput.dataset.discount =
+            String(currentDiscount);
+
         discountOutput.textContent =
             currentDiscount > 0
                 ? `- ${formatMoney(
@@ -75,6 +80,18 @@
                 subtotal +
                 shippingFee() -
                 currentDiscount)} ${currency}`;
+    };
+
+    const setDiscount = value => {
+        const parsed = Number(value || 0);
+
+        currentDiscount =
+            Number.isFinite(parsed) &&
+            parsed > 0
+                ? parsed
+                : 0;
+
+        updateTotals();
     };
 
     const setMessage = (
@@ -93,21 +110,23 @@
             success === false);
     };
 
-    const appendCartLines = body => {
-        document
-            .querySelectorAll(
-                "[data-promotion-product-id]")
-            .forEach(item => {
-                body.append(
-                    "productIds",
-                    item.dataset
-                        .promotionProductId);
+    const readResponse = async response => {
+        const contentType =
+            response.headers.get(
+                "content-type") || "";
 
-                body.append(
-                    "lineTotals",
-                    item.dataset
-                        .promotionLineTotal);
-            });
+        if (contentType.includes(
+                "application/json")) {
+            return await response.json();
+        }
+
+        return {
+            message:
+                response.status === 401 ||
+                response.status === 403
+                    ? "Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại."
+                    : "Không thể kiểm tra mã khuyến mãi lúc này."
+        };
     };
 
     const apply = async () => {
@@ -119,20 +138,20 @@
         codeInput.value = code;
 
         if (!code) {
-            currentDiscount = 0;
+            appliedCode = null;
+            setDiscount(0);
 
             setMessage(
                 "Nhập mã khuyến mãi để áp dụng.",
                 false);
 
-            updateTotals();
             return;
         }
 
         applyButton.disabled = true;
 
         setMessage(
-            "Đang kiểm tra sản phẩm đủ điều kiện...",
+            "Đang kiểm tra giỏ hàng và sản phẩm đủ điều kiện...",
             null);
 
         try {
@@ -140,7 +159,6 @@
                 new URLSearchParams();
 
             body.set("code", code);
-            appendCartLines(body);
 
             const response =
                 await fetch(endpoint, {
@@ -155,7 +173,7 @@
                 });
 
             const data =
-                await response.json();
+                await readResponse(response);
 
             if (!response.ok) {
                 throw new Error(
@@ -163,9 +181,9 @@
                     "Mã khuyến mãi không hợp lệ.");
             }
 
-            currentDiscount =
-                Number(
-                    data.discountAmount || 0);
+            appliedCode = code;
+            setDiscount(
+                data.discountAmount || 0);
 
             setMessage(
                 `${data.message} Giá trị hàng đủ điều kiện: ` +
@@ -173,18 +191,15 @@
                     Number(
                         data.eligibleSubtotal || 0))} ${currency}.`,
                 true);
-
-            updateTotals();
         }
         catch (error) {
-            currentDiscount = 0;
+            appliedCode = null;
+            setDiscount(0);
 
             setMessage(
                 error.message ||
                 "Không thể kiểm tra mã khuyến mãi.",
                 false);
-
-            updateTotals();
         }
         finally {
             applyButton.disabled = false;
@@ -204,6 +219,18 @@
                     .replace(
                         /[^A-Z0-9-]/g,
                         "");
+
+            if (appliedCode !== null &&
+                codeInput.value !== appliedCode) {
+                appliedCode = null;
+                setDiscount(0);
+
+                setMessage(
+                    codeInput.value
+                        ? "Mã đã thay đổi. Bấm Áp dụng để kiểm tra lại."
+                        : "Đã bỏ mã khuyến mãi.",
+                    null);
+            }
         });
 
     form.querySelectorAll(
@@ -217,6 +244,6 @@
         apply();
     }
     else {
-        updateTotals();
+        setDiscount(0);
     }
 })();

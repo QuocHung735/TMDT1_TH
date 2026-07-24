@@ -238,9 +238,7 @@
             <div class="checkout-items">
                 @foreach (var item in Model.Items)
                 {
-                    <article class="checkout-item"
-                             data-promotion-product-id="@item.ProductId"
-                             data-promotion-line-total="@item.LineTotal.ToString("0.##", invariant)">
+                    <article class="checkout-item">
                         <div class="checkout-item__image">
                             @if (!string.IsNullOrWhiteSpace(item.ImageUrl))
                             {
@@ -369,6 +367,10 @@
                 document.querySelector(
                     "[data-checkout-total]");
 
+            const discountOutput =
+                document.querySelector(
+                    "[data-checkout-discount]");
+
             const formatMoney = value =>
                 new Intl.NumberFormat("vi-VN")
                     .format(value);
@@ -402,8 +404,17 @@
                 }
 
                 if (totalOutput) {
+                    const discount =
+                        Number(
+                            discountOutput
+                                ?.dataset
+                                .discount || 0);
+
                     totalOutput.textContent =
-                        `${formatMoney(subtotal + fee)} ${currency}`;
+                        `${formatMoney(
+                            subtotal +
+                            fee -
+                            discount)} ${currency}`;
                 }
             };
 
@@ -476,4 +487,5 @@
         color: #b53d54;
     }
 </style>
+
 
