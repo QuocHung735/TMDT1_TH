@@ -20,7 +20,8 @@ public sealed class PromotionCheckoutController(
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Preview(
         string? code,
-        decimal subtotal)
+        List<int>? productIds,
+        List<decimal>? lineTotals)
     {
         var marketId = await _db.Markets
             .AsNoTracking()
@@ -39,10 +40,22 @@ public sealed class PromotionCheckoutController(
             });
         }
 
+        var lines =
+            BuildLines(productIds, lineTotals);
+
+        if (lines.Count == 0)
+        {
+            return BadRequest(new
+            {
+                message =
+                    "Không xác định được sản phẩm trong giỏ hàng."
+            });
+        }
+
         var result =
             await _promotionService.ResolveAsync(
                 code,
-                subtotal,
+                lines,
                 marketId.Value,
                 StorePriceClock.Now);
 
@@ -58,9 +71,51 @@ public sealed class PromotionCheckoutController(
         {
             promotionName = result.Name,
             code = result.Code,
-            discountAmount = result.DiscountAmount,
+            scopeName = result.ScopeName,
+            eligibleSubtotal =
+                result.EligibleSubtotal,
+            discountAmount =
+                result.DiscountAmount,
             message =
-                $"Đã áp dụng {result.Name}."
+                $"Đã áp dụng {result.Name} cho " +
+                $"{result.ScopeName.ToLowerInvariant()}."
         });
+    }
+
+    private static List<PromotionCartLine> BuildLines(
+        IReadOnlyList<int>? productIds,
+        IReadOnlyList<decimal>? lineTotals)
+    {
+        if (productIds is null ||
+            lineTotals is null)
+        {
+            return new List<PromotionCartLine>();
+        }
+
+        var count =
+            Math.Min(
+                productIds.Count,
+                lineTotals.Count);
+
+        var lines =
+            new List<PromotionCartLine>();
+
+        for (var index = 0;
+             index < count;
+             index++)
+        {
+            if (productIds[index] <= 0 ||
+                lineTotals[index] <= 0)
+            {
+                continue;
+            }
+
+            lines.Add(
+                new PromotionCartLine(
+                    productIds[index],
+                    lineTotals[index]));
+        }
+
+        return lines;
     }
 }

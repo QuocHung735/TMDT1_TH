@@ -1460,9 +1460,7 @@ namespace TMDT1_TH.Migrations
                         .HasColumnType("nvarchar(200)");
 
                     b.Property<int>("ScopeType")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int")
-                        .HasDefaultValue(1);
+                        .HasColumnType("int");
 
                     b.Property<DateTime>("StartsAt")
                         .HasColumnType("datetime2");

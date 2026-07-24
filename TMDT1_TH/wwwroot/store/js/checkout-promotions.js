@@ -83,6 +83,7 @@
         if (!message) return;
 
         message.textContent = text || "";
+
         message.classList.toggle(
             "is-success",
             success === true);
@@ -90,6 +91,23 @@
         message.classList.toggle(
             "is-error",
             success === false);
+    };
+
+    const appendCartLines = body => {
+        document
+            .querySelectorAll(
+                "[data-promotion-product-id]")
+            .forEach(item => {
+                body.append(
+                    "productIds",
+                    item.dataset
+                        .promotionProductId);
+
+                body.append(
+                    "lineTotals",
+                    item.dataset
+                        .promotionLineTotal);
+            });
     };
 
     const apply = async () => {
@@ -102,16 +120,19 @@
 
         if (!code) {
             currentDiscount = 0;
+
             setMessage(
                 "Nhập mã khuyến mãi để áp dụng.",
                 false);
+
             updateTotals();
             return;
         }
 
         applyButton.disabled = true;
+
         setMessage(
-            "Đang kiểm tra mã...",
+            "Đang kiểm tra sản phẩm đủ điều kiện...",
             null);
 
         try {
@@ -119,9 +140,7 @@
                 new URLSearchParams();
 
             body.set("code", code);
-            body.set(
-                "subtotal",
-                String(subtotal));
+            appendCartLines(body);
 
             const response =
                 await fetch(endpoint, {
@@ -149,8 +168,10 @@
                     data.discountAmount || 0);
 
             setMessage(
-                data.message ||
-                "Đã áp dụng mã khuyến mãi.",
+                `${data.message} Giá trị hàng đủ điều kiện: ` +
+                `${formatMoney(
+                    Number(
+                        data.eligibleSubtotal || 0))} ${currency}.`,
                 true);
 
             updateTotals();
@@ -181,12 +202,8 @@
                 codeInput.value
                     .toUpperCase()
                     .replace(
-                        /[^A-Z0-9_-]/g,
+                        /[^A-Z0-9-]/g,
                         "");
-
-            currentDiscount = 0;
-            setMessage("", null);
-            updateTotals();
         });
 
     form.querySelectorAll(

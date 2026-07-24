@@ -25,9 +25,6 @@ public class ApplicationDbContext(
     public DbSet<PriceHistory> PriceHistories => Set<PriceHistory>();
     public DbSet<Promotion> Promotions => Set<Promotion>();
     public DbSet<PromotionMarket> PromotionMarkets => Set<PromotionMarket>();
-    public DbSet<PromotionProduct> PromotionProducts => Set<PromotionProduct>();
-    public DbSet<PromotionCategory> PromotionCategories => Set<PromotionCategory>();
-    public DbSet<PromotionBrand> PromotionBrands => Set<PromotionBrand>();
     public DbSet<Order> Orders => Set<Order>();
     public DbSet<OrderItem> OrderItems => Set<OrderItem>();
     public DbSet<ProductReview> ProductReviews => Set<ProductReview>();
@@ -80,5 +77,4 @@ public class ApplicationDbContext(
         }
     }
 }
-
 

@@ -3,17 +3,13 @@
 @{
     ViewData["Title"] = "Khuyến mãi";
     ViewData["Description"] =
-        "Quản lý mã giảm giá, điều kiện đơn hàng, thời gian và thị trường áp dụng.";
+        "Quản lý mã giảm giá, phạm vi sản phẩm, điều kiện, thị trường và thời gian áp dụng.";
 
     var modalClass =
-        Model.OpenFormModal
-            ? "is-open"
-            : string.Empty;
+        Model.OpenFormModal ? "is-open" : string.Empty;
 
     var modalHidden =
-        Model.OpenFormModal
-            ? "false"
-            : "true";
+        Model.OpenFormModal ? "false" : "true";
 
     var formTitle =
         Model.Form.IsEdit
@@ -39,65 +35,32 @@
 
 <section class="pricing-overview">
     <article class="pricing-overview__card">
-        <span class="tone-purple">
-            <i class="bi bi-ticket-perforated"></i>
-        </span>
-        <div>
-            <small>Đang áp dụng</small>
-            <strong>@Model.ActiveCount</strong>
-            <em>mã còn hiệu lực</em>
-        </div>
+        <span class="tone-purple"><i class="bi bi-ticket-perforated"></i></span>
+        <div><small>Đang áp dụng</small><strong>@Model.ActiveCount</strong><em>mã còn hiệu lực</em></div>
     </article>
-
     <article class="pricing-overview__card">
-        <span class="tone-mint">
-            <i class="bi bi-calendar-plus"></i>
-        </span>
-        <div>
-            <small>Sắp áp dụng</small>
-            <strong>@Model.UpcomingCount</strong>
-            <em>chương trình đã lên lịch</em>
-        </div>
+        <span class="tone-mint"><i class="bi bi-calendar-plus"></i></span>
+        <div><small>Sắp áp dụng</small><strong>@Model.UpcomingCount</strong><em>đã lên lịch</em></div>
     </article>
-
     <article class="pricing-overview__card">
-        <span class="tone-amber">
-            <i class="bi bi-calendar-x"></i>
-        </span>
-        <div>
-            <small>Hết hạn</small>
-            <strong>@Model.ExpiredCount</strong>
-            <em>có thể dùng làm lịch sử</em>
-        </div>
+        <span class="tone-amber"><i class="bi bi-calendar-x"></i></span>
+        <div><small>Hết hạn</small><strong>@Model.ExpiredCount</strong><em>lưu làm lịch sử</em></div>
     </article>
-
     <article class="pricing-overview__card">
-        <span class="tone-blue">
-            <i class="bi bi-bag-check"></i>
-        </span>
-        <div>
-            <small>Lượt đã dùng</small>
-            <strong>@Model.TotalUsedCount</strong>
-            <em>trên các đơn đã đặt</em>
-        </div>
+        <span class="tone-blue"><i class="bi bi-bag-check"></i></span>
+        <div><small>Lượt đã dùng</small><strong>@Model.TotalUsedCount</strong><em>trên đơn đã đặt</em></div>
     </article>
 </section>
 
-<div class="tabs">
-    <a asp-controller="Pricing"
-       asp-action="Index">
-        Lịch giá
-    </a>
-    <a class="is-active"
-       asp-controller="Promotions"
-       asp-action="Index">
+<div class="tabs promotion-tabs">
+    <a asp-controller="Pricing" asp-action="Index">Lịch giá</a>
+    <a class="is-active" asp-controller="Promotions" asp-action="Index">
         Khuyến mãi & mã giảm giá
     </a>
 </div>
 
 <section class="card panel">
-    <form method="get"
-          class="toolbar toolbar--wrap">
+    <form method="get" class="toolbar toolbar--wrap">
         <label class="field-search">
             <i class="bi bi-search"></i>
             <input type="search"
@@ -107,8 +70,7 @@
         </label>
 
         <div class="toolbar__filters">
-            <select asp-for="State"
-                    class="form-select">
+            <select asp-for="State" class="form-select">
                 <option value="">Tất cả trạng thái</option>
                 <option value="active">Đang áp dụng</option>
                 <option value="upcoming">Sắp áp dụng</option>
@@ -116,15 +78,10 @@
                 <option value="exhausted">Hết lượt</option>
                 <option value="inactive">Tạm tắt</option>
             </select>
-
-            <button class="btn btn-light"
-                    type="submit">
-                <i class="bi bi-funnel"></i>
-                Lọc
+            <button class="btn btn-light" type="submit">
+                <i class="bi bi-funnel"></i> Lọc
             </button>
-
-            <a class="btn btn-light"
-               asp-action="Index">
+            <a class="btn btn-light" asp-action="Index">
                 <i class="bi bi-arrow-counterclockwise"></i>
             </a>
         </div>
@@ -136,10 +93,10 @@
                 <tr>
                     <th>Chương trình</th>
                     <th>Mức giảm</th>
-                    <th>Đơn tối thiểu</th>
+                    <th>Phạm vi hàng hóa</th>
+                    <th>Điều kiện</th>
                     <th>Thị trường</th>
                     <th>Lượt dùng</th>
-                    <th>Thời gian</th>
                     <th>Trạng thái</th>
                     <th></th>
                 </tr>
@@ -152,9 +109,7 @@
                         <div class="empty-state">
                             <i class="bi bi-ticket-perforated"></i>
                             <strong>Chưa có khuyến mãi phù hợp</strong>
-                            <p>
-                                Tạo mã giảm giá đầu tiên hoặc thay đổi bộ lọc.
-                            </p>
+                            <p>Tạo chương trình đầu tiên hoặc đổi bộ lọc.</p>
                         </div>
                     </td>
                 </tr>
@@ -164,9 +119,7 @@
                 @foreach (var item in Model.Items)
                 {
                     var toggleTitle =
-                        item.IsActive
-                            ? "Tạm tắt"
-                            : "Kích hoạt";
+                        item.IsActive ? "Tạm tắt" : "Kích hoạt";
 
                     var toggleIcon =
                         item.IsActive
@@ -177,31 +130,16 @@
                         <td>
                             <div class="stacked-text">
                                 <strong>@item.Name</strong>
-                                <small>
-                                    Mã:
-                                    <b>@item.Code</b>
-                                </small>
+                                <small>Mã tự sinh: <b>@item.Code</b></small>
+                                <small>@item.Period</small>
                             </div>
                         </td>
-                        <td>
-                            <strong class="sale-price">
-                                @item.DiscountText
-                            </strong>
-                        </td>
+                        <td><strong class="sale-price">@item.DiscountText</strong></td>
+                        <td><span class="promotion-scope-chip">@item.ScopeText</span></td>
                         <td>@item.MinimumOrderText</td>
-                        <td>
-                            <span class="market-chip">
-                                <i class="bi bi-geo-alt"></i>
-                                @item.Markets
-                            </span>
-                        </td>
+                        <td><span class="market-chip"><i class="bi bi-geo-alt"></i>@item.Markets</span></td>
                         <td>@item.UsageText</td>
-                        <td>@item.Period</td>
-                        <td>
-                            <span class="status-pill @UiStatus.Class(item.Status)">
-                                @item.Status
-                            </span>
-                        </td>
+                        <td><span class="status-pill @UiStatus.Class(item.Status)">@item.Status</span></td>
                         <td class="table-actions">
                             <a class="icon-btn"
                                asp-action="Index"
@@ -209,32 +147,20 @@
                                title="Chỉnh sửa">
                                 <i class="bi bi-pencil"></i>
                             </a>
-
-                            <form asp-action="ToggleStatus"
-                                  method="post"
-                                  class="inline-form">
+                            <form asp-action="ToggleStatus" method="post" class="inline-form">
                                 @Html.AntiForgeryToken()
-                                <input type="hidden"
-                                       name="id"
-                                       value="@item.Id" />
-                                <button class="icon-btn"
-                                        type="submit"
-                                        title="@toggleTitle">
+                                <input type="hidden" name="id" value="@item.Id" />
+                                <button class="icon-btn" type="submit" title="@toggleTitle">
                                     <i class="bi @toggleIcon"></i>
                                 </button>
                             </form>
-
                             <form asp-action="Delete"
                                   method="post"
                                   class="inline-form"
                                   onsubmit="return confirm('Xóa khuyến mãi này? Khuyến mãi đã có lượt dùng chỉ được tạm tắt.');">
                                 @Html.AntiForgeryToken()
-                                <input type="hidden"
-                                       name="id"
-                                       value="@item.Id" />
-                                <button class="icon-btn icon-btn--danger"
-                                        type="submit"
-                                        title="Xóa">
+                                <input type="hidden" name="id" value="@item.Id" />
+                                <button class="icon-btn icon-btn--danger" type="submit" title="Xóa">
                                     <i class="bi bi-trash"></i>
                                 </button>
                             </form>
@@ -245,43 +171,27 @@
             </tbody>
         </table>
     </div>
-
-    <div class="pagination">
-        <span>
-            Hiển thị @Model.Items.Count chương trình
-        </span>
-    </div>
 </section>
 
 <div class="modal modal--wide @modalClass"
      id="promotion-modal"
      aria-hidden="@modalHidden">
-    <div class="modal__backdrop"
-         data-modal-close></div>
-
+    <div class="modal__backdrop" data-modal-close></div>
     <div class="modal__dialog">
-        <form asp-action="Save"
-              method="post">
+        <form asp-action="Save" method="post" data-promotion-form>
             @Html.AntiForgeryToken()
-
-            <input asp-for="Form.Id"
-                   type="hidden" />
-            <input asp-for="Query"
-                   type="hidden" />
-            <input asp-for="State"
-                   type="hidden" />
+            <input asp-for="Form.Id" type="hidden" />
+            <input asp-for="Query" type="hidden" />
+            <input asp-for="State" type="hidden" />
 
             <div class="modal__header">
                 <div>
                     <h2>@formTitle</h2>
                     <p>
-                        Thiết lập mã, mức giảm, điều kiện và thị trường áp dụng.
+                        Chọn rõ giảm toàn bộ, theo sản phẩm, danh mục hoặc thương hiệu.
                     </p>
                 </div>
-
-                <button type="button"
-                        class="icon-btn"
-                        data-modal-close>
+                <button type="button" class="icon-btn" data-modal-close>
                     <i class="bi bi-x-lg"></i>
                 </button>
             </div>
@@ -292,37 +202,140 @@
 
                 <div class="form-grid form-grid--2">
                     <label class="form-field">
-                        <span>
-                            Tên chương trình <em>*</em>
-                        </span>
+                        <span>Tên chương trình <em>*</em></span>
                         <input asp-for="Form.Name"
                                maxlength="200"
-                               placeholder="Ví dụ: Khuyến mãi cuối tháng" />
+                               placeholder="Ví dụ: Giảm giá đồ chơi cuối tuần" />
                         <span asp-validation-for="Form.Name"
                               class="field-error"></span>
                     </label>
 
                     <label class="form-field">
-                        <span>
-                            Mã khuyến mãi <em>*</em>
-                        </span>
+                        <span>Mã khuyến mãi</span>
                         <input asp-for="Form.Code"
-                               maxlength="50"
-                               data-promotion-code
-                               placeholder="Ví dụ: MAYHOME20" />
+                               readonly
+                               class="promotion-code-readonly" />
                         <small>
-                            Tự động chuyển thành chữ hoa, không dùng khoảng trắng.
+                            Hệ thống tự sinh khi tạo mới. Không nhập thủ công.
                         </small>
-                        <span asp-validation-for="Form.Code"
-                              class="field-error"></span>
                     </label>
                 </div>
 
+                <section class="promotion-scope-box">
+                    <div class="promotion-scope-box__heading">
+                        <strong>Phạm vi hàng hóa <em>*</em></strong>
+                        <p>
+                            Khoản giảm chỉ tính trên các sản phẩm thuộc phạm vi đã chọn.
+                        </p>
+                    </div>
+
+                    <div class="promotion-scope-types">
+                        <label>
+                            <input asp-for="Form.ScopeType"
+                                   type="radio"
+                                   value="@((int)PromotionScopeType.AllProducts)"
+                                   data-promotion-scope />
+                            <span>
+                                <b>Tất cả sản phẩm</b>
+                                <small>Giảm trên toàn bộ hàng trong giỏ.</small>
+                            </span>
+                        </label>
+                        <label>
+                            <input asp-for="Form.ScopeType"
+                                   type="radio"
+                                   value="@((int)PromotionScopeType.Products)"
+                                   data-promotion-scope />
+                            <span>
+                                <b>Sản phẩm cụ thể</b>
+                                <small>Chọn một hoặc nhiều sản phẩm.</small>
+                            </span>
+                        </label>
+                        <label>
+                            <input asp-for="Form.ScopeType"
+                                   type="radio"
+                                   value="@((int)PromotionScopeType.Categories)"
+                                   data-promotion-scope />
+                            <span>
+                                <b>Danh mục cụ thể</b>
+                                <small>Mọi sản phẩm thuộc danh mục được chọn.</small>
+                            </span>
+                        </label>
+                        <label>
+                            <input asp-for="Form.ScopeType"
+                                   type="radio"
+                                   value="@((int)PromotionScopeType.Brands)"
+                                   data-promotion-scope />
+                            <span>
+                                <b>Thương hiệu cụ thể</b>
+                                <small>Mọi sản phẩm thuộc thương hiệu được chọn.</small>
+                            </span>
+                        </label>
+                    </div>
+
+                    <div class="promotion-target-panel"
+                         data-scope-panel="@((int)PromotionScopeType.Products)">
+                        <strong>Chọn sản phẩm</strong>
+                        <div class="promotion-target-grid">
+                        @foreach (var option in Model.Form.ProductOptions)
+                        {
+                            var id = int.Parse(option.Value);
+                            <label>
+                                <input type="checkbox"
+                                       name="Form.ProductIds"
+                                       value="@option.Value"
+                                       checked="@Model.Form.ProductIds.Contains(id)" />
+                                <span>@option.Text</span>
+                            </label>
+                        }
+                        </div>
+                        <span asp-validation-for="Form.ProductIds"
+                              class="field-error"></span>
+                    </div>
+
+                    <div class="promotion-target-panel"
+                         data-scope-panel="@((int)PromotionScopeType.Categories)">
+                        <strong>Chọn danh mục</strong>
+                        <div class="promotion-target-grid">
+                        @foreach (var option in Model.Form.CategoryOptions)
+                        {
+                            var id = int.Parse(option.Value);
+                            <label>
+                                <input type="checkbox"
+                                       name="Form.CategoryIds"
+                                       value="@option.Value"
+                                       checked="@Model.Form.CategoryIds.Contains(id)" />
+                                <span>@option.Text</span>
+                            </label>
+                        }
+                        </div>
+                        <span asp-validation-for="Form.CategoryIds"
+                              class="field-error"></span>
+                    </div>
+
+                    <div class="promotion-target-panel"
+                         data-scope-panel="@((int)PromotionScopeType.Brands)">
+                        <strong>Chọn thương hiệu</strong>
+                        <div class="promotion-target-grid">
+                        @foreach (var option in Model.Form.BrandOptions)
+                        {
+                            var id = int.Parse(option.Value);
+                            <label>
+                                <input type="checkbox"
+                                       name="Form.BrandIds"
+                                       value="@option.Value"
+                                       checked="@Model.Form.BrandIds.Contains(id)" />
+                                <span>@option.Text</span>
+                            </label>
+                        }
+                        </div>
+                        <span asp-validation-for="Form.BrandIds"
+                              class="field-error"></span>
+                    </div>
+                </section>
+
                 <div class="form-grid form-grid--2">
                     <label class="form-field">
-                        <span>
-                            Loại giảm <em>*</em>
-                        </span>
+                        <span>Loại giảm <em>*</em></span>
                         <select asp-for="Form.DiscountType"
                                 data-discount-type>
                             <option value="@((int)PromotionDiscountType.Percentage)">
@@ -335,15 +348,12 @@
                     </label>
 
                     <label class="form-field price-field">
-                        <span>
-                            Giá trị giảm <em>*</em>
-                        </span>
+                        <span>Giá trị giảm <em>*</em></span>
                         <div>
                             <input asp-for="Form.DiscountValue"
                                    type="number"
                                    min="0.01"
-                                   step="0.01"
-                                   data-discount-value />
+                                   step="0.01" />
                             <i data-discount-unit>%</i>
                         </div>
                         <span asp-validation-for="Form.DiscountValue"
@@ -362,15 +372,13 @@
                                    step="1" />
                             <i>₫</i>
                         </div>
-                        <small>
-                            Chỉ dùng khi giảm theo phần trăm.
-                        </small>
+                        <small>Chỉ dùng khi giảm theo phần trăm.</small>
                         <span asp-validation-for="Form.MaximumDiscountAmount"
                               class="field-error"></span>
                     </label>
 
                     <label class="form-field price-field">
-                        <span>Giá trị đơn tối thiểu</span>
+                        <span>Tổng đơn tối thiểu</span>
                         <div>
                             <input asp-for="Form.MinimumOrderAmount"
                                    type="number"
@@ -378,12 +386,15 @@
                                    step="1" />
                             <i>₫</i>
                         </div>
+                        <small>
+                            Điều kiện này tính trên toàn bộ đơn hàng.
+                        </small>
                         <span asp-validation-for="Form.MinimumOrderAmount"
                               class="field-error"></span>
                     </label>
 
                     <label class="form-field">
-                        <span>Giới hạn lượt sử dụng</span>
+                        <span>Giới hạn lượt dùng</span>
                         <input asp-for="Form.UsageLimit"
                                type="number"
                                min="1"
@@ -398,7 +409,6 @@
                     <div class="schedule-box__head">
                         <strong>Thời gian áp dụng</strong>
                     </div>
-
                     <div class="form-grid form-grid--2">
                         <label class="form-field">
                             <span>Bắt đầu <em>*</em></span>
@@ -408,7 +418,6 @@
                             <span asp-validation-for="Form.StartsAt"
                                   class="field-error"></span>
                         </label>
-
                         <label class="form-field">
                             <span>Kết thúc <em>*</em></span>
                             <input asp-for="Form.EndsAt"
@@ -422,35 +431,20 @@
 
                 <section class="promotion-market-box">
                     <strong>Thị trường áp dụng <em>*</em></strong>
-                    <p>
-                        Có thể chọn một hoặc nhiều thị trường.
-                    </p>
-
-                    <div class="promotion-market-grid">
-                    @foreach (var market in Model.Form.MarketOptions)
+                    <p>Có thể chọn một hoặc nhiều thị trường.</p>
+                    <div class="promotion-target-grid">
+                    @foreach (var option in Model.Form.MarketOptions)
                     {
-                        var marketId =
-                            int.Parse(market.Value);
-
-                        <label class="promotion-market-option">
-                            @if (Model.Form.MarketIds.Contains(marketId))
-                            {
-                                <input type="checkbox"
-                                       name="Form.MarketIds"
-                                       value="@market.Value"
-                                       checked />
-                            }
-                            else
-                            {
-                                <input type="checkbox"
-                                       name="Form.MarketIds"
-                                       value="@market.Value" />
-                            }
-                            <span>@market.Text</span>
+                        var id = int.Parse(option.Value);
+                        <label>
+                            <input type="checkbox"
+                                   name="Form.MarketIds"
+                                   value="@option.Value"
+                                   checked="@Model.Form.MarketIds.Contains(id)" />
+                            <span>@option.Text</span>
                         </label>
                     }
                     </div>
-
                     <span asp-validation-for="Form.MarketIds"
                           class="field-error"></span>
                 </section>
@@ -458,9 +452,7 @@
                 <label class="switch-row switch-row--border">
                     <span>
                         <strong>Kích hoạt chương trình</strong>
-                        <small>
-                            Chương trình tắt sẽ không được khách sử dụng.
-                        </small>
+                        <small>Chương trình tắt sẽ không được sử dụng.</small>
                     </span>
                     <input asp-for="Form.IsActive" />
                     <i></i>
@@ -471,7 +463,7 @@
                     <textarea asp-for="Form.Description"
                               rows="3"
                               maxlength="1000"
-                              placeholder="Nội dung và điều kiện bổ sung..."></textarea>
+                              placeholder="Điều kiện hoặc nội dung bổ sung..."></textarea>
                     <span asp-validation-for="Form.Description"
                           class="field-error"></span>
                 </label>
@@ -483,7 +475,6 @@
                         data-modal-close>
                     Hủy
                 </button>
-
                 <button class="btn btn-primary"
                         type="submit">
                     <i class="bi bi-check2"></i>
@@ -495,9 +486,8 @@
 </div>
 
 <style>
-    .tabs a {
+    .promotion-tabs a {
         display: inline-flex;
-        align-items: center;
         padding: 10px 14px;
         color: inherit;
         text-decoration: none;
@@ -506,11 +496,19 @@
         font-weight: 700;
     }
 
-    .tabs a.is-active {
+    .promotion-tabs a.is-active {
         color: #6956df;
         background: #f0edff;
     }
 
+    .promotion-code-readonly {
+        color: #5d4ed4;
+        background: #f4f1ff !important;
+        font-weight: 800;
+        letter-spacing: .04em;
+    }
+
+    .promotion-scope-box,
     .promotion-market-box {
         padding: 15px;
         border: 1px solid #e3dff0;
@@ -518,28 +516,25 @@
         background: #faf9ff;
     }
 
-    .promotion-market-box > strong {
-        display: block;
-        font-size: 11px;
-    }
-
+    .promotion-scope-box__heading p,
     .promotion-market-box > p {
         margin: 4px 0 12px;
         color: #77718c;
         font-size: 9px;
     }
 
-    .promotion-market-grid {
+    .promotion-scope-types {
         display: grid;
         grid-template-columns:
             repeat(auto-fit, minmax(180px, 1fr));
         gap: 8px;
     }
 
-    .promotion-market-option {
+    .promotion-scope-types label,
+    .promotion-target-grid label {
         display: flex;
-        align-items: center;
-        min-height: 42px;
+        align-items: flex-start;
+        min-height: 44px;
         padding: 9px 11px;
         gap: 8px;
         cursor: pointer;
@@ -547,29 +542,69 @@
         border: 1px solid #ddd8ec;
         border-radius: 10px;
         font-size: 10px;
-        font-weight: 600;
     }
 
-    .promotion-market-option:has(input:checked) {
+    .promotion-scope-types label:has(input:checked),
+    .promotion-target-grid label:has(input:checked) {
         color: #5d4ed4;
         background: #f0edff;
         border-color: #9b8df5;
     }
 
-    .promotion-market-option input {
-        width: 16px;
-        height: 16px;
+    .promotion-scope-types input,
+    .promotion-target-grid input {
+        margin-top: 2px;
         accent-color: #7c69ee;
+    }
+
+    .promotion-scope-types b,
+    .promotion-scope-types small {
+        display: block;
+    }
+
+    .promotion-scope-types small {
+        margin-top: 3px;
+        color: #77718c;
+        line-height: 1.4;
+    }
+
+    .promotion-target-panel {
+        margin-top: 13px;
+    }
+
+    .promotion-target-panel[hidden] {
+        display: none;
+    }
+
+    .promotion-target-panel > strong {
+        display: block;
+        margin-bottom: 8px;
+        font-size: 10px;
+    }
+
+    .promotion-target-grid {
+        display: grid;
+        grid-template-columns:
+            repeat(auto-fit, minmax(190px, 1fr));
+        max-height: 240px;
+        padding-right: 3px;
+        gap: 8px;
+        overflow-y: auto;
+    }
+
+    .promotion-scope-chip {
+        display: inline-block;
+        max-width: 280px;
+        padding: 6px 9px;
+        background: #f1effb;
+        border-radius: 9px;
+        line-height: 1.4;
     }
 </style>
 
 @section Scripts {
     <script>
         (() => {
-            const code =
-                document.querySelector(
-                    "[data-promotion-code]");
-
             const type =
                 document.querySelector(
                     "[data-discount-type]");
@@ -582,49 +617,66 @@
                 document.querySelector(
                     "[data-max-discount-field]");
 
-            const updateType = () => {
+            const scopeInputs =
+                [...document.querySelectorAll(
+                    "[data-promotion-scope]")];
+
+            const panels =
+                [...document.querySelectorAll(
+                    "[data-scope-panel]")];
+
+            const updateDiscountType = () => {
                 const percentage =
                     type?.value ===
                     "@((int)PromotionDiscountType.Percentage)";
 
                 if (unit) {
                     unit.textContent =
-                        percentage
-                            ? "%"
-                            : "₫";
+                        percentage ? "%" : "₫";
                 }
 
                 if (maxField) {
-                    maxField.hidden =
-                        !percentage;
+                    maxField.hidden = !percentage;
 
                     const input =
-                        maxField.querySelector(
-                            "input");
+                        maxField.querySelector("input");
 
                     if (input) {
-                        input.disabled =
-                            !percentage;
+                        input.disabled = !percentage;
                     }
                 }
             };
 
-            code?.addEventListener(
-                "input",
-                () => {
-                    code.value =
-                        code.value
-                            .toUpperCase()
-                            .replace(
-                                /[^A-Z0-9_-]/g,
-                                "");
+            const updateScope = () => {
+                const selected =
+                    scopeInputs.find(x => x.checked)
+                        ?.value;
+
+                panels.forEach(panel => {
+                    const active =
+                        panel.dataset.scopePanel === selected;
+
+                    panel.hidden = !active;
+
+                    panel
+                        .querySelectorAll("input")
+                        .forEach(input => {
+                            input.disabled = !active;
+                        });
                 });
+            };
 
             type?.addEventListener(
                 "change",
-                updateType);
+                updateDiscountType);
 
-            updateType();
+            scopeInputs.forEach(input =>
+                input.addEventListener(
+                    "change",
+                    updateScope));
+
+            updateDiscountType();
+            updateScope();
         })();
     </script>
 }

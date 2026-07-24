@@ -11,7 +11,7 @@ public sealed class PromotionService(
 
     public async Task<PromotionResolution> ResolveAsync(
         string? code,
-        decimal subtotal,
+        IReadOnlyCollection<PromotionCartLine> lines,
         int marketId,
         DateTime now,
         CancellationToken cancellationToken = default)
@@ -20,6 +20,14 @@ public sealed class PromotionService(
 
         if (normalizedCode is null)
             return PromotionResolution.None;
+
+        if (lines.Count == 0)
+        {
+            return PromotionResolution.Invalid(
+                "Đơn hàng chưa có sản phẩm để áp dụng khuyến mãi.");
+        }
+
+        var subtotal = lines.Sum(x => x.LineTotal);
 
         if (subtotal <= 0)
         {
@@ -30,6 +38,9 @@ public sealed class PromotionService(
         var promotion = await _db.Promotions
             .AsNoTracking()
             .Include(x => x.Markets)
+            .Include(x => x.Products)
+            .Include(x => x.Categories)
+            .Include(x => x.Brands)
             .FirstOrDefaultAsync(
                 x => x.Code == normalizedCode,
                 cancellationToken);
@@ -75,9 +86,29 @@ public sealed class PromotionService(
         if (subtotal < promotion.MinimumOrderAmount)
         {
             return PromotionResolution.Invalid(
-                $"Đơn hàng cần tối thiểu " +
+                $"Tổng đơn hàng cần tối thiểu " +
                 $"{promotion.MinimumOrderAmount:N0}đ " +
                 "để sử dụng mã này.");
+        }
+
+        var eligibleProductIds =
+            await ResolveEligibleProductIdsAsync(
+                promotion.ScopeType,
+                promotion.Products.Select(x => x.ProductId),
+                promotion.Categories.Select(x => x.CategoryId),
+                promotion.Brands.Select(x => x.BrandId),
+                lines.Select(x => x.ProductId),
+                cancellationToken);
+
+        var eligibleSubtotal = lines
+            .Where(x =>
+                eligibleProductIds.Contains(x.ProductId))
+            .Sum(x => x.LineTotal);
+
+        if (eligibleSubtotal <= 0)
+        {
+            return PromotionResolution.Invalid(
+                GetScopeError(promotion.ScopeType));
         }
 
         decimal discount;
@@ -86,7 +117,7 @@ public sealed class PromotionService(
             PromotionDiscountType.Percentage)
         {
             discount =
-                subtotal *
+                eligibleSubtotal *
                 promotion.DiscountValue /
                 100m;
 
@@ -102,7 +133,10 @@ public sealed class PromotionService(
             discount = promotion.DiscountValue;
         }
 
-        discount = Math.Min(discount, subtotal);
+        discount = Math.Min(
+            discount,
+            eligibleSubtotal);
+
         discount = decimal.Round(
             discount,
             0,
@@ -118,7 +152,9 @@ public sealed class PromotionService(
             promotion.Id,
             promotion.Code,
             promotion.Name,
-            discount);
+            discount,
+            eligibleSubtotal,
+            GetScopeName(promotion.ScopeType));
     }
 
     public async Task<bool> TryClaimAsync(
@@ -156,7 +192,112 @@ public sealed class PromotionService(
             ? null
             : code.Trim().ToUpperInvariant();
     }
+
+    private async Task<HashSet<int>>
+        ResolveEligibleProductIdsAsync(
+            PromotionScopeType scopeType,
+            IEnumerable<int> configuredProductIds,
+            IEnumerable<int> configuredCategoryIds,
+            IEnumerable<int> configuredBrandIds,
+            IEnumerable<int> cartProductIds,
+            CancellationToken cancellationToken)
+    {
+        var productIds =
+            cartProductIds
+                .Where(x => x > 0)
+                .Distinct()
+                .ToList();
+
+        if (scopeType ==
+            PromotionScopeType.AllProducts)
+        {
+            return productIds.ToHashSet();
+        }
+
+        if (scopeType ==
+            PromotionScopeType.Products)
+        {
+            var allowed =
+                configuredProductIds.ToHashSet();
+
+            return productIds
+                .Where(allowed.Contains)
+                .ToHashSet();
+        }
+
+        var products = await _db.Products
+            .IgnoreQueryFilters()
+            .AsNoTracking()
+            .Where(x =>
+                productIds.Contains(x.Id) &&
+                !x.IsDeleted)
+            .Select(x => new
+            {
+                x.Id,
+                x.CategoryId,
+                x.BrandId
+            })
+            .ToListAsync(cancellationToken);
+
+        if (scopeType ==
+            PromotionScopeType.Categories)
+        {
+            var allowed =
+                configuredCategoryIds.ToHashSet();
+
+            return products
+                .Where(x =>
+                    allowed.Contains(x.CategoryId))
+                .Select(x => x.Id)
+                .ToHashSet();
+        }
+
+        var allowedBrands =
+            configuredBrandIds.ToHashSet();
+
+        return products
+            .Where(x =>
+                allowedBrands.Contains(x.BrandId))
+            .Select(x => x.Id)
+            .ToHashSet();
+    }
+
+    private static string GetScopeError(
+        PromotionScopeType scopeType)
+    {
+        return scopeType switch
+        {
+            PromotionScopeType.Products =>
+                "Giỏ hàng không có sản phẩm được áp dụng mã này.",
+            PromotionScopeType.Categories =>
+                "Giỏ hàng không có sản phẩm thuộc danh mục được áp dụng.",
+            PromotionScopeType.Brands =>
+                "Giỏ hàng không có sản phẩm thuộc thương hiệu được áp dụng.",
+            _ =>
+                "Giỏ hàng không có sản phẩm đủ điều kiện."
+        };
+    }
+
+    private static string GetScopeName(
+        PromotionScopeType scopeType)
+    {
+        return scopeType switch
+        {
+            PromotionScopeType.Products =>
+                "Sản phẩm cụ thể",
+            PromotionScopeType.Categories =>
+                "Danh mục cụ thể",
+            PromotionScopeType.Brands =>
+                "Thương hiệu cụ thể",
+            _ =>
+                "Toàn bộ sản phẩm"
+        };
+    }
 }
+
+public sealed record PromotionCartLine(
+    int ProductId,
+    decimal LineTotal);
 
 public sealed record PromotionResolution(
     bool IsValid,
@@ -164,6 +305,8 @@ public sealed record PromotionResolution(
     string? Code,
     string? Name,
     decimal DiscountAmount,
+    decimal EligibleSubtotal,
+    string? ScopeName,
     string? Error)
 {
     public static PromotionResolution None =>
@@ -173,6 +316,8 @@ public sealed record PromotionResolution(
             null,
             null,
             0,
+            0,
+            null,
             null);
 
     public static PromotionResolution Invalid(
@@ -183,18 +328,24 @@ public sealed record PromotionResolution(
             null,
             null,
             0,
+            0,
+            null,
             error);
 
     public static PromotionResolution Success(
         int promotionId,
         string code,
         string name,
-        decimal discountAmount) =>
+        decimal discountAmount,
+        decimal eligibleSubtotal,
+        string scopeName) =>
         new(
             true,
             promotionId,
             code,
             name,
             discountAmount,
+            eligibleSubtotal,
+            scopeName,
             null);
 }

@@ -182,18 +182,10 @@ public sealed class CheckoutController(
                     "Phương thức giao hàng không còn hoạt động. Vui lòng chọn lại.");
             }
 
-            var promotionLines =
-                resolution.Items
-                    .Select(x =>
-                        new PromotionCartLine(
-                            x.ProductId,
-                            x.LineTotal))
-                    .ToList();
-
             var promotion =
                 await _promotionService.ResolveAsync(
                     model.PromotionCode,
-                    promotionLines,
+                    resolution.Subtotal,
                     resolution.MarketId,
                     StorePriceClock.Now);
 
@@ -1191,6 +1183,5 @@ public sealed class CheckoutController(
             new(null, error);
     }
 }
-
 
 

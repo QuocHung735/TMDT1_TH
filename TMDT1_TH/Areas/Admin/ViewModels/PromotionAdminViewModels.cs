@@ -35,15 +35,7 @@ public sealed class PromotionFormViewModel
         ErrorMessage = "Tên chương trình cần từ 3 đến 200 ký tự.")]
     public string Name { get; set; } = string.Empty;
 
-    [Required(ErrorMessage = "Vui lòng nhập mã khuyến mãi.")]
-    [StringLength(
-        50,
-        MinimumLength = 3,
-        ErrorMessage = "Mã khuyến mãi cần từ 3 đến 50 ký tự.")]
-    [RegularExpression(
-        @"^[A-Za-z0-9_-]+$",
-        ErrorMessage =
-            "Mã chỉ được chứa chữ, số, dấu gạch ngang hoặc gạch dưới.")]
+    [StringLength(50)]
     public string Code { get; set; } = string.Empty;
 
     [StringLength(
@@ -54,6 +46,10 @@ public sealed class PromotionFormViewModel
     [Required]
     public PromotionDiscountType DiscountType { get; set; }
         = PromotionDiscountType.Percentage;
+
+    [Required]
+    public PromotionScopeType ScopeType { get; set; }
+        = PromotionScopeType.AllProducts;
 
     [Range(
         typeof(decimal),
@@ -86,15 +82,30 @@ public sealed class PromotionFormViewModel
     public DateTime StartsAt { get; set; } = DateTime.Now;
 
     [Required(ErrorMessage = "Vui lòng chọn thời gian kết thúc.")]
-    public DateTime EndsAt { get; set; } =
-        DateTime.Now.AddDays(7);
+    public DateTime EndsAt { get; set; }
+        = DateTime.Now.AddDays(7);
 
     public bool IsActive { get; set; } = true;
 
     public List<int> MarketIds { get; set; } = new();
+    public List<int> ProductIds { get; set; } = new();
+    public List<int> CategoryIds { get; set; } = new();
+    public List<int> BrandIds { get; set; } = new();
 
     [ValidateNever]
     public IReadOnlyList<SelectListItem> MarketOptions { get; set; }
+        = Array.Empty<SelectListItem>();
+
+    [ValidateNever]
+    public IReadOnlyList<SelectListItem> ProductOptions { get; set; }
+        = Array.Empty<SelectListItem>();
+
+    [ValidateNever]
+    public IReadOnlyList<SelectListItem> CategoryOptions { get; set; }
+        = Array.Empty<SelectListItem>();
+
+    [ValidateNever]
+    public IReadOnlyList<SelectListItem> BrandOptions { get; set; }
         = Array.Empty<SelectListItem>();
 
     public bool IsEdit => Id.HasValue;
@@ -106,11 +117,7 @@ public sealed class PromotionFormViewModel
         {
             yield return new ValidationResult(
                 "Thời gian kết thúc phải sau thời gian bắt đầu.",
-                new[]
-                {
-                    nameof(StartsAt),
-                    nameof(EndsAt)
-                });
+                new[] { nameof(StartsAt), nameof(EndsAt) });
         }
 
         if (DiscountType ==
@@ -137,6 +144,30 @@ public sealed class PromotionFormViewModel
                 "Vui lòng chọn ít nhất một thị trường.",
                 new[] { nameof(MarketIds) });
         }
+
+        if (ScopeType == PromotionScopeType.Products &&
+            ProductIds.Count == 0)
+        {
+            yield return new ValidationResult(
+                "Vui lòng chọn ít nhất một sản phẩm.",
+                new[] { nameof(ProductIds) });
+        }
+
+        if (ScopeType == PromotionScopeType.Categories &&
+            CategoryIds.Count == 0)
+        {
+            yield return new ValidationResult(
+                "Vui lòng chọn ít nhất một danh mục.",
+                new[] { nameof(CategoryIds) });
+        }
+
+        if (ScopeType == PromotionScopeType.Brands &&
+            BrandIds.Count == 0)
+        {
+            yield return new ValidationResult(
+                "Vui lòng chọn ít nhất một thương hiệu.",
+                new[] { nameof(BrandIds) });
+        }
     }
 }
 
@@ -147,6 +178,7 @@ public sealed class PromotionListItem
     public string Code { get; set; } = string.Empty;
     public string DiscountText { get; set; } = string.Empty;
     public string MinimumOrderText { get; set; } = string.Empty;
+    public string ScopeText { get; set; } = string.Empty;
     public string Markets { get; set; } = string.Empty;
     public string UsageText { get; set; } = string.Empty;
     public string Period { get; set; } = string.Empty;

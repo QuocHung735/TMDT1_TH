@@ -1,7 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using TMDT1_TH.Domain.Entities;
-using TMDT1_TH.Domain.Enums;
 
 namespace TMDT1_TH.Data.Configurations;
 
@@ -61,9 +60,7 @@ public sealed class PromotionConfiguration
             .HasConversion<int>();
 
         builder.Property(x => x.ScopeType)
-            .HasConversion<int>()
-            .HasDefaultValue(
-                PromotionScopeType.AllProducts);
+            .HasConversion<int>();
 
         builder.Property(x => x.DiscountValue)
             .HasPrecision(18, 2);
@@ -91,4 +88,3 @@ public sealed class PromotionConfiguration
         });
     }
 }
-

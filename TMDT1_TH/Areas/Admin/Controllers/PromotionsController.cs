@@ -6,7 +6,6 @@ using TMDT1_TH.Areas.Admin.ViewModels;
 using TMDT1_TH.Data;
 using TMDT1_TH.Domain.Entities;
 using TMDT1_TH.Domain.Enums;
-using TMDT1_TH.Infrastructure.Pricing;
 
 namespace TMDT1_TH.Areas.Admin.Controllers;
 
@@ -33,6 +32,9 @@ public sealed class PromotionsController(
             var promotion = await _db.Promotions
                 .AsNoTracking()
                 .Include(x => x.Markets)
+                .Include(x => x.Products)
+                .Include(x => x.Categories)
+                .Include(x => x.Brands)
                 .FirstOrDefaultAsync(
                     x => x.Id == editId.Value);
 
@@ -51,6 +53,7 @@ public sealed class PromotionsController(
                 Code = promotion.Code,
                 Description = promotion.Description,
                 DiscountType = promotion.DiscountType,
+                ScopeType = promotion.ScopeType,
                 DiscountValue = promotion.DiscountValue,
                 MaximumDiscountAmount =
                     promotion.MaximumDiscountAmount,
@@ -62,6 +65,15 @@ public sealed class PromotionsController(
                 IsActive = promotion.IsActive,
                 MarketIds = promotion.Markets
                     .Select(x => x.MarketId)
+                    .ToList(),
+                ProductIds = promotion.Products
+                    .Select(x => x.ProductId)
+                    .ToList(),
+                CategoryIds = promotion.Categories
+                    .Select(x => x.CategoryId)
+                    .ToList(),
+                BrandIds = promotion.Brands
+                    .Select(x => x.BrandId)
                     .ToList()
             };
 
@@ -71,9 +83,11 @@ public sealed class PromotionsController(
         {
             form = new PromotionFormViewModel
             {
+                Code = await GeneratePromotionCodeAsync(),
                 StartsAt = DateTime.Now,
                 EndsAt = DateTime.Now.AddDays(7),
-                IsActive = true
+                IsActive = true,
+                ScopeType = PromotionScopeType.AllProducts
             };
         }
 
@@ -93,54 +107,43 @@ public sealed class PromotionsController(
         var form = page.Form ?? new PromotionFormViewModel();
 
         form.Name = form.Name?.Trim() ?? string.Empty;
-        form.Code =
-            PromotionService.NormalizeCode(form.Code)
-            ?? string.Empty;
-
         form.Description =
             string.IsNullOrWhiteSpace(form.Description)
                 ? null
                 : form.Description.Trim();
 
-        form.MarketIds = form.MarketIds
-            .Where(x => x > 0)
-            .Distinct()
-            .ToList();
+        form.MarketIds = NormalizeIds(form.MarketIds);
+        form.ProductIds = NormalizeIds(form.ProductIds);
+        form.CategoryIds = NormalizeIds(form.CategoryIds);
+        form.BrandIds = NormalizeIds(form.BrandIds);
+
+        if (form.ScopeType != PromotionScopeType.Products)
+            form.ProductIds.Clear();
+
+        if (form.ScopeType != PromotionScopeType.Categories)
+            form.CategoryIds.Clear();
+
+        if (form.ScopeType != PromotionScopeType.Brands)
+            form.BrandIds.Clear();
+
+        if (!form.Id.HasValue)
+        {
+            var postedCode =
+                NormalizeGeneratedCode(form.Code);
+
+            form.Code =
+                postedCode is not null &&
+                !await _db.Promotions
+                    .AsNoTracking()
+                    .AnyAsync(x => x.Code == postedCode)
+                    ? postedCode
+                    : await GeneratePromotionCodeAsync();
+        }
 
         ModelState.Clear();
         TryValidateModel(form, nameof(page.Form));
 
-        if (form.MarketIds.Count > 0)
-        {
-            var activeMarketIds = await _db.Markets
-                .AsNoTracking()
-                .Where(x =>
-                    form.MarketIds.Contains(x.Id) &&
-                    x.IsActive)
-                .Select(x => x.Id)
-                .ToListAsync();
-
-            if (activeMarketIds.Count !=
-                form.MarketIds.Count)
-            {
-                ModelState.AddModelError(
-                    "Form.MarketIds",
-                    "Có thị trường không tồn tại hoặc đã bị tắt.");
-            }
-        }
-
-        var duplicatedCode = await _db.Promotions
-            .AsNoTracking()
-            .AnyAsync(x =>
-                x.Id != form.Id &&
-                x.Code == form.Code);
-
-        if (duplicatedCode)
-        {
-            ModelState.AddModelError(
-                "Form.Code",
-                "Mã khuyến mãi đã được sử dụng.");
-        }
+        await ValidateReferencesAsync(form);
 
         if (!ModelState.IsValid)
         {
@@ -159,6 +162,9 @@ public sealed class PromotionsController(
         {
             promotion = await _db.Promotions
                 .Include(x => x.Markets)
+                .Include(x => x.Products)
+                .Include(x => x.Categories)
+                .Include(x => x.Brands)
                 .FirstOrDefaultAsync(
                     x => x.Id == form.Id.Value)
                 ?? throw new InvalidOperationException(
@@ -168,6 +174,7 @@ public sealed class PromotionsController(
         {
             promotion = new Promotion
             {
+                Code = form.Code,
                 CreatedBy = CurrentUserName()
             };
 
@@ -175,9 +182,9 @@ public sealed class PromotionsController(
         }
 
         promotion.Name = form.Name;
-        promotion.Code = form.Code;
         promotion.Description = form.Description;
         promotion.DiscountType = form.DiscountType;
+        promotion.ScopeType = form.ScopeType;
         promotion.DiscountValue = form.DiscountValue;
         promotion.MaximumDiscountAmount =
             form.DiscountType ==
@@ -194,35 +201,16 @@ public sealed class PromotionsController(
         promotion.IsActive = form.IsActive;
         promotion.UpdatedBy = CurrentUserName();
 
-        var existingMarketIds = promotion.Markets
-            .Select(x => x.MarketId)
-            .ToHashSet();
-
-        foreach (var removed in promotion.Markets
-                     .Where(x =>
-                         !form.MarketIds.Contains(
-                             x.MarketId))
-                     .ToList())
-        {
-            promotion.Markets.Remove(removed);
-        }
-
-        foreach (var marketId in form.MarketIds
-                     .Where(x =>
-                         !existingMarketIds.Contains(x)))
-        {
-            promotion.Markets.Add(
-                new PromotionMarket
-                {
-                    MarketId = marketId
-                });
-        }
+        SyncMarkets(promotion, form.MarketIds);
+        SyncProducts(promotion, form.ProductIds);
+        SyncCategories(promotion, form.CategoryIds);
+        SyncBrands(promotion, form.BrandIds);
 
         await _db.SaveChangesAsync();
 
         TempData["Success"] = form.Id.HasValue
             ? "Đã cập nhật chương trình khuyến mãi."
-            : "Đã tạo chương trình khuyến mãi.";
+            : $"Đã tạo khuyến mãi với mã {promotion.Code}.";
 
         return RedirectToAction(nameof(Index));
     }
@@ -254,7 +242,6 @@ public sealed class PromotionsController(
     public async Task<IActionResult> Delete(int id)
     {
         var promotion = await _db.Promotions
-            .Include(x => x.Markets)
             .FirstOrDefaultAsync(x => x.Id == id);
 
         if (promotion is null)
@@ -268,7 +255,7 @@ public sealed class PromotionsController(
             await _db.SaveChangesAsync();
 
             TempData["Error"] =
-                "Khuyến mãi đã phát sinh lượt dùng nên chỉ được tạm tắt, không thể xóa.";
+                "Khuyến mãi đã phát sinh lượt dùng nên chỉ được tạm tắt.";
 
             return RedirectToAction(nameof(Index));
         }
@@ -289,7 +276,7 @@ public sealed class PromotionsController(
             PromotionFormViewModel form,
             bool openModal)
     {
-        await LoadMarketOptionsAsync(form);
+        await LoadOptionsAsync(form);
 
         var now = DateTime.Now;
 
@@ -297,6 +284,13 @@ public sealed class PromotionsController(
             .AsNoTracking()
             .Include(x => x.Markets)
                 .ThenInclude(x => x.Market)
+            .Include(x => x.Products)
+                .ThenInclude(x => x.Product)
+            .Include(x => x.Categories)
+                .ThenInclude(x => x.Category)
+            .Include(x => x.Brands)
+                .ThenInclude(x => x.Brand)
+            .AsSplitQuery()
             .AsQueryable();
 
         if (!string.IsNullOrWhiteSpace(q))
@@ -308,9 +302,7 @@ public sealed class PromotionsController(
                 x.Code.Contains(keyword));
         }
 
-        if (string.Equals(
-                state,
-                "active",
+        if (string.Equals(state, "active",
                 StringComparison.OrdinalIgnoreCase))
         {
             query = query.Where(x =>
@@ -320,33 +312,25 @@ public sealed class PromotionsController(
                 (!x.UsageLimit.HasValue ||
                  x.UsedCount < x.UsageLimit.Value));
         }
-        else if (string.Equals(
-                     state,
-                     "upcoming",
+        else if (string.Equals(state, "upcoming",
                      StringComparison.OrdinalIgnoreCase))
         {
             query = query.Where(x =>
                 x.IsActive &&
                 x.StartsAt > now);
         }
-        else if (string.Equals(
-                     state,
-                     "expired",
+        else if (string.Equals(state, "expired",
                      StringComparison.OrdinalIgnoreCase))
         {
             query = query.Where(x =>
                 x.EndsAt <= now);
         }
-        else if (string.Equals(
-                     state,
-                     "inactive",
+        else if (string.Equals(state, "inactive",
                      StringComparison.OrdinalIgnoreCase))
         {
             query = query.Where(x => !x.IsActive);
         }
-        else if (string.Equals(
-                     state,
-                     "exhausted",
+        else if (string.Equals(state, "exhausted",
                      StringComparison.OrdinalIgnoreCase))
         {
             query = query.Where(x =>
@@ -366,12 +350,12 @@ public sealed class PromotionsController(
                 Id = x.Id,
                 Name = x.Name,
                 Code = x.Code,
-                DiscountText =
-                    FormatDiscount(x),
+                DiscountText = FormatDiscount(x),
                 MinimumOrderText =
                     x.MinimumOrderAmount > 0
-                        ? $"Từ {Money(x.MinimumOrderAmount)}"
+                        ? $"Tổng đơn từ {Money(x.MinimumOrderAmount)}"
                         : "Không giới hạn",
+                ScopeText = FormatScope(x),
                 Markets = string.Join(
                     ", ",
                     x.Markets
@@ -416,10 +400,13 @@ public sealed class PromotionsController(
         };
     }
 
-    private async Task LoadMarketOptionsAsync(
+    private async Task LoadOptionsAsync(
         PromotionFormViewModel form)
     {
-        var selected = form.MarketIds.ToHashSet();
+        var marketIds = form.MarketIds.ToHashSet();
+        var productIds = form.ProductIds.ToHashSet();
+        var categoryIds = form.CategoryIds.ToHashSet();
+        var brandIds = form.BrandIds.ToHashSet();
 
         form.MarketOptions = await _db.Markets
             .AsNoTracking()
@@ -429,11 +416,252 @@ public sealed class PromotionsController(
             .Select(x => new SelectListItem
             {
                 Value = x.Id.ToString(),
-                Text =
-                    $"{x.Name} ({x.Code} · {x.CurrencyCode})",
-                Selected = selected.Contains(x.Id)
+                Text = $"{x.Name} ({x.Code} · {x.CurrencyCode})",
+                Selected = marketIds.Contains(x.Id)
             })
             .ToListAsync();
+
+        form.ProductOptions = await _db.Products
+            .IgnoreQueryFilters()
+            .AsNoTracking()
+            .Where(x => !x.IsDeleted)
+            .OrderBy(x => x.Name)
+            .Select(x => new SelectListItem
+            {
+                Value = x.Id.ToString(),
+                Text = $"{x.Name} ({x.Sku})",
+                Selected = productIds.Contains(x.Id)
+            })
+            .ToListAsync();
+
+        form.CategoryOptions = await _db.Categories
+            .IgnoreQueryFilters()
+            .AsNoTracking()
+            .Where(x => x.IsActive && !x.IsDeleted)
+            .OrderBy(x => x.Name)
+            .Select(x => new SelectListItem
+            {
+                Value = x.Id.ToString(),
+                Text = x.Name,
+                Selected = categoryIds.Contains(x.Id)
+            })
+            .ToListAsync();
+
+        form.BrandOptions = await _db.Brands
+            .IgnoreQueryFilters()
+            .AsNoTracking()
+            .Where(x => x.IsActive && !x.IsDeleted)
+            .OrderBy(x => x.Name)
+            .Select(x => new SelectListItem
+            {
+                Value = x.Id.ToString(),
+                Text = x.Name,
+                Selected = brandIds.Contains(x.Id)
+            })
+            .ToListAsync();
+    }
+
+    private async Task ValidateReferencesAsync(
+        PromotionFormViewModel form)
+    {
+        await ValidateIdsAsync(
+            "Form.MarketIds",
+            form.MarketIds,
+            _db.Markets.AsNoTracking()
+                .Where(x => x.IsActive)
+                .Select(x => x.Id),
+            "Có thị trường không tồn tại hoặc đã bị tắt.");
+
+        if (form.ScopeType == PromotionScopeType.Products)
+        {
+            await ValidateIdsAsync(
+                "Form.ProductIds",
+                form.ProductIds,
+                _db.Products.IgnoreQueryFilters()
+                    .AsNoTracking()
+                    .Where(x => !x.IsDeleted)
+                    .Select(x => x.Id),
+                "Có sản phẩm không tồn tại hoặc đã bị xóa.");
+        }
+        else if (form.ScopeType == PromotionScopeType.Categories)
+        {
+            await ValidateIdsAsync(
+                "Form.CategoryIds",
+                form.CategoryIds,
+                _db.Categories.IgnoreQueryFilters()
+                    .AsNoTracking()
+                    .Where(x => x.IsActive && !x.IsDeleted)
+                    .Select(x => x.Id),
+                "Có danh mục không tồn tại hoặc đã bị tắt.");
+        }
+        else if (form.ScopeType == PromotionScopeType.Brands)
+        {
+            await ValidateIdsAsync(
+                "Form.BrandIds",
+                form.BrandIds,
+                _db.Brands.IgnoreQueryFilters()
+                    .AsNoTracking()
+                    .Where(x => x.IsActive && !x.IsDeleted)
+                    .Select(x => x.Id),
+                "Có thương hiệu không tồn tại hoặc đã bị tắt.");
+        }
+    }
+
+    private async Task ValidateIdsAsync(
+        string field,
+        IReadOnlyCollection<int> selectedIds,
+        IQueryable<int> allowedQuery,
+        string error)
+    {
+        if (selectedIds.Count == 0)
+            return;
+
+        var allowedIds = await allowedQuery
+            .Where(x => selectedIds.Contains(x))
+            .ToListAsync();
+
+        if (allowedIds.Count != selectedIds.Count)
+        {
+            ModelState.AddModelError(field, error);
+        }
+    }
+
+    private static List<int> NormalizeIds(
+        IEnumerable<int>? values)
+    {
+        return values?
+            .Where(x => x > 0)
+            .Distinct()
+            .ToList()
+            ?? new List<int>();
+    }
+
+    private static void SyncMarkets(
+        Promotion promotion,
+        IReadOnlyCollection<int> selectedIds)
+    {
+        Sync(
+            promotion.Markets,
+            selectedIds,
+            x => x.MarketId,
+            id => new PromotionMarket
+            {
+                MarketId = id
+            });
+    }
+
+    private static void SyncProducts(
+        Promotion promotion,
+        IReadOnlyCollection<int> selectedIds)
+    {
+        Sync(
+            promotion.Products,
+            selectedIds,
+            x => x.ProductId,
+            id => new PromotionProduct
+            {
+                ProductId = id
+            });
+    }
+
+    private static void SyncCategories(
+        Promotion promotion,
+        IReadOnlyCollection<int> selectedIds)
+    {
+        Sync(
+            promotion.Categories,
+            selectedIds,
+            x => x.CategoryId,
+            id => new PromotionCategory
+            {
+                CategoryId = id
+            });
+    }
+
+    private static void SyncBrands(
+        Promotion promotion,
+        IReadOnlyCollection<int> selectedIds)
+    {
+        Sync(
+            promotion.Brands,
+            selectedIds,
+            x => x.BrandId,
+            id => new PromotionBrand
+            {
+                BrandId = id
+            });
+    }
+
+    private static void Sync<T>(
+        ICollection<T> current,
+        IReadOnlyCollection<int> selectedIds,
+        Func<T, int> getId,
+        Func<int, T> create)
+    {
+        foreach (var removed in current
+                     .Where(x =>
+                         !selectedIds.Contains(getId(x)))
+                     .ToList())
+        {
+            current.Remove(removed);
+        }
+
+        var existingIds =
+            current.Select(getId).ToHashSet();
+
+        foreach (var id in selectedIds
+                     .Where(x =>
+                         !existingIds.Contains(x)))
+        {
+            current.Add(create(id));
+        }
+    }
+
+    private async Task<string> GeneratePromotionCodeAsync()
+    {
+        const string alphabet =
+            "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+
+        for (var attempt = 0; attempt < 30; attempt++)
+        {
+            var randomPart = new string(
+                Enumerable.Range(0, 4)
+                    .Select(_ =>
+                        alphabet[
+                            Random.Shared.Next(
+                                alphabet.Length)])
+                    .ToArray());
+
+            var code =
+                $"KM-{DateTime.Now:yyMMdd}-{randomPart}";
+
+            var exists = await _db.Promotions
+                .AsNoTracking()
+                .AnyAsync(x => x.Code == code);
+
+            if (!exists)
+                return code;
+        }
+
+        return
+            $"KM-{DateTime.Now:yyMMddHHmmss}";
+    }
+
+    private static string? NormalizeGeneratedCode(
+        string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            return null;
+
+        var code =
+            value.Trim().ToUpperInvariant();
+
+        return System.Text.RegularExpressions.Regex
+            .IsMatch(
+                code,
+                @"^KM-\d{6}-[A-Z0-9]{4}$")
+            ? code
+            : null;
     }
 
     private static string FormatDiscount(
@@ -457,6 +685,49 @@ public sealed class PromotionsController(
         }
 
         return text;
+    }
+
+    private static string FormatScope(
+        Promotion promotion)
+    {
+        return promotion.ScopeType switch
+        {
+            PromotionScopeType.Products =>
+                FormatNames(
+                    "Sản phẩm",
+                    promotion.Products
+                        .Select(x => x.Product.Name)),
+            PromotionScopeType.Categories =>
+                FormatNames(
+                    "Danh mục",
+                    promotion.Categories
+                        .Select(x => x.Category.Name)),
+            PromotionScopeType.Brands =>
+                FormatNames(
+                    "Thương hiệu",
+                    promotion.Brands
+                        .Select(x => x.Brand.Name)),
+            _ =>
+                "Toàn bộ sản phẩm"
+        };
+    }
+
+    private static string FormatNames(
+        string prefix,
+        IEnumerable<string> names)
+    {
+        var values = names
+            .Where(x =>
+                !string.IsNullOrWhiteSpace(x))
+            .OrderBy(x => x)
+            .ToList();
+
+        if (values.Count <= 3)
+            return $"{prefix}: {string.Join(", ", values)}";
+
+        return
+            $"{prefix}: {string.Join(", ", values.Take(3))} " +
+            $"và {values.Count - 3} mục khác";
     }
 
     private static string GetStatus(

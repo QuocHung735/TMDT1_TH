@@ -238,9 +238,7 @@
             <div class="checkout-items">
                 @foreach (var item in Model.Items)
                 {
-                    <article class="checkout-item"
-                             data-promotion-product-id="@item.ProductId"
-                             data-promotion-line-total="@item.LineTotal.ToString("0.##", invariant)">
+                    <article class="checkout-item">
                         <div class="checkout-item__image">
                             @if (!string.IsNullOrWhiteSpace(item.ImageUrl))
                             {
@@ -351,7 +349,9 @@
     <script>
         (() => {
             const form =
-                document.querySelector("[data-shipping-checkout]");
+                document.querySelector("[data-shipping-checkout
+               data-vn-address-form
+               data-vn-address-required="true"]");
 
             if (!form) return;
 
@@ -476,4 +476,3 @@
         color: #b53d54;
     }
 </style>
-
