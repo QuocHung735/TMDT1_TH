@@ -1,0 +1,103 @@
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace TMDT1_TH.ViewModels.Storefront;
+
+public sealed class StoreCheckoutViewModel
+{
+    [Required(ErrorMessage = "Vui lòng nhập họ tên người nhận.")]
+    [StringLength(150, MinimumLength = 2, ErrorMessage = "Họ tên cần từ 2 đến 150 ký tự.")]
+    [Display(Name = "Họ tên người nhận")]
+    public string CustomerName { get; set; } = string.Empty;
+
+    [Required(ErrorMessage = "Vui lòng nhập số điện thoại.")]
+    [StringLength(30, MinimumLength = 9, ErrorMessage = "Số điện thoại chưa hợp lệ.")]
+    [RegularExpression(
+        @"^[0-9+\s().-]{9,30}$",
+        ErrorMessage = "Số điện thoại chỉ được chứa số và các ký tự +, khoảng trắng, dấu chấm hoặc dấu gạch.")]
+    [Display(Name = "Số điện thoại")]
+    public string CustomerPhone { get; set; } = string.Empty;
+
+    [EmailAddress(ErrorMessage = "Địa chỉ email chưa đúng định dạng.")]
+    [StringLength(180)]
+    [Display(Name = "Email")]
+    public string? CustomerEmail { get; set; }
+
+    [Required(ErrorMessage = "Vui lòng nhập tỉnh hoặc thành phố.")]
+    [StringLength(150)]
+    [Display(Name = "Tỉnh/Thành phố")]
+    public string Province { get; set; } = string.Empty;
+
+    [Required(ErrorMessage = "Vui lòng nhập quận hoặc huyện.")]
+    [StringLength(150)]
+    [Display(Name = "Quận/Huyện")]
+    public string District { get; set; } = string.Empty;
+
+    [Required(ErrorMessage = "Vui lòng nhập phường hoặc xã.")]
+    [StringLength(150)]
+    [Display(Name = "Phường/Xã")]
+    public string Ward { get; set; } = string.Empty;
+
+    [Required(ErrorMessage = "Vui lòng nhập số nhà và tên đường.")]
+    [StringLength(500, MinimumLength = 5)]
+    [Display(Name = "Địa chỉ cụ thể")]
+    public string AddressLine { get; set; } = string.Empty;
+
+    [StringLength(1000)]
+    [Display(Name = "Ghi chú")]
+    public string? CustomerNote { get; set; }
+
+    public IReadOnlyList<StoreCheckoutItemViewModel> Items { get; set; }
+        = Array.Empty<StoreCheckoutItemViewModel>();
+
+    public string CurrencyCode { get; set; } = "VND";
+    public int TotalQuantity { get; set; }
+    public decimal Subtotal { get; set; }
+    public decimal ShippingFee { get; set; }
+    public decimal TotalAmount { get; set; }
+}
+
+public sealed class StoreCheckoutItemViewModel
+{
+    public int ProductId { get; init; }
+    public int? ProductVariantId { get; init; }
+    public string ProductName { get; init; } = string.Empty;
+    public string? VariantName { get; init; }
+    public string Sku { get; init; } = string.Empty;
+    public string? ImageUrl { get; init; }
+    public string Unit { get; init; } = "Cái";
+    public decimal ListPrice { get; init; }
+    public decimal UnitPrice { get; init; }
+    public int Quantity { get; init; }
+    public int StockQuantity { get; init; }
+    public decimal LineTotal => UnitPrice * Quantity;
+}
+
+public sealed class StoreOrderConfirmationViewModel
+{
+    public string OrderNumber { get; init; } = string.Empty;
+    public DateTime CreatedAt { get; init; }
+    public string StatusName { get; init; } = string.Empty;
+    public string PaymentMethodName { get; init; } = string.Empty;
+    public string CustomerName { get; init; } = string.Empty;
+    public string CustomerPhone { get; init; } = string.Empty;
+    public string? CustomerEmail { get; init; }
+    public string ShippingAddress { get; init; } = string.Empty;
+    public string? CustomerNote { get; init; }
+    public string CurrencyCode { get; init; } = "VND";
+    public decimal Subtotal { get; init; }
+    public decimal ShippingFee { get; init; }
+    public decimal TotalAmount { get; init; }
+    public IReadOnlyList<StoreOrderConfirmationItemViewModel> Items { get; init; }
+        = Array.Empty<StoreOrderConfirmationItemViewModel>();
+}
+
+public sealed class StoreOrderConfirmationItemViewModel
+{
+    public string ProductName { get; init; } = string.Empty;
+    public string? VariantName { get; init; }
+    public string Sku { get; init; } = string.Empty;
+    public string? ImageUrl { get; init; }
+    public decimal UnitPrice { get; init; }
+    public int Quantity { get; init; }
+    public decimal LineTotal { get; init; }
+}

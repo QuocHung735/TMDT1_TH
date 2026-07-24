@@ -135,7 +135,7 @@
                         </div>
                         <div>
                             <dt>Phí vận chuyển</dt>
-                            <dd>Tính ở bước thanh toán</dd>
+                            <dd>Miễn phí ở bước hiện tại</dd>
                         </div>
                     </dl>
 
@@ -144,11 +144,11 @@
                         <strong>@Model.Subtotal.ToString("N0", culture) @Model.CurrencyCode</strong>
                     </div>
 
-                    <button class="store-button store-button--primary store-button--full store-button--large"
-                            type="button"
-                            disabled>
-                        Thanh toán triển khai ở bước 7
-                    </button>
+                    <a class="store-button store-button--primary store-button--full store-button--large"
+                       asp-controller="Checkout"
+                       asp-action="Index">
+                        Tiến hành đặt hàng
+                    </a>
 
                     <a class="store-button store-button--ghost store-button--full"
                        asp-controller="Home"

@@ -1,4 +1,4 @@
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using TMDT1_TH.Domain.Common;
 using TMDT1_TH.Domain.Entities;
 
@@ -18,6 +18,8 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
     public DbSet<Market> Markets => Set<Market>();
     public DbSet<PriceSchedule> PriceSchedules => Set<PriceSchedule>();
     public DbSet<PriceHistory> PriceHistories => Set<PriceHistory>();
+    public DbSet<Order> Orders => Set<Order>();
+    public DbSet<OrderItem> OrderItems => Set<OrderItem>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
