@@ -1,0 +1,206 @@
+﻿@using System.Globalization
+@model TMDT1_TH.ViewModels.Storefront.StoreCheckoutViewModel
+@{
+    Layout = "_StoreLayout";
+    ViewData["Title"] = "Thanh toán";
+    var culture = CultureInfo.GetCultureInfo("vi-VN");
+}
+
+<section class="checkout-head">
+    <div class="store-container">
+        <span class="eyebrow">THANH TOÁN</span>
+        <h1>Thông tin nhận hàng</h1>
+        <p>Giá và tồn kho sẽ được kiểm tra lại lần cuối khi bạn xác nhận đặt hàng.</p>
+    </div>
+</section>
+
+<section class="store-section checkout-page">
+    <div class="store-container checkout-layout">
+        <form asp-controller="Checkout"
+              asp-action="PlaceOrder"
+              method="post"
+              class="checkout-form">
+            <div asp-validation-summary="ModelOnly"
+                 class="checkout-validation"></div>
+
+            <section class="checkout-card">
+                <div class="checkout-card__heading">
+                    <span>1</span>
+                    <div>
+                        <h2>Người nhận</h2>
+                        <p>Thông tin dùng để liên hệ khi giao hàng.</p>
+                    </div>
+                </div>
+
+                <div class="checkout-fields checkout-fields--two">
+                    <label>
+                        <span>@Html.DisplayNameFor(x => x.CustomerName)</span>
+                        <input asp-for="CustomerName"
+                               autocomplete="name"
+                               maxlength="150" />
+                        <small asp-validation-for="CustomerName"></small>
+                    </label>
+
+                    <label>
+                        <span>@Html.DisplayNameFor(x => x.CustomerPhone)</span>
+                        <input asp-for="CustomerPhone"
+                               autocomplete="tel"
+                               inputmode="tel"
+                               maxlength="30" />
+                        <small asp-validation-for="CustomerPhone"></small>
+                    </label>
+
+                    <label class="checkout-field--full">
+                        <span>@Html.DisplayNameFor(x => x.CustomerEmail)</span>
+                        <input asp-for="CustomerEmail"
+                               autocomplete="email"
+                               maxlength="180"
+                               placeholder="Không bắt buộc" />
+                        <small asp-validation-for="CustomerEmail"></small>
+                    </label>
+                </div>
+            </section>
+
+            <section class="checkout-card">
+                <div class="checkout-card__heading">
+                    <span>2</span>
+                    <div>
+                        <h2>Địa chỉ giao hàng</h2>
+                        <p>Nhập rõ địa chỉ để đơn hàng được giao chính xác.</p>
+                    </div>
+                </div>
+
+                <div class="checkout-fields checkout-fields--two">
+                    <label>
+                        <span>@Html.DisplayNameFor(x => x.Province)</span>
+                        <input asp-for="Province"
+                               autocomplete="address-level1"
+                               maxlength="150" />
+                        <small asp-validation-for="Province"></small>
+                    </label>
+
+                    <label>
+                        <span>@Html.DisplayNameFor(x => x.District)</span>
+                        <input asp-for="District"
+                               autocomplete="address-level2"
+                               maxlength="150" />
+                        <small asp-validation-for="District"></small>
+                    </label>
+
+                    <label>
+                        <span>@Html.DisplayNameFor(x => x.Ward)</span>
+                        <input asp-for="Ward"
+                               autocomplete="address-level3"
+                               maxlength="150" />
+                        <small asp-validation-for="Ward"></small>
+                    </label>
+
+                    <label>
+                        <span>@Html.DisplayNameFor(x => x.AddressLine)</span>
+                        <input asp-for="AddressLine"
+                               autocomplete="street-address"
+                               maxlength="500"
+                               placeholder="Số nhà, tên đường..." />
+                        <small asp-validation-for="AddressLine"></small>
+                    </label>
+
+                    <label class="checkout-field--full">
+                        <span>@Html.DisplayNameFor(x => x.CustomerNote)</span>
+                        <textarea asp-for="CustomerNote"
+                                  rows="4"
+                                  maxlength="1000"
+                                  placeholder="Ví dụ: Gọi trước khi giao hàng"></textarea>
+                        <small asp-validation-for="CustomerNote"></small>
+                    </label>
+                </div>
+            </section>
+
+            <section class="checkout-card">
+                <div class="checkout-card__heading">
+                    <span>3</span>
+                    <div>
+                        <h2>Phương thức thanh toán</h2>
+                        <p>Bước này hỗ trợ thanh toán khi nhận hàng.</p>
+                    </div>
+                </div>
+
+                <label class="payment-method is-selected">
+                    <input type="radio"
+                           checked
+                           disabled />
+                    <span>
+                        <b>Thanh toán khi nhận hàng</b>
+                        <small>Thanh toán trực tiếp cho đơn vị giao hàng.</small>
+                    </span>
+                </label>
+            </section>
+
+            <button class="store-button store-button--primary store-button--large store-button--full"
+                    type="submit">
+                Xác nhận đặt hàng
+            </button>
+
+            <p class="checkout-submit-note">
+                Bằng việc đặt hàng, bạn xác nhận thông tin người nhận là chính xác.
+            </p>
+        </form>
+
+        <aside class="checkout-summary">
+            <h2>Đơn hàng của bạn</h2>
+
+            <div class="checkout-items">
+                @foreach (var item in Model.Items)
+                {
+                    <article class="checkout-item">
+                        <div class="checkout-item__image">
+                            @if (!string.IsNullOrWhiteSpace(item.ImageUrl))
+                            {
+                                <img src="@item.ImageUrl" alt="@item.ProductName" />
+                            }
+                            else
+                            {
+                                <span>Mây Home</span>
+                            }
+                        </div>
+                        <div>
+                            <b>@item.ProductName</b>
+                            @if (!string.IsNullOrWhiteSpace(item.VariantName))
+                            {
+                                <small>@item.VariantName</small>
+                            }
+                            <small>@item.Sku · SL @item.Quantity</small>
+                        </div>
+                        <strong>
+                            @item.LineTotal.ToString("N0", culture)
+                            @Model.CurrencyCode
+                        </strong>
+                    </article>
+                }
+            </div>
+
+            <dl class="checkout-totals">
+                <div>
+                    <dt>Số lượng</dt>
+                    <dd>@Model.TotalQuantity sản phẩm</dd>
+                </div>
+                <div>
+                    <dt>Tạm tính</dt>
+                    <dd>@Model.Subtotal.ToString("N0", culture) @Model.CurrencyCode</dd>
+                </div>
+                <div>
+                    <dt>Phí vận chuyển</dt>
+                    <dd>@(Model.ShippingFee == 0 ? "Miễn phí" : $"{Model.ShippingFee:N0} {Model.CurrencyCode}")</dd>
+                </div>
+            </dl>
+
+            <div class="checkout-total">
+                <span>Tổng thanh toán</span>
+                <strong>@Model.TotalAmount.ToString("N0", culture) @Model.CurrencyCode</strong>
+            </div>
+
+            <a class="checkout-back-link"
+               asp-controller="Cart"
+               asp-action="Index">← Quay lại giỏ hàng</a>
+        </aside>
+    </div>
+</section>
