@@ -49,14 +49,6 @@
             <nav class="store-actions" aria-label="Tài khoản và giỏ hàng">
                 @if (authenticated)
                 {
-                    <a asp-area=""
-                       asp-controller="MyOrders"
-                       asp-action="Index">Đơn hàng</a>
-
-                    <a asp-area=""
-                       asp-controller="MyReviews"
-                       asp-action="Index">Đánh giá</a>
-
                     @if (User.IsInRole("Admin"))
                     {
                         <a asp-area="Admin"
@@ -138,8 +130,6 @@
                 @if (authenticated)
                 {
                     <a asp-controller="Account" asp-action="Profile">Hồ sơ khách hàng</a>
-                    <a asp-controller="MyOrders" asp-action="Index">Đơn hàng của tôi</a>
-                    <a asp-controller="MyReviews" asp-action="Index">Đánh giá của tôi</a>
                 }
                 else
                 {
