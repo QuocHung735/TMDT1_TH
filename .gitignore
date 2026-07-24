@@ -414,3 +414,21 @@ FodyWeavers.xsd
 /VIETNAM_ADDRESS_DROPDOWNS_LOG.txt
 /VIETNAM_ADDRESS_DROPDOWNS_V2.md
 /VIETNAM_ADDRESS_DROPDOWNS_V2_LOG.txt
+# Local repair artifacts
+/*_LOG.txt
+/PROMOTION_SCOPE_*.md
+/promotion-scope-migration-*-backup/
+*.before-*.bak
+/TMDT1_TH_CRUD_Update/
+/TMDT1_TH_MAY_HOME_FIX_PRODUCT_SAVE/
+/tools/
+# Local repair artifacts
+/*_LOG.txt
+/PROMOTION_SCOPE_*.md
+/promotion-scope-migration-*-backup/
+*.before-*.bak
+/TMDT1_TH_CRUD_Update/
+/TMDT1_TH_MAY_HOME_FIX_PRODUCT_SAVE/
+/tools/
+/REPOSITORY_CLEANUP_STEP2.md
+/REPOSITORY_CLEANUP_STEP2_V2.md

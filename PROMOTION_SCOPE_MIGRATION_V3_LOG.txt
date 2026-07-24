@@ -1,9 +1,0 @@
-﻿TMDT1_TH PROMOTION SCOPE MIGRATION V3
-Started: 2026-07-25 03:47:30
-
-
-============================================================
- PROMOTION SCOPE MIGRATION V3
-============================================================
-
-[1/7] Locating failed promotion scope migration...
