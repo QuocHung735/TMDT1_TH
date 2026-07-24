@@ -13,6 +13,10 @@
         {
             PropertyNamingPolicy = JsonNamingPolicy.CamelCase
         });
+    var canBuySimpleProduct =
+        !Model.HasVariants &&
+        Model.SalePrice.HasValue &&
+        Model.StockQuantity >= Model.MinPurchaseQuantity;
 }
 
 <section class="product-breadcrumb">
@@ -30,8 +34,13 @@
 <section class="store-section product-detail">
     <div class="store-container product-detail__grid"
          data-product-details
+         data-product-id="@Model.Id"
          data-has-variants="@Model.HasVariants.ToString().ToLowerInvariant()"
-         data-currency="@Model.CurrencyCode">
+         data-currency="@Model.CurrencyCode"
+         data-simple-price-available="@Model.SalePrice.HasValue.ToString().ToLowerInvariant()"
+         data-simple-stock="@Model.StockQuantity"
+         data-min-purchase="@Model.MinPurchaseQuantity"
+         data-max-purchase="@Model.MaxPurchaseQuantity">
         <div class="product-gallery">
             <div class="product-gallery__main">
                 @if (primaryImage is not null)
@@ -158,14 +167,33 @@
             <div class="product-purchase-actions">
                 <button class="store-button store-button--primary store-button--large"
                         type="button"
-                        disabled
+                        disabled="@(!canBuySimpleProduct)"
                         data-add-to-cart>
-                    Giỏ hàng triển khai ở bước 6
+                    @if (Model.HasVariants)
+                    {
+                        <span>Chọn phân loại</span>
+                    }
+                    else if (!Model.SalePrice.HasValue)
+                    {
+                        <span>Chưa có giá bán</span>
+                    }
+                    else if (Model.StockQuantity < Model.MinPurchaseQuantity)
+                    {
+                        <span>Tạm hết hàng</span>
+                    }
+                    else
+                    {
+                        <span>Thêm vào giỏ hàng</span>
+                    }
                 </button>
                 <a class="store-button store-button--ghost store-button--large"
                    asp-controller="Home"
                    asp-action="Catalog">Tiếp tục xem hàng</a>
             </div>
+
+            <p class="product-cart-feedback"
+               data-cart-feedback
+               aria-live="polite"></p>
 
             <div class="product-assurance">
                 <span><b>Giá minh bạch</b><small>Theo lịch giá đang hiệu lực</small></span>

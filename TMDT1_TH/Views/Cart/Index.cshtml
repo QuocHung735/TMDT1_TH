@@ -1,0 +1,167 @@
+﻿@using System.Globalization
+@model TMDT1_TH.ViewModels.Storefront.StoreCartPageViewModel
+@{
+    Layout = "_StoreLayout";
+    ViewData["Title"] = "Giỏ hàng";
+    var culture = CultureInfo.GetCultureInfo("vi-VN");
+}
+
+<section class="cart-page-head">
+    <div class="store-container">
+        <span class="eyebrow">GIỎ HÀNG</span>
+        <h1>Sản phẩm bạn đã chọn</h1>
+        <p>Giá và tồn kho được kiểm tra lại trực tiếp từ database mỗi lần mở giỏ.</p>
+    </div>
+</section>
+
+<section class="store-section cart-page">
+    <div class="store-container">
+        @if (TempData["CartMessage"] is string message)
+        {
+            <div class="cart-notice">@message</div>
+        }
+
+        @foreach (var warning in Model.Warnings)
+        {
+            <div class="cart-notice cart-notice--warning">@warning</div>
+        }
+
+        @if (Model.Items.Count == 0)
+        {
+            <div class="store-empty">
+                <h3>Giỏ hàng đang trống</h3>
+                <p>Khám phá các sản phẩm gia dụng và chọn phân loại phù hợp.</p>
+                <a class="store-button store-button--primary"
+                   asp-controller="Home"
+                   asp-action="Catalog">Tiếp tục mua sắm</a>
+            </div>
+        }
+        else
+        {
+            <div class="cart-layout">
+                <div class="cart-items">
+                    @foreach (var item in Model.Items)
+                    {
+                        <article class="cart-item">
+                            <a class="cart-item__image"
+                               asp-controller="Home"
+                               asp-action="Details"
+                               asp-route-slug="@item.ProductSlug">
+                                @if (!string.IsNullOrWhiteSpace(item.ImageUrl))
+                                {
+                                    <img src="@item.ImageUrl" alt="@item.ProductName" />
+                                }
+                                else
+                                {
+                                    <span>Mây Home</span>
+                                }
+                            </a>
+
+                            <div class="cart-item__content">
+                                <p class="cart-item__sku">@item.Sku</p>
+                                <h2>
+                                    <a asp-controller="Home"
+                                       asp-action="Details"
+                                       asp-route-slug="@item.ProductSlug">
+                                        @item.ProductName
+                                    </a>
+                                </h2>
+
+                                @if (!string.IsNullOrWhiteSpace(item.VariantName))
+                                {
+                                    <p class="cart-item__variant">@item.VariantName</p>
+                                }
+
+                                <div class="cart-item__price">
+                                    <strong>@item.SalePrice.ToString("N0", culture) @item.CurrencyCode</strong>
+                                    @if (item.ListPrice.HasValue &&
+                                         item.ListPrice.Value > item.SalePrice)
+                                    {
+                                        <del>@item.ListPrice.Value.ToString("N0", culture) @item.CurrencyCode</del>
+                                    }
+                                </div>
+
+                                <p class="cart-item__stock">
+                                    Còn @item.StockQuantity · Mua từ @item.MinQuantity đến @item.MaxQuantity
+                                </p>
+                            </div>
+
+                            <div class="cart-item__actions">
+                                <form asp-controller="Cart"
+                                      asp-action="Update"
+                                      method="post"
+                                      class="cart-update-form">
+                                    <input type="hidden" name="ProductId" value="@item.ProductId" />
+                                    <input type="hidden" name="ProductVariantId" value="@item.ProductVariantId" />
+                                    <label>
+                                        <span>Số lượng</span>
+                                        <input type="number"
+                                               name="Quantity"
+                                               value="@item.Quantity"
+                                               min="@item.MinQuantity"
+                                               max="@item.MaxQuantity" />
+                                    </label>
+                                    <button class="store-button store-button--ghost"
+                                            type="submit">Cập nhật</button>
+                                </form>
+
+                                <strong class="cart-item__total">
+                                    @item.LineTotal.ToString("N0", culture) @item.CurrencyCode
+                                </strong>
+
+                                <form asp-controller="Cart"
+                                      asp-action="Remove"
+                                      method="post">
+                                    <input type="hidden" name="ProductId" value="@item.ProductId" />
+                                    <input type="hidden" name="ProductVariantId" value="@item.ProductVariantId" />
+                                    <button class="cart-remove-button"
+                                            type="submit">Xóa</button>
+                                </form>
+                            </div>
+                        </article>
+                    }
+                </div>
+
+                <aside class="cart-summary">
+                    <h2>Tóm tắt giỏ hàng</h2>
+                    <dl>
+                        <div>
+                            <dt>Số lượng</dt>
+                            <dd>@Model.TotalQuantity sản phẩm</dd>
+                        </div>
+                        <div>
+                            <dt>Tạm tính</dt>
+                            <dd>@Model.Subtotal.ToString("N0", culture) @Model.CurrencyCode</dd>
+                        </div>
+                        <div>
+                            <dt>Phí vận chuyển</dt>
+                            <dd>Tính ở bước thanh toán</dd>
+                        </div>
+                    </dl>
+
+                    <div class="cart-summary__total">
+                        <span>Tổng tạm tính</span>
+                        <strong>@Model.Subtotal.ToString("N0", culture) @Model.CurrencyCode</strong>
+                    </div>
+
+                    <button class="store-button store-button--primary store-button--full store-button--large"
+                            type="button"
+                            disabled>
+                        Thanh toán triển khai ở bước 7
+                    </button>
+
+                    <a class="store-button store-button--ghost store-button--full"
+                       asp-controller="Home"
+                       asp-action="Catalog">Tiếp tục mua sắm</a>
+
+                    <form asp-controller="Cart"
+                          asp-action="Clear"
+                          method="post"
+                          class="cart-clear-form">
+                        <button type="submit">Xóa toàn bộ giỏ hàng</button>
+                    </form>
+                </aside>
+            </div>
+        }
+    </div>
+</section>

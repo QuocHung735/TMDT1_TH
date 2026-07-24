@@ -9,6 +9,7 @@
     <title>@title - Mây Home</title>
     <meta name="description" content="Mây Home - Đồ gia dụng tiện nghi cho mọi gia đình." />
     <link rel="stylesheet" href="~/store/css/store.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/store/css/cart.css" asp-append-version="true" />
 </head>
 <body>
     <div class="store-announcement">
@@ -40,9 +41,13 @@
                 <a asp-area="Admin"
                    asp-controller="Dashboard"
                    asp-action="Index">Quản trị</a>
-                <span class="store-cart-preview" title="Giỏ hàng được triển khai ở bước 6">
-                    Giỏ hàng <b>0</b>
-                </span>
+                <a class="store-cart-preview"
+                   asp-area=""
+                   asp-controller="Cart"
+                   asp-action="Index"
+                   title="Mở giỏ hàng">
+                    Giỏ hàng <b data-cart-count>0</b>
+                </a>
             </nav>
         </div>
 
@@ -92,6 +97,10 @@
             <div class="store-container">© @DateTime.Now.Year Mây Home.</div>
         </div>
     </footer>
+
+    <form id="store-antiforgery" hidden>
+        @Html.AntiForgeryToken()
+    </form>
 
     <script src="~/store/js/store.js" asp-append-version="true"></script>
     @await RenderSectionAsync("Scripts", required: false)
