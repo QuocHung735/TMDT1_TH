@@ -32,8 +32,7 @@
                     <div>
                         <dt>Ngày đặt</dt>
                         <dd>
-                            @Model.CreatedAt.ToLocalTime()
-                                .ToString("dd/MM/yyyy HH:mm")
+                            @VietnamDateTime.Format(Model.CreatedAt, "dd/MM/yyyy HH:mm")
                         </dd>
                     </div>
                     <div>
@@ -75,9 +74,7 @@
                     <p>
                         Dự kiến giao trước:
                         <strong>
-                            @Model.EstimatedDeliveryAt.Value
-                                .ToLocalTime()
-                                .ToString("dd/MM/yyyy")
+                            @VietnamDateTime.Format(Model.EstimatedDeliveryAt.Value, "dd/MM/yyyy")
                         </strong>
                     </p>
                 }
@@ -217,4 +214,5 @@
         </aside>
     </div>
 </section>
+
 

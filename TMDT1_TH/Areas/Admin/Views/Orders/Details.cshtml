@@ -3,11 +3,13 @@
 @{
     ViewData["Title"] = $"Đơn {Model.OrderNumber}";
     ViewData["Description"] =
-        $"Đặt lúc {Model.CreatedAt.ToLocalTime():dd/MM/yyyy HH:mm}";
+        $"Đặt lúc {VietnamDateTime.Format(Model.CreatedAt)}";
     var culture = CultureInfo.GetCultureInfo("vi-VN");
-    var estimatedDate = Model.EstimatedDeliveryAt?
-        .ToLocalTime()
-        .ToString("yyyy-MM-dd");
+    var estimatedDate = Model.EstimatedDeliveryAt.HasValue
+        ? VietnamDateTime.Format(
+            Model.EstimatedDeliveryAt.Value,
+            "yyyy-MM-dd")
+        : null;
 }
 
 @section PageActions {
@@ -117,9 +119,7 @@
                     <small>Dự kiến giao</small>
                     <strong>
                         @(Model.EstimatedDeliveryAt.HasValue
-                            ? Model.EstimatedDeliveryAt.Value
-                                .ToLocalTime()
-                                .ToString("dd/MM/yyyy")
+                            ? VietnamDateTime.Format(Model.EstimatedDeliveryAt.Value, "dd/MM/yyyy")
                             : "Chưa cập nhật")
                     </strong>
                 </div>
@@ -134,9 +134,7 @@
                         <strong>Bàn giao vận chuyển</strong>
                         <small>
                             @(Model.ShippedAt.HasValue
-                                ? Model.ShippedAt.Value
-                                    .ToLocalTime()
-                                    .ToString("dd/MM/yyyy HH:mm")
+                                ? VietnamDateTime.Format(Model.ShippedAt.Value, "dd/MM/yyyy HH:mm")
                                 : "Chưa bàn giao")
                         </small>
                     </div>
@@ -150,9 +148,7 @@
                         <strong>Giao hàng thành công</strong>
                         <small>
                             @(Model.DeliveredAt.HasValue
-                                ? Model.DeliveredAt.Value
-                                    .ToLocalTime()
-                                    .ToString("dd/MM/yyyy HH:mm")
+                                ? VietnamDateTime.Format(Model.DeliveredAt.Value, "dd/MM/yyyy HH:mm")
                                 : "Chưa hoàn thành")
                         </small>
                     </div>
@@ -431,3 +427,4 @@
         })();
     </script>
 }
+

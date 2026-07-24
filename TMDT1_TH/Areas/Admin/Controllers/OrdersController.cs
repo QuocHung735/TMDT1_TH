@@ -7,6 +7,7 @@ using TMDT1_TH.Data;
 using TMDT1_TH.Domain.Entities;
 using TMDT1_TH.Domain.Enums;
 using TMDT1_TH.ViewModels.Storefront;
+using TMDT1_TH.Infrastructure.Pricing;
 
 namespace TMDT1_TH.Areas.Admin.Controllers;
 
@@ -849,7 +850,7 @@ public sealed class OrdersController(
         // Id đơn hàng là duy nhất nên mã này không bị trùng.
         // Ví dụ: MHV-260724-000123.
         return
-            $"MHV-{DateTime.UtcNow:yyMMdd}-{order.Id:D6}";
+            $"MHV-{StorePriceClock.Now:yyMMdd}-{order.Id:D6}";
     }
 
     private static string? BuildTrackingUrl(
@@ -905,3 +906,4 @@ public sealed class OrdersController(
             : value.Trim();
     }
 }
+

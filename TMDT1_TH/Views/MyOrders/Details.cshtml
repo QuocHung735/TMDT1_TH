@@ -25,8 +25,7 @@
                 <h1>@Model.OrderNumber</h1>
                 <p>
                     Đặt lúc
-                    @Model.CreatedAt.ToLocalTime()
-                        .ToString("dd/MM/yyyy HH:mm")
+                    @VietnamDateTime.Format(Model.CreatedAt, "dd/MM/yyyy HH:mm")
                 </p>
             </div>
             <span class="customer-order-status @Model.StatusClass">
@@ -98,9 +97,7 @@
                     <small>Dự kiến giao</small>
                     <strong>
                         @(Model.EstimatedDeliveryAt.HasValue
-                            ? Model.EstimatedDeliveryAt.Value
-                                .ToLocalTime()
-                                .ToString("dd/MM/yyyy")
+                            ? VietnamDateTime.Format(Model.EstimatedDeliveryAt.Value, "dd/MM/yyyy")
                             : "Đang cập nhật")
                     </strong>
                 </div>
@@ -122,8 +119,7 @@
                     <div>
                         <strong>Đã đặt hàng</strong>
                         <small>
-                            @Model.CreatedAt.ToLocalTime()
-                                .ToString("dd/MM/yyyy HH:mm")
+                            @VietnamDateTime.Format(Model.CreatedAt, "dd/MM/yyyy HH:mm")
                         </small>
                     </div>
                 </div>
@@ -136,9 +132,7 @@
                         <strong>Bàn giao đơn vị vận chuyển</strong>
                         <small>
                             @(Model.ShippedAt.HasValue
-                                ? Model.ShippedAt.Value
-                                    .ToLocalTime()
-                                    .ToString("dd/MM/yyyy HH:mm")
+                                ? VietnamDateTime.Format(Model.ShippedAt.Value, "dd/MM/yyyy HH:mm")
                                 : "Chưa bàn giao")
                         </small>
                     </div>
@@ -152,9 +146,7 @@
                         <strong>Giao hàng thành công</strong>
                         <small>
                             @(Model.DeliveredAt.HasValue
-                                ? Model.DeliveredAt.Value
-                                    .ToLocalTime()
-                                    .ToString("dd/MM/yyyy HH:mm")
+                                ? VietnamDateTime.Format(Model.DeliveredAt.Value, "dd/MM/yyyy HH:mm")
                                 : "Chưa hoàn thành")
                         </small>
                     </div>
@@ -314,3 +306,4 @@
         </div>
     </div>
 </section>
+

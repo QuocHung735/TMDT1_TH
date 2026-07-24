@@ -21,7 +21,7 @@
                     <span>@Model.RoleName</span>
                     <span>
                         Thành viên từ
-                        @Model.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy")
+                        @VietnamDateTime.Format(Model.CreatedAt, "dd/MM/yyyy")
                     </span>
                     <span class="@(Model.HasDefaultAddress ? "is-complete" : "is-incomplete")">
                         @(Model.HasDefaultAddress
@@ -248,3 +248,4 @@
     <script src="~/store/js/vietnam-address.js"
             asp-append-version="true"></script>
 }
+

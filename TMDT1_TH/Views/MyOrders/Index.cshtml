@@ -85,8 +85,7 @@
 
                                 <small>
                                     Đặt lúc
-                                    @order.CreatedAt.ToLocalTime()
-                                        .ToString("dd/MM/yyyy HH:mm")
+                                    @VietnamDateTime.Format(order.CreatedAt, "dd/MM/yyyy HH:mm")
                                     · @order.TotalQuantity sản phẩm
                                 </small>
 
@@ -130,3 +129,4 @@
         }
     </div>
 </section>
+

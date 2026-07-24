@@ -1,4 +1,4 @@
-using System.Globalization;
+﻿using System.Globalization;
 using System.Text;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
@@ -7,6 +7,8 @@ using TMDT1_TH.Areas.Admin.ViewModels;
 using TMDT1_TH.Data;
 using TMDT1_TH.Domain.Entities;
 using TMDT1_TH.Domain.Enums;
+using TMDT1_TH.Infrastructure.Pricing;
+using TMDT1_TH.Infrastructure.Time;
 
 namespace TMDT1_TH.Areas.Admin.Controllers;
 
@@ -74,7 +76,7 @@ public class PricingController : Controller
             form = new PricingScheduleFormViewModel
             {
                 MarketId = defaultMarketId,
-                ValidFrom = DateTime.Now,
+                ValidFrom = StorePriceClock.Now,
                 IsUnlimited = true,
                 IsActive = true
             };
@@ -265,7 +267,7 @@ public class PricingController : Controller
         }
 
         var bytes = Encoding.UTF8.GetPreamble().Concat(Encoding.UTF8.GetBytes(csv.ToString())).ToArray();
-        return File(bytes, "text/csv; charset=utf-8", $"lich-su-gia-{DateTime.Now:yyyyMMdd-HHmm}.csv");
+        return File(bytes, "text/csv; charset=utf-8", $"lich-su-gia-{StorePriceClock.Now:yyyyMMdd-HHmm}.csv");
     }
 
     private async Task<PricingIndexViewModel> BuildIndexModelAsync(
@@ -277,7 +279,7 @@ public class PricingController : Controller
     {
         await LoadFormOptionsAsync(form);
 
-        var now = DateTime.Now;
+        var now = StorePriceClock.Now;
         var nextSevenDays = now.AddDays(7);
         var query = _db.PriceSchedules
             .AsNoTracking()
@@ -347,7 +349,12 @@ public class PricingController : Controller
             IsActive = schedule.IsActive
         }).ToList();
 
-        var startOfMonth = new DateTime(now.Year, now.Month, 1);
+        var startOfMonthUtc =
+            VietnamDateTime.ToUtc(
+                new DateTime(
+                    now.Year,
+                    now.Month,
+                    1));
         var model = new PricingIndexViewModel
         {
             Items = rows,
@@ -363,7 +370,7 @@ public class PricingController : Controller
             UpcomingCount = await _db.PriceSchedules.CountAsync(x => x.IsActive && x.ValidFrom > now && x.ValidFrom <= nextSevenDays),
             ExpiringCount = await _db.PriceSchedules.CountAsync(x => x.IsActive && x.ValidFrom <= now &&
                 x.ValidTo.HasValue && x.ValidTo.Value > now && x.ValidTo.Value <= nextSevenDays),
-            ChangedThisMonthCount = await _db.PriceHistories.CountAsync(x => x.ChangedAt >= startOfMonth),
+            ChangedThisMonthCount = await _db.PriceHistories.CountAsync(x => x.ChangedAt >= startOfMonthUtc),
             ActiveMarketCount = await _db.Markets.CountAsync(x => x.IsActive)
         };
 
@@ -599,7 +606,7 @@ public class PricingController : Controller
             Tone = tone,
             Action = GetActionLabel(history.Action),
             User = history.ChangedBy,
-            Time = history.ChangedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm"),
+            Time = VietnamDateTime.Format(history.ChangedAt),
             Reason = history.Reason
         };
     }
@@ -713,3 +720,4 @@ public class PricingController : Controller
     private sealed record TargetReference(int? ProductId, int? ProductVariantId);
     private sealed record TargetName(string Product, string Variant);
 }
+

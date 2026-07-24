@@ -72,7 +72,7 @@
                         <div class="customer-review-card__content">
                             <small>
                                 Đơn @item.OrderNumber ·
-                                Hoàn thành @item.CompletedAt.ToLocalTime().ToString("dd/MM/yyyy")
+                                Hoàn thành @VietnamDateTime.Format(item.CompletedAt, "dd/MM/yyyy")
                             </small>
                             <h2>@item.ProductName</h2>
 
@@ -130,3 +130,4 @@
         }
     </div>
 </section>
+

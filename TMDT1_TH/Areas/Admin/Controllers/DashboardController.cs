@@ -1,8 +1,10 @@
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using TMDT1_TH.Areas.Admin.ViewModels;
 using TMDT1_TH.Data;
 using TMDT1_TH.Domain.Enums;
+using TMDT1_TH.Infrastructure.Pricing;
+using TMDT1_TH.Infrastructure.Time;
 
 namespace TMDT1_TH.Areas.Admin.Controllers;
 
@@ -13,14 +15,15 @@ public class DashboardController(ApplicationDbContext dbContext) : Controller
 
     public async Task<IActionResult> Index(CancellationToken cancellationToken)
     {
-        var now = DateTime.UtcNow;
-        var nextSevenDays = now.AddDays(7);
+        var utcNow = DateTime.UtcNow;
+        var priceNow = StorePriceClock.Now;
+        var nextSevenDays = priceNow.AddDays(7);
 
         var totalProducts = await dbContext.Products.CountAsync(cancellationToken);
         var activeProducts = await dbContext.Products.CountAsync(x => x.Status == ProductStatus.Active, cancellationToken);
         var activeVariants = await dbContext.ProductVariants.CountAsync(x => x.IsActive, cancellationToken);
         var upcomingPriceCount = await dbContext.PriceSchedules.CountAsync(
-            x => x.IsActive && x.ValidFrom > now && x.ValidFrom <= nextSevenDays,
+            x => x.IsActive && x.ValidFrom > priceNow && x.ValidFrom <= nextSevenDays,
             cancellationToken);
 
         var stockValues = await dbContext.Products
@@ -63,8 +66,8 @@ public class DashboardController(ApplicationDbContext dbContext) : Controller
         var currentPriceData = await dbContext.PriceSchedules
             .AsNoTracking()
             .Where(x => x.IsActive
-                && x.ValidFrom <= now
-                && (x.ValidTo == null || x.ValidTo > now)
+                && x.ValidFrom <= priceNow
+                && (x.ValidTo == null || x.ValidTo > priceNow)
                 && ((x.ProductId.HasValue && recentIds.Contains(x.ProductId.Value))
                     || (x.ProductVariant != null && recentIds.Contains(x.ProductVariant.ProductId))))
             .Select(x => new PricePoint(
@@ -90,7 +93,7 @@ public class DashboardController(ApplicationDbContext dbContext) : Controller
 
         var upcomingSchedules = await dbContext.PriceSchedules
             .AsNoTracking()
-            .Where(x => x.IsActive && x.ValidFrom > now && x.ValidFrom <= nextSevenDays)
+            .Where(x => x.IsActive && x.ValidFrom > priceNow && x.ValidFrom <= nextSevenDays)
             .OrderBy(x => x.ValidFrom)
             .Take(5)
             .Select(x => new UpcomingPriceData(
@@ -104,11 +107,11 @@ public class DashboardController(ApplicationDbContext dbContext) : Controller
             x.ProductName,
             x.MarketName,
             x.VariantName is null ? "Giá sản phẩm" : $"Biến thể {x.VariantName}",
-            x.ValidFrom.ToLocalTime().ToString("dd"),
-            $"Thg {x.ValidFrom.ToLocalTime():MM}",
+            x.ValidFrom.ToString("dd"),
+            $"Thg {x.ValidFrom:MM}",
             "Sắp áp dụng")).ToList();
 
-        var activities = await LoadActivitiesAsync(now, cancellationToken);
+        var activities = await LoadActivitiesAsync(utcNow, cancellationToken);
 
         var model = new DashboardViewModel
         {
@@ -210,7 +213,7 @@ public class DashboardController(ApplicationDbContext dbContext) : Controller
         if (difference.TotalHours < 1) return $"{Math.Max(1, (int)difference.TotalMinutes)} phút trước";
         if (difference.TotalDays < 1) return $"{Math.Max(1, (int)difference.TotalHours)} giờ trước";
         if (difference.TotalDays < 7) return $"{Math.Max(1, (int)difference.TotalDays)} ngày trước";
-        return time.ToLocalTime().ToString("dd/MM/yyyy");
+        return VietnamDateTime.Format(time, "dd/MM/yyyy");
     }
 
     private static string FormatMoney(decimal amount) => $"{amount:N0}đ";
@@ -230,3 +233,4 @@ public class DashboardController(ApplicationDbContext dbContext) : Controller
     private sealed record PricePoint(int ProductId, decimal SalePrice, DateTime ValidFrom);
     private sealed record UpcomingPriceData(string ProductName, string? VariantName, string MarketName, DateTime ValidFrom);
 }
+

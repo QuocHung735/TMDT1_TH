@@ -100,7 +100,7 @@
                             <div class="stacked-text">
                                 <strong>@order.OrderNumber</strong>
                                 <small>
-                                    @order.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm")
+                                    @VietnamDateTime.Format(order.CreatedAt, "dd/MM/yyyy HH:mm")
                                 </small>
                             </div>
                         </td>
@@ -137,3 +137,4 @@
         </table>
     </div>
 </section>
+

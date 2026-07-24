@@ -48,7 +48,7 @@
                                 </span>
                             </div>
                             <time>
-                                @item.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy")
+                                @VietnamDateTime.Format(item.CreatedAt, "dd/MM/yyyy")
                             </time>
                         </div>
 
@@ -87,3 +87,4 @@
         }
     </div>
 </section>
+

@@ -6,6 +6,7 @@ using TMDT1_TH.Areas.Admin.ViewModels;
 using TMDT1_TH.Data;
 using TMDT1_TH.Domain.Entities;
 using TMDT1_TH.Domain.Enums;
+using TMDT1_TH.Infrastructure.Pricing;
 
 namespace TMDT1_TH.Areas.Admin.Controllers;
 
@@ -84,8 +85,8 @@ public sealed class PromotionsController(
             form = new PromotionFormViewModel
             {
                 Code = await GeneratePromotionCodeAsync(),
-                StartsAt = DateTime.Now,
-                EndsAt = DateTime.Now.AddDays(7),
+                StartsAt = StorePriceClock.Now,
+                EndsAt = StorePriceClock.Now.AddDays(7),
                 IsActive = true,
                 ScopeType = PromotionScopeType.AllProducts
             };
@@ -278,7 +279,7 @@ public sealed class PromotionsController(
     {
         await LoadOptionsAsync(form);
 
-        var now = DateTime.Now;
+        var now = StorePriceClock.Now;
 
         var query = _db.Promotions
             .AsNoTracking()
@@ -633,7 +634,7 @@ public sealed class PromotionsController(
                     .ToArray());
 
             var code =
-                $"KM-{DateTime.Now:yyMMdd}-{randomPart}";
+                $"KM-{StorePriceClock.Now:yyMMdd}-{randomPart}";
 
             var exists = await _db.Promotions
                 .AsNoTracking()
@@ -644,7 +645,7 @@ public sealed class PromotionsController(
         }
 
         return
-            $"KM-{DateTime.Now:yyMMddHHmmss}";
+            $"KM-{StorePriceClock.Now:yyMMddHHmmss}";
     }
 
     private static string? NormalizeGeneratedCode(
@@ -759,3 +760,4 @@ public sealed class PromotionsController(
     private string CurrentUserName() =>
         User.Identity?.Name ?? "Admin";
 }
+

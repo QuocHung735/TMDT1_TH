@@ -128,7 +128,7 @@
                             <div class="stacked-text">
                                 <strong>@review.CustomerName</strong>
                                 <small>
-                                    @review.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm")
+                                    @VietnamDateTime.Format(review.CreatedAt, "dd/MM/yyyy HH:mm")
                                 </small>
                             </div>
                         </td>
@@ -164,3 +164,4 @@
         </table>
     </div>
 </section>
+

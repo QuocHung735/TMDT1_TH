@@ -2,7 +2,7 @@
 @{
     ViewData["Title"] = "Chi tiết đánh giá";
     ViewData["Description"] =
-        $"Đơn {Model.OrderNumber} · {Model.CreatedAt.ToLocalTime():dd/MM/yyyy HH:mm}";
+        $"Đơn {Model.OrderNumber} · {VietnamDateTime.Format(Model.CreatedAt)}";
 }
 
 @section PageActions {
@@ -132,3 +132,4 @@
         </div>
     </aside>
 </div>
+

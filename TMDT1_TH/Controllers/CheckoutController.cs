@@ -956,7 +956,7 @@ public sealed class CheckoutController(
                     .ToUpperInvariant();
 
             var candidate =
-                $"MH-{DateTime.UtcNow:yyMMdd}-{randomPart}";
+                $"MH-{StorePriceClock.Now:yyMMdd}-{randomPart}";
 
             var exists = await _db.Orders
                 .AsNoTracking()
@@ -1191,6 +1191,7 @@ public sealed class CheckoutController(
             new(null, error);
     }
 }
+
 
 
 
