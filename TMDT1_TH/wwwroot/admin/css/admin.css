@@ -1,4 +1,4 @@
-:root {
+﻿:root {
     --primary: #8573f4;
     --primary-dark: #6f5de7;
     --primary-soft: #eeeafd;
@@ -322,4 +322,45 @@ button:focus-visible {
     .specification-row { grid-template-columns: 1fr; }
     .listing-readiness { grid-template-columns: 1fr; }
     .listing-readiness__checks { grid-template-columns: 1fr; }
+}
+
+/* Step 2: system-managed immutable SKU and model number */
+.product-code-field input[readonly] {
+    cursor: not-allowed;
+    color: #615d72;
+    background:
+        linear-gradient(0deg, rgba(139, 124, 246, .045), rgba(139, 124, 246, .045)),
+        #f8f7fc;
+    border-style: dashed;
+}
+
+.product-code-field input[readonly]:focus {
+    box-shadow: none;
+    border-color: #c9c2ee;
+}
+
+.system-managed-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    margin-left: 8px;
+    padding: 3px 8px;
+    border-radius: 999px;
+    color: #6958d8;
+    background: #eeeafd;
+    font-size: 11px;
+    font-weight: 600;
+    font-style: normal;
+}
+
+.product-code-field small[data-product-code-status][data-state="success"] {
+    color: #25856f;
+}
+
+.product-code-field small[data-product-code-status][data-state="error"] {
+    color: #c2415d;
+}
+
+.product-code-field small[data-product-code-status][data-state="loading"] {
+    color: #7664e8;
 }

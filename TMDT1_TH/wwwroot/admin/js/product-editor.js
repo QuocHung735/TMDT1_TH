@@ -1,4 +1,4 @@
-(() => {
+﻿(() => {
     const form = document.querySelector('[data-product-form]');
     if (!form) return;
 
@@ -13,7 +13,11 @@
     const optionName2 = document.getElementById('OptionName2');
     const optionValues2 = document.getElementById('OptionValues2');
     const skuInput = document.getElementById('Sku');
+    const modelInput = document.getElementById('ModelNumber');
     const nameInput = document.getElementById('Name');
+    const categorySelect = document.querySelector('[data-product-category]');
+    const brandSelect = document.querySelector('[data-product-brand]');
+    const productCodeStatus = document.querySelector('[data-product-code-status]');
     const productWeight = document.getElementById('Weight');
     const lowStockThreshold = document.getElementById('LowStockThreshold');
     const marketSelect = document.querySelector('[data-product-market]');
@@ -60,6 +64,94 @@
         if (entered) return entered.toUpperCase();
         return `HOME-${token(nameInput?.value || 'SANPHAM')}`;
     };
+
+    const productCodeState = {
+        timer: null,
+        requestId: 0
+    };
+
+    const setProductCodeStatus = (message, state = '') => {
+        if (!productCodeStatus) return;
+        productCodeStatus.textContent = message;
+        productCodeStatus.dataset.state = state;
+    };
+
+    const loadSystemManagedProductCodes = async () => {
+        const name = nameInput?.value.trim() || '';
+        const categoryId = categorySelect?.value || '';
+        const brandId = brandSelect?.value || '';
+
+        if (!productId && (!name || !categoryId || !brandId)) {
+            if (skuInput) skuInput.value = '';
+            if (modelInput) modelInput.value = '';
+            setProductCodeStatus(
+                'Nhập tên sản phẩm, chọn danh mục và thương hiệu để hệ thống tạo mã.',
+                '');
+            return;
+        }
+
+        const requestId = ++productCodeState.requestId;
+        const url = new URL('/Admin/Products/GenerateCodes', window.location.origin);
+
+        if (productId) {
+            url.searchParams.set('productId', productId);
+        } else {
+            url.searchParams.set('name', name);
+            url.searchParams.set('categoryId', categoryId);
+            url.searchParams.set('brandId', brandId);
+        }
+
+        setProductCodeStatus(
+            'Hệ thống đang tạo và kiểm tra mã trong database...',
+            'loading');
+
+        try {
+            const response = await fetch(url, {
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            });
+            const data = await response.json().catch(() => ({}));
+
+            if (requestId !== productCodeState.requestId) return;
+            if (!response.ok) {
+                throw new Error(data.message || 'Không thể tạo mã hệ thống.');
+            }
+
+            if (skuInput) skuInput.value = data.sku || '';
+            if (modelInput) modelInput.value = data.modelNumber || '';
+
+            if (hasVariants?.checked) {
+                renderVariantRows();
+            }
+
+            setProductCodeStatus(
+                productId
+                    ? 'SKU và mã model đã được khóa; không thể chỉnh sửa.'
+                    : 'Đây là mã xem trước. Server sẽ xác nhận lại mã duy nhất khi lưu.',
+                'success');
+        } catch (error) {
+            if (requestId === productCodeState.requestId) {
+                setProductCodeStatus(
+                    error?.message || 'Không thể tạo mã hệ thống.',
+                    'error');
+            }
+        }
+    };
+
+    const scheduleSystemManagedProductCodes = () => {
+        if (productId) return;
+        window.clearTimeout(productCodeState.timer);
+        productCodeState.timer = window.setTimeout(
+            loadSystemManagedProductCodes,
+            450);
+    };
+
+    nameInput?.addEventListener('input', scheduleSystemManagedProductCodes);
+    categorySelect?.addEventListener('change', scheduleSystemManagedProductCodes);
+    brandSelect?.addEventListener('change', scheduleSystemManagedProductCodes);
+
+    // Khóa lại ở DOM để các script khác không vô tình mở quyền chỉnh sửa.
+    if (skuInput) skuInput.readOnly = true;
+    if (modelInput) modelInput.readOnly = true;
 
     const combinationKey = (value1, value2) => value2
         ? `1=${token(value1)}|2=${token(value2)}`
@@ -503,4 +595,6 @@
     refreshVariantMode();
     validateSimplePrice();
     updateReadiness();
+
+    loadSystemManagedProductCodes();
 })();

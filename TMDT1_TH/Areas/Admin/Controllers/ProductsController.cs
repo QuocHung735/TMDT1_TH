@@ -1,4 +1,4 @@
-using System.Globalization;
+﻿using System.Globalization;
 using System.Text.RegularExpressions;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
@@ -236,6 +236,80 @@ public class ProductsController : Controller
         });
     }
 
+    [HttpGet]
+    public async Task<IActionResult> GenerateCodes(
+        string? name,
+        int? categoryId,
+        int? brandId,
+        int? productId)
+    {
+        if (productId.HasValue)
+        {
+            var existing = await _db.Products
+                .IgnoreQueryFilters()
+                .AsNoTracking()
+                .Where(x => !x.IsDeleted && x.Id == productId.Value)
+                .Select(x => new
+                {
+                    x.Name,
+                    x.CategoryId,
+                    x.BrandId,
+                    x.Sku,
+                    x.ModelNumber
+                })
+                .FirstOrDefaultAsync();
+
+            if (existing is null)
+                return NotFound(new { message = "Không tìm thấy sản phẩm." });
+
+            if (!string.IsNullOrWhiteSpace(existing.ModelNumber))
+            {
+                return Json(new
+                {
+                    sku = existing.Sku,
+                    modelNumber = existing.ModelNumber
+                });
+            }
+
+            var missingModelSuggestion = await GenerateUniqueProductCodesAsync(
+                existing.Name,
+                existing.CategoryId,
+                existing.BrandId,
+                productId.Value);
+
+            return Json(new
+            {
+                sku = existing.Sku,
+                modelNumber = missingModelSuggestion.ModelNumber
+            });
+        }
+
+        if (string.IsNullOrWhiteSpace(name))
+            return BadRequest(new { message = "Vui lòng nhập tên sản phẩm trước." });
+
+        if (!categoryId.HasValue || !brandId.HasValue)
+            return BadRequest(new { message = "Vui lòng chọn danh mục và thương hiệu." });
+
+        try
+        {
+            var suggestion = await GenerateUniqueProductCodesAsync(
+                name.Trim(),
+                categoryId.Value,
+                brandId.Value,
+                null);
+
+            return Json(new
+            {
+                sku = suggestion.Sku,
+                modelNumber = suggestion.ModelNumber
+            });
+        }
+        catch (InvalidOperationException exception)
+        {
+            return BadRequest(new { message = exception.Message });
+        }
+    }
+
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Save(ProductEditorViewModel model, string? mode)
@@ -245,12 +319,17 @@ public class ProductsController : Controller
             model.Status = ProductStatus.Draft;
 
         NormalizeEditorModel(model);
-        model.Sku = NormalizeSku(model.Sku, model.Name);
+        await EnsureSystemManagedProductCodesAsync(model);
+
+        // SKU và mã model do server quản lý. Xóa lỗi binding từ giá trị trống
+        // hoặc giá trị đã bị sửa ở phía trình duyệt.
+        ModelState.Remove(nameof(model.Sku));
+        ModelState.Remove(nameof(model.ModelNumber));
+
         EnsureVariantRows(model);
         await ValidateProductAsync(model, saveAsDraft);
-
-        var normalizedSku = model.Sku;
         await ValidateSkuUniquenessAsync(model);
+        await ValidateModelNumberUniquenessAsync(model);
 
         if (!ModelState.IsValid)
         {
@@ -370,14 +449,21 @@ public class ProductsController : Controller
             return NotFound();
 
         await using var transaction = await _db.Database.BeginTransactionAsync();
+        var copyName = source.Name + " - Bản sao";
+        var copyCodes = await GenerateUniqueProductCodesAsync(
+            copyName,
+            source.CategoryId,
+            source.BrandId,
+            null);
+
         var copy = new Product
         {
             CategoryId = source.CategoryId,
             BrandId = source.BrandId,
-            Name = source.Name + " - Bản sao",
-            Slug = await CreateUniqueSlugAsync(source.Name + " bản sao", null),
-            Sku = await CreateUniqueProductSkuAsync(source.Sku + "-COPY"),
-            ModelNumber = source.ModelNumber,
+            Name = copyName,
+            Slug = await CreateUniqueSlugAsync(copyName, null),
+            Sku = copyCodes.Sku,
+            ModelNumber = copyCodes.ModelNumber,
             Unit = source.Unit,
             ShortDescription = source.ShortDescription,
             Description = source.Description,
@@ -1547,6 +1633,191 @@ public class ProductsController : Controller
         return checks.Count(x => x) * 10;
     }
 
+    private async Task EnsureSystemManagedProductCodesAsync(ProductEditorViewModel model)
+    {
+        if (model.Id.HasValue)
+        {
+            var existing = await _db.Products
+                .IgnoreQueryFilters()
+                .AsNoTracking()
+                .Where(x => !x.IsDeleted && x.Id == model.Id.Value)
+                .Select(x => new
+                {
+                    x.Name,
+                    x.CategoryId,
+                    x.BrandId,
+                    x.Sku,
+                    x.ModelNumber
+                })
+                .FirstOrDefaultAsync();
+
+            if (existing is null)
+                throw new InvalidOperationException("Sản phẩm không còn tồn tại.");
+
+            // Không nhận SKU/model từ request khi chỉnh sửa.
+            model.Sku = existing.Sku;
+
+            if (!string.IsNullOrWhiteSpace(existing.ModelNumber))
+            {
+                model.ModelNumber = existing.ModelNumber;
+                return;
+            }
+
+            var missingModelSuggestion = await GenerateUniqueProductCodesAsync(
+                existing.Name,
+                existing.CategoryId,
+                existing.BrandId,
+                model.Id);
+
+            model.ModelNumber = missingModelSuggestion.ModelNumber;
+            return;
+        }
+
+        if (!model.CategoryId.HasValue || !model.BrandId.HasValue)
+        {
+            model.Sku = string.Empty;
+            model.ModelNumber = null;
+            return;
+        }
+
+        // Khi tạo mới, luôn bỏ qua mã do client gửi và sinh lại từ database.
+        var suggestion = await GenerateUniqueProductCodesAsync(
+            model.Name,
+            model.CategoryId.Value,
+            model.BrandId.Value,
+            null);
+
+        model.Sku = suggestion.Sku;
+        model.ModelNumber = suggestion.ModelNumber;
+    }
+
+    private async Task<ProductCodeSuggestion> GenerateUniqueProductCodesAsync(
+        string productName,
+        int categoryId,
+        int brandId,
+        int? currentProductId)
+    {
+        var category = await _db.Categories
+            .AsNoTracking()
+            .Where(x => x.Id == categoryId && x.IsActive)
+            .Select(x => new { x.Name, x.Slug })
+            .FirstOrDefaultAsync();
+
+        if (category is null)
+            throw new InvalidOperationException("Danh mục không tồn tại hoặc đã bị ẩn.");
+
+        var brand = await _db.Brands
+            .AsNoTracking()
+            .Where(x => x.Id == brandId && x.IsActive)
+            .Select(x => new { x.Name, x.Slug })
+            .FirstOrDefaultAsync();
+
+        if (brand is null)
+            throw new InvalidOperationException("Thương hiệu không tồn tại hoặc đã bị ẩn.");
+
+        var brandToken = BuildCodeToken(brand.Slug, brand.Name, 4, "BR");
+        var categoryToken = BuildCodeToken(category.Slug, category.Name, 5, "DM");
+        var productToken = BuildCodeToken(null, productName, 8, "SP");
+
+        var skuPrefix = $"HOME-{brandToken}-{categoryToken}-{productToken}";
+        var modelPrefix = $"{brandToken}-{categoryToken}-{DateTime.Now:yyMM}";
+
+        var usedProductSkus = await _db.Products
+            .IgnoreQueryFilters()
+            .AsNoTracking()
+            .Where(x => !x.IsDeleted &&
+                        x.Id != currentProductId &&
+                        x.Sku.StartsWith(skuPrefix))
+            .Select(x => x.Sku)
+            .ToListAsync();
+
+        var usedVariantSkus = await _db.ProductVariants
+            .IgnoreQueryFilters()
+            .AsNoTracking()
+            .Where(x => !x.IsDeleted && x.Sku.StartsWith(skuPrefix))
+            .Select(x => x.Sku)
+            .ToListAsync();
+
+        var usedModels = await _db.Products
+            .IgnoreQueryFilters()
+            .AsNoTracking()
+            .Where(x => !x.IsDeleted &&
+                        x.Id != currentProductId &&
+                        x.BrandId == brandId &&
+                        x.ModelNumber != null &&
+                        x.ModelNumber.StartsWith(modelPrefix))
+            .Select(x => x.ModelNumber!)
+            .ToListAsync();
+
+        var usedSkus = usedProductSkus
+            .Concat(usedVariantSkus)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        var usedModelNumbers = usedModels
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        for (var sequence = 1; sequence <= 9999; sequence++)
+        {
+            var suffix = sequence.ToString("000");
+            var sku = $"{skuPrefix}-{suffix}";
+            var modelNumber = $"{modelPrefix}-{suffix}";
+
+            if (!usedSkus.Contains(sku) &&
+                !usedModelNumbers.Contains(modelNumber))
+            {
+                return new ProductCodeSuggestion(sku, modelNumber);
+            }
+        }
+
+        throw new InvalidOperationException(
+            "Không thể sinh thêm SKU và mã model tự động vì dải số đã hết.");
+    }
+
+    private async Task ValidateModelNumberUniquenessAsync(ProductEditorViewModel model)
+    {
+        if (string.IsNullOrWhiteSpace(model.ModelNumber) ||
+            !model.BrandId.HasValue)
+        {
+            return;
+        }
+
+        var exists = await _db.Products
+            .IgnoreQueryFilters()
+            .AsNoTracking()
+            .AnyAsync(x => !x.IsDeleted &&
+                           x.Id != model.Id &&
+                           x.BrandId == model.BrandId.Value &&
+                           x.ModelNumber == model.ModelNumber);
+
+        if (exists)
+        {
+            ModelState.AddModelError(
+                nameof(model.ModelNumber),
+                "Mã model hệ thống sinh đang bị trùng trong cùng thương hiệu.");
+        }
+    }
+
+    private static string BuildCodeToken(
+        string? slug,
+        string source,
+        int maxLength,
+        string fallback)
+    {
+        var tokenSource = string.IsNullOrWhiteSpace(slug)
+            ? SlugHelper.Generate(source)
+            : slug;
+
+        var token = Regex.Replace(
+                tokenSource.ToUpperInvariant(),
+                "[^A-Z0-9]",
+                string.Empty);
+
+        if (string.IsNullOrWhiteSpace(token))
+            token = fallback;
+
+        return token[..Math.Min(token.Length, maxLength)];
+    }
+
     private async Task<string> CreateUniqueSlugAsync(string name, int? currentId)
     {
         var baseSlug = SlugHelper.Generate(name);
@@ -1567,8 +1838,11 @@ public class ProductsController : Controller
             baseSku = "HOME-COPY";
         var sku = baseSku;
         var suffix = 2;
-        while (await _db.Products.IgnoreQueryFilters().AnyAsync(x => !x.IsDeleted && x.Sku == sku))
+        while (await _db.Products.IgnoreQueryFilters().AnyAsync(x => !x.IsDeleted && x.Sku == sku) ||
+               await _db.ProductVariants.IgnoreQueryFilters().AnyAsync(x => !x.IsDeleted && x.Sku == sku))
+        {
             sku = $"{baseSku}-{suffix++}";
+        }
         return sku;
     }
 
@@ -1740,6 +2014,7 @@ public class ProductsController : Controller
         return "Không thể lưu dữ liệu. Vui lòng kiểm tra SKU, barcode, giá và các ràng buộc sản phẩm.";
     }
 
+    private sealed record ProductCodeSuggestion(string Sku, string ModelNumber);
     private sealed record OptionDefinition(string Name, IReadOnlyList<string> Values);
     private sealed record VariantSyncResult(ProductVariant Entity, ProductVariantEditorItem Row);
 }

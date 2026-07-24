@@ -1,4 +1,4 @@
-@using System.Text.Json
+﻿@using System.Text.Json
 @using TMDT1_TH.Domain.Enums
 @model ProductEditorViewModel
 @{
@@ -79,15 +79,39 @@
                 </label>
 
                 <div class="form-grid form-grid--4">
-                    <label class="form-field"><span>SKU sản phẩm</span><input asp-for="Sku" maxlength="80" placeholder="Tự sinh nếu để trống" /><span asp-validation-for="Sku"></span></label>
-                    <label class="form-field"><span>Mã model</span><input asp-for="ModelNumber" maxlength="100" placeholder="Ví dụ: AC-6L-2026" /><span asp-validation-for="ModelNumber"></span></label>
+                    <label class="form-field product-code-field">
+                        <span>SKU sản phẩm <small class="system-managed-badge"><i class="bi bi-lock-fill"></i> Hệ thống quản lý</small></span>
+                        <input asp-for="Sku"
+                               maxlength="80"
+                               readonly
+                               aria-readonly="true"
+                               tabindex="-1"
+                               data-product-sku
+                               placeholder="Tự động sinh sau khi nhập đủ thông tin" />
+                        <small data-product-code-status>
+                            Không thể nhập hoặc chỉnh sửa. Khi tạo mới, server sẽ sinh lại mã duy nhất trước khi lưu.
+                        </small>
+                        <span asp-validation-for="Sku"></span>
+                    </label>
+                    <label class="form-field product-code-field">
+                        <span>Mã model <small class="system-managed-badge"><i class="bi bi-lock-fill"></i> Hệ thống quản lý</small></span>
+                        <input asp-for="ModelNumber"
+                               maxlength="100"
+                               readonly
+                               aria-readonly="true"
+                               tabindex="-1"
+                               data-product-model
+                               placeholder="Tự động sinh sau khi nhập đủ thông tin" />
+                        <small>Không thể nhập hoặc chỉnh sửa; mã được khóa sau khi sản phẩm được tạo.</small>
+                        <span asp-validation-for="ModelNumber"></span>
+                    </label>
                     <label class="form-field"><span>Đơn vị bán <em>*</em></span><input asp-for="Unit" maxlength="50" placeholder="Cái, bộ, hộp..." /><span asp-validation-for="Unit"></span></label>
                     <label class="form-field"><span>Bảo hành</span><div class="input-suffix"><input asp-for="WarrantyMonths" type="number" min="0" max="120" step="1" /><i>tháng</i></div><span asp-validation-for="WarrantyMonths"></span></label>
                 </div>
 
                 <div class="form-grid form-grid--2">
-                    <label class="form-field"><span>Danh mục <em>*</em></span><select asp-for="CategoryId" asp-items="Model.CategoryOptions"><option value="">Chọn danh mục</option></select><span asp-validation-for="CategoryId"></span></label>
-                    <label class="form-field"><span>Thương hiệu <em>*</em></span><select asp-for="BrandId" asp-items="Model.BrandOptions"><option value="">Chọn thương hiệu</option></select><span asp-validation-for="BrandId"></span></label>
+                    <label class="form-field"><span>Danh mục <em>*</em></span><select asp-for="CategoryId" asp-items="Model.CategoryOptions" data-product-category><option value="">Chọn danh mục</option></select><span asp-validation-for="CategoryId"></span></label>
+                    <label class="form-field"><span>Thương hiệu <em>*</em></span><select asp-for="BrandId" asp-items="Model.BrandOptions" data-product-brand><option value="">Chọn thương hiệu</option></select><span asp-validation-for="BrandId"></span></label>
                 </div>
 
                 <label class="form-field"><span>Mô tả ngắn</span><textarea asp-for="ShortDescription" rows="3" maxlength="600" placeholder="Tóm tắt lợi ích chính, dung tích, công suất hoặc chất liệu."></textarea><span asp-validation-for="ShortDescription"></span></label>
