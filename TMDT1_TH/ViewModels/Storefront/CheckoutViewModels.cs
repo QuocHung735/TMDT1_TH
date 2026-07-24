@@ -5,15 +5,21 @@ namespace TMDT1_TH.ViewModels.Storefront;
 public sealed class StoreCheckoutViewModel
 {
     [Required(ErrorMessage = "Vui lòng nhập họ tên người nhận.")]
-    [StringLength(150, MinimumLength = 2, ErrorMessage = "Họ tên cần từ 2 đến 150 ký tự.")]
+    [StringLength(
+        150,
+        MinimumLength = 2,
+        ErrorMessage = "Họ tên cần từ 2 đến 150 ký tự.")]
     [Display(Name = "Họ tên người nhận")]
     public string CustomerName { get; set; } = string.Empty;
 
     [Required(ErrorMessage = "Vui lòng nhập số điện thoại.")]
-    [StringLength(30, MinimumLength = 9, ErrorMessage = "Số điện thoại chưa hợp lệ.")]
+    [StringLength(
+        30,
+        MinimumLength = 9,
+        ErrorMessage = "Số điện thoại chưa hợp lệ.")]
     [RegularExpression(
         @"^[0-9+\s().-]{9,30}$",
-        ErrorMessage = "Số điện thoại chỉ được chứa số và các ký tự +, khoảng trắng, dấu chấm hoặc dấu gạch.")]
+        ErrorMessage = "Số điện thoại chưa hợp lệ.")]
     [Display(Name = "Số điện thoại")]
     public string CustomerPhone { get; set; } = string.Empty;
 
@@ -46,6 +52,16 @@ public sealed class StoreCheckoutViewModel
     [Display(Name = "Ghi chú")]
     public string? CustomerNote { get; set; }
 
+    [Range(
+        1,
+        int.MaxValue,
+        ErrorMessage = "Vui lòng chọn phương thức giao hàng.")]
+    [Display(Name = "Phương thức giao hàng")]
+    public int ShippingServiceId { get; set; }
+
+    public IReadOnlyList<StoreShippingOptionViewModel> ShippingOptions { get; set; }
+        = Array.Empty<StoreShippingOptionViewModel>();
+
     public IReadOnlyList<StoreCheckoutItemViewModel> Items { get; set; }
         = Array.Empty<StoreCheckoutItemViewModel>();
 
@@ -54,6 +70,22 @@ public sealed class StoreCheckoutViewModel
     public decimal Subtotal { get; set; }
     public decimal ShippingFee { get; set; }
     public decimal TotalAmount { get; set; }
+}
+
+public sealed class StoreShippingOptionViewModel
+{
+    public int Id { get; init; }
+    public string CarrierName { get; init; } = string.Empty;
+    public string ServiceName { get; init; } = string.Empty;
+    public string? Description { get; init; }
+    public decimal Fee { get; init; }
+    public int EstimatedMinDays { get; init; }
+    public int EstimatedMaxDays { get; init; }
+
+    public string EstimatedText =>
+        EstimatedMinDays == EstimatedMaxDays
+            ? $"{EstimatedMinDays} ngày"
+            : $"{EstimatedMinDays}–{EstimatedMaxDays} ngày";
 }
 
 public sealed class StoreCheckoutItemViewModel
@@ -78,15 +110,22 @@ public sealed class StoreOrderConfirmationViewModel
     public DateTime CreatedAt { get; init; }
     public string StatusName { get; init; } = string.Empty;
     public string PaymentMethodName { get; init; } = string.Empty;
+
     public string CustomerName { get; init; } = string.Empty;
     public string CustomerPhone { get; init; } = string.Empty;
     public string? CustomerEmail { get; init; }
     public string ShippingAddress { get; init; } = string.Empty;
     public string? CustomerNote { get; init; }
+
+    public string? ShippingCarrierName { get; init; }
+    public string? ShippingServiceName { get; init; }
+    public DateTime? EstimatedDeliveryAt { get; init; }
+
     public string CurrencyCode { get; init; } = "VND";
     public decimal Subtotal { get; init; }
     public decimal ShippingFee { get; init; }
     public decimal TotalAmount { get; init; }
+
     public IReadOnlyList<StoreOrderConfirmationItemViewModel> Items { get; init; }
         = Array.Empty<StoreOrderConfirmationItemViewModel>();
 }

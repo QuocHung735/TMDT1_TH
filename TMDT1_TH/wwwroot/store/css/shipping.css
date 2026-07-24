@@ -1,0 +1,327 @@
+﻿/* Chọn phương thức và theo dõi giao hàng */
+.shipping-option-list {
+    display: grid;
+    gap: 10px;
+}
+
+.shipping-option {
+    display: grid;
+    grid-template-columns: auto 42px minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 12px;
+    padding: 15px;
+    cursor: pointer;
+    background: #fff;
+    border: 1px solid var(--store-border);
+    border-radius: 14px;
+    transition:
+        border-color .15s ease,
+        box-shadow .15s ease,
+        transform .15s ease;
+}
+
+.shipping-option:hover,
+.shipping-option.is-selected {
+    border-color: #9c8bea;
+    box-shadow: 0 8px 20px rgba(92, 72, 188, .09);
+    transform: translateY(-1px);
+}
+
+.shipping-option > input {
+    width: 17px;
+    height: 17px;
+    accent-color: var(--store-primary);
+}
+
+.shipping-option__mark {
+    display: grid;
+    width: 42px;
+    height: 42px;
+    place-items: center;
+    color: var(--store-primary);
+    background: #f0ecff;
+    border-radius: 12px;
+    font-size: 18px;
+}
+
+.shipping-option__content {
+    display: grid;
+    min-width: 0;
+    gap: 3px;
+}
+
+.shipping-option__content b {
+    font-size: 13px;
+}
+
+.shipping-option__content small,
+.shipping-option__content em {
+    color: var(--store-muted);
+    font-size: 10px;
+    font-style: normal;
+    line-height: 1.45;
+}
+
+.shipping-option > strong {
+    color: var(--store-primary);
+    font-size: 12px;
+    white-space: nowrap;
+}
+
+.shipping-option-empty {
+    padding: 24px;
+    color: #956400;
+    background: #fff4d1;
+    border-radius: 13px;
+    text-align: center;
+    font-size: 11px;
+    line-height: 1.6;
+}
+
+.shipping-option-validation {
+    display: block;
+    margin-top: 8px;
+    color: #b63d52;
+}
+
+.shipment-confirmation {
+    display: grid;
+    gap: 14px;
+}
+
+.shipment-confirmation > h2,
+.shipment-confirmation > p,
+.shipment-confirmation > small {
+    margin: 0;
+}
+
+.shipment-confirmation__carrier {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px;
+    background: #f2effd;
+    border-radius: 13px;
+}
+
+.shipment-confirmation__carrier > span {
+    display: grid;
+    width: 43px;
+    height: 43px;
+    place-items: center;
+    color: #fff;
+    background: var(--store-primary);
+    border-radius: 12px;
+    font-size: 18px;
+}
+
+.shipment-confirmation__carrier strong,
+.shipment-confirmation__carrier small {
+    display: block;
+}
+
+.shipment-confirmation__carrier small,
+.shipment-confirmation > small {
+    margin-top: 3px;
+    color: var(--store-muted);
+    font-size: 10px;
+}
+
+.order-shipping-compact {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 5px 8px;
+    margin-top: 9px;
+    color: #645a78;
+    font-size: 10px;
+}
+
+.order-shipping-compact i {
+    color: var(--store-primary);
+}
+
+.order-shipping-compact b {
+    color: #3d3650;
+}
+
+.customer-shipment-card {
+    margin: 18px 0;
+    padding: 23px;
+    background: #fff;
+    border: 1px solid var(--store-border);
+    border-radius: 19px;
+    box-shadow: 0 8px 25px rgba(36, 30, 65, .05);
+}
+
+.customer-shipment-card__heading {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 15px;
+    margin-bottom: 17px;
+}
+
+.customer-shipment-card__heading h2 {
+    margin: 5px 0 0;
+}
+
+.shipment-code {
+    padding: 7px 10px;
+    color: #176e58;
+    background: #e4f7f0;
+    border-radius: 999px;
+    font-size: 10px;
+    font-weight: 800;
+}
+
+.customer-shipment-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 10px;
+}
+
+.customer-shipment-grid > div {
+    padding: 13px;
+    background: #f8f6fc;
+    border-radius: 12px;
+}
+
+.customer-shipment-grid small,
+.customer-shipment-grid strong {
+    display: block;
+}
+
+.customer-shipment-grid small {
+    color: var(--store-muted);
+    font-size: 9px;
+}
+
+.customer-shipment-grid strong {
+    margin-top: 5px;
+    font-size: 11px;
+    overflow-wrap: anywhere;
+}
+
+.customer-shipment-timeline {
+    position: relative;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-top: 17px;
+}
+
+.customer-shipment-timeline::before {
+    position: absolute;
+    top: 16px;
+    right: 15%;
+    left: 15%;
+    z-index: 0;
+    height: 2px;
+    content: "";
+    background: #e1ddea;
+}
+
+.customer-shipment-timeline > div {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    justify-items: center;
+    gap: 7px;
+    text-align: center;
+}
+
+.customer-shipment-timeline > div > span {
+    display: grid;
+    width: 33px;
+    height: 33px;
+    place-items: center;
+    color: #847d90;
+    background: #efedf3;
+    border: 4px solid #fff;
+    border-radius: 50%;
+    font-size: 10px;
+    font-weight: 800;
+}
+
+.customer-shipment-timeline > div.is-done > span {
+    color: #fff;
+    background: #55ad94;
+}
+
+.customer-shipment-timeline strong,
+.customer-shipment-timeline small {
+    display: block;
+}
+
+.customer-shipment-timeline strong {
+    font-size: 10px;
+}
+
+.customer-shipment-timeline small {
+    margin-top: 3px;
+    color: var(--store-muted);
+    font-size: 9px;
+}
+
+.customer-shipment-note {
+    margin-top: 17px;
+    padding: 13px;
+    background: #fff9e6;
+    border-radius: 11px;
+}
+
+.customer-shipment-note p {
+    margin: 5px 0 0;
+    color: var(--store-muted);
+    line-height: 1.6;
+}
+
+.customer-shipment-card > .store-button {
+    width: fit-content;
+    margin-top: 17px;
+}
+
+.customer-shipment-help {
+    margin: 15px 0 0;
+    color: var(--store-muted);
+    font-size: 10px;
+}
+
+@media (max-width: 850px) {
+    .customer-shipment-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 620px) {
+    .shipping-option {
+        grid-template-columns: auto 38px 1fr;
+    }
+
+    .shipping-option > strong {
+        grid-column: 3;
+    }
+
+    .customer-shipment-card__heading {
+        flex-direction: column;
+    }
+
+    .customer-shipment-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .customer-shipment-timeline {
+        grid-template-columns: 1fr;
+    }
+
+    .customer-shipment-timeline::before {
+        display: none;
+    }
+
+    .customer-shipment-timeline > div {
+        grid-template-columns: 33px 1fr;
+        justify-items: start;
+        text-align: left;
+    }
+}

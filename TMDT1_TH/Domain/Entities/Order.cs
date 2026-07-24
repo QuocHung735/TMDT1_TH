@@ -30,6 +30,16 @@ public sealed class Order : AuditableEntity
     public string AddressLine { get; set; } = string.Empty;
     public string? CustomerNote { get; set; }
 
+    public int? ShippingServiceId { get; set; }
+    public string? ShippingCarrierName { get; set; }
+    public string? ShippingServiceName { get; set; }
+    public string? TrackingNumber { get; set; }
+    public string? TrackingUrl { get; set; }
+    public string? ShippingNote { get; set; }
+    public DateTime? EstimatedDeliveryAt { get; set; }
+    public DateTime? ShippedAt { get; set; }
+    public DateTime? DeliveredAt { get; set; }
+
     public decimal Subtotal { get; set; }
     public decimal ShippingFee { get; set; }
     public decimal DiscountAmount { get; set; }
@@ -45,6 +55,7 @@ public sealed class Order : AuditableEntity
 
     public ApplicationUser? CustomerUser { get; set; }
     public Market Market { get; set; } = null!;
+    public ShippingService? ShippingService { get; set; }
     public ICollection<OrderItem> Items { get; set; } =
         new List<OrderItem>();
 }

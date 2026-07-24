@@ -1,0 +1,531 @@
+﻿@using System.Globalization
+@model ShippingManagementViewModel
+@{
+    ViewData["Title"] = "Giao nhận";
+    ViewData["Description"] =
+        "Quản lý đơn vị vận chuyển, dịch vụ, phí giao hàng và URL tra cứu.";
+    var culture = CultureInfo.GetCultureInfo("vi-VN");
+}
+
+<section class="segmented-stats shipping-stats">
+    <div>
+        <strong>@Model.CarrierCount</strong>
+        <span>Đơn vị giao nhận</span>
+    </div>
+    <div>
+        <strong>@Model.ActiveCarrierCount</strong>
+        <span>Đơn vị đang hoạt động</span>
+    </div>
+    <div>
+        <strong>@Model.ServiceCount</strong>
+        <span>Dịch vụ vận chuyển</span>
+    </div>
+    <div>
+        <strong>@Model.ActiveServiceCount</strong>
+        <span>Dịch vụ khách có thể chọn</span>
+    </div>
+</section>
+
+<section class="card panel">
+    <form method="get"
+          class="toolbar toolbar--wrap">
+        <label class="field-search">
+            <i class="bi bi-search"></i>
+            <input type="search"
+                   name="q"
+                   value="@Model.Query"
+                   placeholder="Tên, mã đơn vị hoặc dịch vụ..." />
+        </label>
+
+        <div class="toolbar__filters">
+            <select class="form-select"
+                    name="active">
+                <option value="">Tất cả trạng thái</option>
+                <option value="true"
+                        selected="@(Model.Active == true)">
+                    Đang hoạt động
+                </option>
+                <option value="false"
+                        selected="@(Model.Active == false)">
+                    Tạm tắt
+                </option>
+            </select>
+
+            <button class="btn btn-light"
+                    type="submit">
+                <i class="bi bi-funnel"></i>
+                Lọc
+            </button>
+
+            <a class="btn btn-light"
+               asp-action="Index">
+                <i class="bi bi-arrow-counterclockwise"></i>
+            </a>
+        </div>
+    </form>
+</section>
+
+<div class="shipping-admin-grid">
+    <section class="card panel shipping-admin-list">
+        <div class="shipping-section-heading">
+            <div>
+                <span class="eyebrow">ĐỐI TÁC GIAO NHẬN</span>
+                <h2>Đơn vị vận chuyển</h2>
+            </div>
+            <a class="btn btn-primary"
+               href="#carrier-form"
+               data-open-carrier-form>
+                <i class="bi bi-plus-lg"></i>
+                Thêm đơn vị
+            </a>
+        </div>
+
+        @if (Model.Carriers.Count == 0)
+        {
+            <div class="shipping-empty">
+                Chưa có đơn vị giao nhận phù hợp.
+            </div>
+        }
+        else
+        {
+            <div class="shipping-carrier-list">
+                @foreach (var carrier in Model.Carriers)
+                {
+                    <article class="shipping-carrier-card">
+                        <div class="shipping-carrier-card__mark">
+                            <i class="bi bi-truck"></i>
+                        </div>
+
+                        <div class="shipping-carrier-card__body">
+                            <div class="shipping-carrier-card__title">
+                                <div>
+                                    <h3>@carrier.Name</h3>
+                                    <span>@carrier.Code</span>
+                                </div>
+                                <span class="shipping-state @(carrier.IsActive ? "is-active" : "is-inactive")">
+                                    @(carrier.IsActive
+                                        ? "Đang hoạt động"
+                                        : "Tạm tắt")
+                                </span>
+                            </div>
+
+                            <div class="shipping-carrier-card__meta">
+                                <span>
+                                    <b>@carrier.ActiveServiceCount</b>/@carrier.ServiceCount
+                                    dịch vụ đang bật
+                                </span>
+                                @if (!string.IsNullOrWhiteSpace(carrier.PhoneNumber))
+                                {
+                                    <span>@carrier.PhoneNumber</span>
+                                }
+                                <span>Thứ tự @carrier.DisplayOrder</span>
+                            </div>
+
+                            @if (!string.IsNullOrWhiteSpace(carrier.TrackingUrlTemplate))
+                            {
+                                <small class="shipping-template">
+                                    URL tra cứu đã được cấu hình
+                                </small>
+                            }
+                        </div>
+
+                        <div class="shipping-card-actions">
+                            <a class="icon-btn"
+                               asp-action="Index"
+                               asp-route-q="@Model.Query"
+                               asp-route-active="@Model.Active"
+                               asp-route-carrierEditId="@carrier.Id"
+                               title="Chỉnh sửa">
+                                <i class="bi bi-pencil"></i>
+                            </a>
+
+                            <form asp-action="ToggleCarrier"
+                                  method="post">
+                                <input type="hidden"
+                                       name="id"
+                                       value="@carrier.Id" />
+                                <button class="icon-btn"
+                                        type="submit"
+                                        title="@(carrier.IsActive ? "Tạm tắt" : "Kích hoạt")">
+                                    <i class="bi @(carrier.IsActive ? "bi-pause-circle" : "bi-play-circle")"></i>
+                                </button>
+                            </form>
+                        </div>
+                    </article>
+                }
+            </div>
+        }
+    </section>
+
+    <aside class="card panel shipping-admin-form"
+           id="carrier-form">
+        <div class="shipping-section-heading">
+            <div>
+                <span class="eyebrow">THÔNG TIN ĐƠN VỊ</span>
+                <h2>
+                    @(Model.CarrierForm.IsEdit
+                        ? "Cập nhật đơn vị"
+                        : "Thêm đơn vị")
+                </h2>
+            </div>
+        </div>
+
+        <form asp-action="@(Model.CarrierForm.IsEdit ? "EditCarrier" : "CreateCarrier")"
+              method="post">
+            <input asp-for="CarrierForm.Id"
+                   type="hidden" />
+
+            <div asp-validation-summary="ModelOnly"
+                 class="admin-form-validation"></div>
+
+            <div class="shipping-form-grid">
+                <label>
+                    <span>@Html.DisplayNameFor(x => x.CarrierForm.Code)</span>
+                    <input asp-for="CarrierForm.Code"
+                           class="form-control"
+                           maxlength="30"
+                           placeholder="VD: GHN" />
+                    <small asp-validation-for="CarrierForm.Code"></small>
+                </label>
+
+                <label>
+                    <span>@Html.DisplayNameFor(x => x.CarrierForm.Name)</span>
+                    <input asp-for="CarrierForm.Name"
+                           class="form-control"
+                           maxlength="150"
+                           placeholder="Tên đơn vị giao nhận" />
+                    <small asp-validation-for="CarrierForm.Name"></small>
+                </label>
+
+                <label>
+                    <span>@Html.DisplayNameFor(x => x.CarrierForm.PhoneNumber)</span>
+                    <input asp-for="CarrierForm.PhoneNumber"
+                           class="form-control"
+                           maxlength="30" />
+                    <small asp-validation-for="CarrierForm.PhoneNumber"></small>
+                </label>
+
+                <label>
+                    <span>@Html.DisplayNameFor(x => x.CarrierForm.WebsiteUrl)</span>
+                    <input asp-for="CarrierForm.WebsiteUrl"
+                           class="form-control"
+                           maxlength="500"
+                           placeholder="https://..." />
+                    <small asp-validation-for="CarrierForm.WebsiteUrl"></small>
+                </label>
+
+                <label class="is-wide">
+                    <span>@Html.DisplayNameFor(x => x.CarrierForm.TrackingUrlTemplate)</span>
+                    <input asp-for="CarrierForm.TrackingUrlTemplate"
+                           class="form-control"
+                           maxlength="700"
+                           placeholder="https://.../{trackingNumber}" />
+                    <small>
+                        Dùng <b>{trackingNumber}</b> tại vị trí mã vận đơn.
+                    </small>
+                    <small asp-validation-for="CarrierForm.TrackingUrlTemplate"></small>
+                </label>
+
+                <label>
+                    <span>@Html.DisplayNameFor(x => x.CarrierForm.DisplayOrder)</span>
+                    <input asp-for="CarrierForm.DisplayOrder"
+                           class="form-control"
+                           type="number"
+                           min="0"
+                           max="9999" />
+                    <small asp-validation-for="CarrierForm.DisplayOrder"></small>
+                </label>
+
+                <label class="shipping-check">
+                    <input asp-for="CarrierForm.IsActive"
+                           type="checkbox" />
+                    <span>@Html.DisplayNameFor(x => x.CarrierForm.IsActive)</span>
+                </label>
+            </div>
+
+            <div class="shipping-form-actions">
+                @if (Model.CarrierForm.IsEdit)
+                {
+                    <a class="btn btn-light"
+                       asp-action="Index">
+                        Hủy chỉnh sửa
+                    </a>
+                }
+                <button class="btn btn-primary"
+                        type="submit">
+                    @(Model.CarrierForm.IsEdit
+                        ? "Lưu đơn vị"
+                        : "Tạo đơn vị")
+                </button>
+            </div>
+        </form>
+    </aside>
+</div>
+
+<div class="shipping-admin-grid shipping-admin-grid--services">
+    <section class="card panel shipping-admin-list">
+        <div class="shipping-section-heading">
+            <div>
+                <span class="eyebrow">PHƯƠNG THỨC GIAO HÀNG</span>
+                <h2>Dịch vụ và phí vận chuyển</h2>
+            </div>
+            <a class="btn btn-primary"
+               href="#service-form"
+               data-open-service-form>
+                <i class="bi bi-plus-lg"></i>
+                Thêm dịch vụ
+            </a>
+        </div>
+
+        <div class="table-wrap">
+            <table class="data-table shipping-service-table">
+                <thead>
+                    <tr>
+                        <th>Dịch vụ</th>
+                        <th>Đơn vị</th>
+                        <th>Thời gian</th>
+                        <th>Phí cơ bản</th>
+                        <th>Đơn hàng</th>
+                        <th>Trạng thái</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                @if (Model.Services.Count == 0)
+                {
+                    <tr>
+                        <td colspan="7">
+                            <div class="shipping-empty">
+                                Chưa có dịch vụ vận chuyển phù hợp.
+                            </div>
+                        </td>
+                    </tr>
+                }
+                else
+                {
+                    @foreach (var service in Model.Services)
+                    {
+                        <tr>
+                            <td>
+                                <div class="stacked-text">
+                                    <strong>@service.Name</strong>
+                                    <small>
+                                        @service.Code
+                                        @if (!string.IsNullOrWhiteSpace(service.Description))
+                                        {
+                                            <span>· @service.Description</span>
+                                        }
+                                    </small>
+                                </div>
+                            </td>
+                            <td>@service.CarrierName</td>
+                            <td>
+                                @(service.EstimatedMinDays == service.EstimatedMaxDays
+                                    ? $"{service.EstimatedMinDays} ngày"
+                                    : $"{service.EstimatedMinDays}–{service.EstimatedMaxDays} ngày")
+                            </td>
+                            <td>
+                                <strong>
+                                    @service.BaseFee.ToString("N0", culture) VND
+                                </strong>
+                            </td>
+                            <td>@service.OrderCount.ToString("N0", culture)</td>
+                            <td>
+                                <span class="shipping-state @((service.IsActive && service.CarrierIsActive) ? "is-active" : "is-inactive")">
+                                    @((service.IsActive && service.CarrierIsActive)
+                                        ? "Khách có thể chọn"
+                                        : "Đang tắt")
+                                </span>
+                            </td>
+                            <td class="table-actions">
+                                <a class="icon-btn"
+                                   asp-action="Index"
+                                   asp-route-q="@Model.Query"
+                                   asp-route-active="@Model.Active"
+                                   asp-route-serviceEditId="@service.Id"
+                                   title="Chỉnh sửa">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+
+                                <form asp-action="ToggleService"
+                                      method="post">
+                                    <input type="hidden"
+                                           name="id"
+                                           value="@service.Id" />
+                                    <button class="icon-btn"
+                                            type="submit"
+                                            title="@(service.IsActive ? "Tạm tắt" : "Kích hoạt")">
+                                        <i class="bi @(service.IsActive ? "bi-pause-circle" : "bi-play-circle")"></i>
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                    }
+                }
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <aside class="card panel shipping-admin-form"
+           id="service-form">
+        <div class="shipping-section-heading">
+            <div>
+                <span class="eyebrow">CẤU HÌNH DỊCH VỤ</span>
+                <h2>
+                    @(Model.ServiceForm.IsEdit
+                        ? "Cập nhật dịch vụ"
+                        : "Thêm dịch vụ")
+                </h2>
+            </div>
+        </div>
+
+        <form asp-action="@(Model.ServiceForm.IsEdit ? "EditService" : "CreateService")"
+              method="post">
+            <input asp-for="ServiceForm.Id"
+                   type="hidden" />
+
+            <div asp-validation-summary="ModelOnly"
+                 class="admin-form-validation"></div>
+
+            <div class="shipping-form-grid">
+                <label class="is-wide">
+                    <span>@Html.DisplayNameFor(x => x.ServiceForm.ShippingCarrierId)</span>
+                    <select asp-for="ServiceForm.ShippingCarrierId"
+                            asp-items="Model.CarrierOptions"
+                            class="form-select">
+                        <option value="">Chọn đơn vị giao nhận</option>
+                    </select>
+                    <small asp-validation-for="ServiceForm.ShippingCarrierId"></small>
+                </label>
+
+                <label>
+                    <span>@Html.DisplayNameFor(x => x.ServiceForm.Code)</span>
+                    <input asp-for="ServiceForm.Code"
+                           class="form-control"
+                           maxlength="30"
+                           placeholder="VD: STANDARD" />
+                    <small asp-validation-for="ServiceForm.Code"></small>
+                </label>
+
+                <label>
+                    <span>@Html.DisplayNameFor(x => x.ServiceForm.Name)</span>
+                    <input asp-for="ServiceForm.Name"
+                           class="form-control"
+                           maxlength="150" />
+                    <small asp-validation-for="ServiceForm.Name"></small>
+                </label>
+
+                <label class="is-wide">
+                    <span>@Html.DisplayNameFor(x => x.ServiceForm.Description)</span>
+                    <textarea asp-for="ServiceForm.Description"
+                              class="form-control"
+                              rows="3"
+                              maxlength="500"></textarea>
+                    <small asp-validation-for="ServiceForm.Description"></small>
+                </label>
+
+                <label>
+                    <span>@Html.DisplayNameFor(x => x.ServiceForm.BaseFee)</span>
+                    <input asp-for="ServiceForm.BaseFee"
+                           class="form-control"
+                           type="number"
+                           min="0"
+                           step="1000" />
+                    <small asp-validation-for="ServiceForm.BaseFee"></small>
+                </label>
+
+                <label>
+                    <span>@Html.DisplayNameFor(x => x.ServiceForm.DisplayOrder)</span>
+                    <input asp-for="ServiceForm.DisplayOrder"
+                           class="form-control"
+                           type="number"
+                           min="0"
+                           max="9999" />
+                    <small asp-validation-for="ServiceForm.DisplayOrder"></small>
+                </label>
+
+                <label>
+                    <span>@Html.DisplayNameFor(x => x.ServiceForm.EstimatedMinDays)</span>
+                    <input asp-for="ServiceForm.EstimatedMinDays"
+                           class="form-control"
+                           type="number"
+                           min="0"
+                           max="60" />
+                    <small asp-validation-for="ServiceForm.EstimatedMinDays"></small>
+                </label>
+
+                <label>
+                    <span>@Html.DisplayNameFor(x => x.ServiceForm.EstimatedMaxDays)</span>
+                    <input asp-for="ServiceForm.EstimatedMaxDays"
+                           class="form-control"
+                           type="number"
+                           min="0"
+                           max="60" />
+                    <small asp-validation-for="ServiceForm.EstimatedMaxDays"></small>
+                </label>
+
+                <label class="shipping-check is-wide">
+                    <input asp-for="ServiceForm.IsActive"
+                           type="checkbox" />
+                    <span>@Html.DisplayNameFor(x => x.ServiceForm.IsActive)</span>
+                </label>
+            </div>
+
+            <div class="shipping-form-actions">
+                @if (Model.ServiceForm.IsEdit)
+                {
+                    <a class="btn btn-light"
+                       asp-action="Index">
+                        Hủy chỉnh sửa
+                    </a>
+                }
+                <button class="btn btn-primary"
+                        type="submit">
+                    @(Model.ServiceForm.IsEdit
+                        ? "Lưu dịch vụ"
+                        : "Tạo dịch vụ")
+                </button>
+            </div>
+        </form>
+    </aside>
+</div>
+
+@section Scripts {
+    <script>
+        (() => {
+            const carrierLink =
+                document.querySelector("[data-open-carrier-form]");
+            const serviceLink =
+                document.querySelector("[data-open-service-form]");
+
+            carrierLink?.addEventListener("click", event => {
+                event.preventDefault();
+                document.querySelector("#carrier-form")
+                    ?.scrollIntoView({ behavior: "smooth" });
+            });
+
+            serviceLink?.addEventListener("click", event => {
+                event.preventDefault();
+                document.querySelector("#service-form")
+                    ?.scrollIntoView({ behavior: "smooth" });
+            });
+
+            @if (Model.OpenCarrierForm)
+            {
+                <text>
+                document.querySelector("#carrier-form")
+                    ?.scrollIntoView({ behavior: "smooth" });
+                </text>
+            }
+
+            @if (Model.OpenServiceForm)
+            {
+                <text>
+                document.querySelector("#service-form")
+                    ?.scrollIntoView({ behavior: "smooth" });
+                </text>
+            }
+        })();
+    </script>
+}

@@ -12,11 +12,16 @@
             <div>
                 <span class="eyebrow">TÀI KHOẢN</span>
                 <h1>Đơn hàng của tôi</h1>
-                <p>Theo dõi trạng thái các đơn đã đặt bằng tài khoản này.</p>
+                <p>
+                    Theo dõi trạng thái đơn và thông tin giao nhận
+                    bằng tài khoản này.
+                </p>
             </div>
             <a class="store-button store-button--ghost"
-               asp-controller="Home"
-               asp-action="Catalog">Tiếp tục mua sắm</a>
+               asp-controller="Account"
+               asp-action="Profile">
+                Quay lại hồ sơ
+            </a>
         </div>
 
         @if (TempData["AccountMessage"] is string message)
@@ -29,11 +34,14 @@
             <div class="store-empty">
                 <h3>Chưa có đơn hàng</h3>
                 <p>
-                    Các đơn mới được đặt sau khi đăng nhập sẽ xuất hiện tại đây.
+                    Các đơn mới được đặt sau khi đăng nhập
+                    sẽ xuất hiện tại đây.
                 </p>
                 <a class="store-button store-button--primary"
                    asp-controller="Home"
-                   asp-action="Catalog">Khám phá sản phẩm</a>
+                   asp-action="Catalog">
+                    Khám phá sản phẩm
+                </a>
             </div>
         }
         else
@@ -64,17 +72,43 @@
                                     <span>Mây Home</span>
                                 }
                             </div>
+
                             <div>
                                 <h2>@order.FirstProductName</h2>
                                 @if (order.AdditionalItemCount > 0)
                                 {
-                                    <p>Và @order.AdditionalItemCount sản phẩm khác</p>
+                                    <p>
+                                        Và @order.AdditionalItemCount
+                                        sản phẩm khác
+                                    </p>
                                 }
+
                                 <small>
-                                    Đặt lúc @order.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm")
+                                    Đặt lúc
+                                    @order.CreatedAt.ToLocalTime()
+                                        .ToString("dd/MM/yyyy HH:mm")
                                     · @order.TotalQuantity sản phẩm
                                 </small>
+
+                                @if (!string.IsNullOrWhiteSpace(order.ShippingServiceName))
+                                {
+                                    <div class="order-shipping-compact">
+                                        <i class="bi bi-truck"></i>
+                                        <span>
+                                            @order.ShippingCarrierName ·
+                                            @order.ShippingServiceName
+                                        </span>
+
+                                        @if (!string.IsNullOrWhiteSpace(order.TrackingNumber))
+                                        {
+                                            <b>
+                                                Mã: @order.TrackingNumber
+                                            </b>
+                                        }
+                                    </div>
+                                }
                             </div>
+
                             <div class="customer-order-card__total">
                                 <small>Tổng thanh toán</small>
                                 <strong>

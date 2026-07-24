@@ -5,12 +5,16 @@
     ViewData["Description"] =
         $"Đặt lúc {Model.CreatedAt.ToLocalTime():dd/MM/yyyy HH:mm}";
     var culture = CultureInfo.GetCultureInfo("vi-VN");
+    var estimatedDate = Model.EstimatedDeliveryAt?
+        .ToLocalTime()
+        .ToString("yyyy-MM-dd");
 }
 
 @section PageActions {
     <a class="btn btn-light"
        asp-action="Index">
-        <i class="bi bi-arrow-left"></i> Danh sách đơn
+        <i class="bi bi-arrow-left"></i>
+        Danh sách đơn
     </a>
 }
 
@@ -25,18 +29,36 @@
             </div>
 
             <dl class="admin-order-info">
-                <div><dt>Khách hàng</dt><dd>@Model.CustomerName</dd></div>
-                <div><dt>Điện thoại</dt><dd>@Model.CustomerPhone</dd></div>
+                <div>
+                    <dt>Khách hàng</dt>
+                    <dd>@Model.CustomerName</dd>
+                </div>
+                <div>
+                    <dt>Điện thoại</dt>
+                    <dd>@Model.CustomerPhone</dd>
+                </div>
                 @if (!string.IsNullOrWhiteSpace(Model.CustomerEmail))
                 {
-                    <div><dt>Email</dt><dd>@Model.CustomerEmail</dd></div>
+                    <div>
+                        <dt>Email</dt>
+                        <dd>@Model.CustomerEmail</dd>
+                    </div>
                 }
-                <div><dt>Địa chỉ</dt><dd>@Model.ShippingAddress</dd></div>
+                <div>
+                    <dt>Địa chỉ</dt>
+                    <dd>@Model.ShippingAddress</dd>
+                </div>
                 @if (!string.IsNullOrWhiteSpace(Model.CustomerNote))
                 {
-                    <div><dt>Ghi chú</dt><dd>@Model.CustomerNote</dd></div>
+                    <div>
+                        <dt>Ghi chú</dt>
+                        <dd>@Model.CustomerNote</dd>
+                    </div>
                 }
-                <div><dt>Thanh toán</dt><dd>@Model.PaymentStatusName</dd></div>
+                <div>
+                    <dt>Thanh toán</dt>
+                    <dd>@Model.PaymentStatusName</dd>
+                </div>
             </dl>
 
             @if (!string.IsNullOrWhiteSpace(Model.CancellationReason))
@@ -44,6 +66,188 @@
                 <div class="admin-order-cancel-note">
                     <strong>Lý do hủy</strong>
                     <p>@Model.CancellationReason</p>
+                </div>
+            }
+        </section>
+
+        <section class="card panel admin-order-panel admin-shipment-panel">
+            <div class="admin-order-panel__head">
+                <div>
+                    <span class="eyebrow">GIAO NHẬN</span>
+                    <h2>Thông tin vận chuyển</h2>
+                </div>
+
+                @if (!string.IsNullOrWhiteSpace(Model.TrackingNumber))
+                {
+                    <span class="shipping-state is-active">
+                        Đã có mã vận đơn
+                    </span>
+                }
+                else
+                {
+                    <span class="shipping-state is-inactive">
+                        Chưa có mã vận đơn
+                    </span>
+                }
+            </div>
+
+            <div class="admin-shipment-summary">
+                <div>
+                    <small>Đơn vị giao nhận</small>
+                    <strong>
+                        @(Model.ShippingCarrierName
+                            ?? "Chưa chọn")
+                    </strong>
+                </div>
+                <div>
+                    <small>Dịch vụ</small>
+                    <strong>
+                        @(Model.ShippingServiceName
+                            ?? "Chưa chọn")
+                    </strong>
+                </div>
+                <div>
+                    <small>Mã vận đơn</small>
+                    <strong>
+                        @(Model.TrackingNumber
+                            ?? "Chưa cập nhật")
+                    </strong>
+                </div>
+                <div>
+                    <small>Dự kiến giao</small>
+                    <strong>
+                        @(Model.EstimatedDeliveryAt.HasValue
+                            ? Model.EstimatedDeliveryAt.Value
+                                .ToLocalTime()
+                                .ToString("dd/MM/yyyy")
+                            : "Chưa cập nhật")
+                    </strong>
+                </div>
+            </div>
+
+            <div class="admin-shipment-timeline">
+                <div class="@(Model.ShippedAt.HasValue ? "is-done" : "")">
+                    <span>
+                        @(Model.ShippedAt.HasValue ? "✓" : "1")
+                    </span>
+                    <div>
+                        <strong>Bàn giao vận chuyển</strong>
+                        <small>
+                            @(Model.ShippedAt.HasValue
+                                ? Model.ShippedAt.Value
+                                    .ToLocalTime()
+                                    .ToString("dd/MM/yyyy HH:mm")
+                                : "Chưa bàn giao")
+                        </small>
+                    </div>
+                </div>
+
+                <div class="@(Model.DeliveredAt.HasValue ? "is-done" : "")">
+                    <span>
+                        @(Model.DeliveredAt.HasValue ? "✓" : "2")
+                    </span>
+                    <div>
+                        <strong>Giao hàng thành công</strong>
+                        <small>
+                            @(Model.DeliveredAt.HasValue
+                                ? Model.DeliveredAt.Value
+                                    .ToLocalTime()
+                                    .ToString("dd/MM/yyyy HH:mm")
+                                : "Chưa hoàn thành")
+                        </small>
+                    </div>
+                </div>
+            </div>
+
+            @if (!string.IsNullOrWhiteSpace(Model.TrackingUrl))
+            {
+                <a class="btn btn-light"
+                   href="@Model.TrackingUrl"
+                   target="_blank"
+                   rel="noopener noreferrer">
+                    <i class="bi bi-box-arrow-up-right"></i>
+                    Mở trang tra cứu vận đơn
+                </a>
+            }
+
+            <form asp-action="UpdateShipment"
+                  method="post"
+                  class="admin-shipment-form">
+                <input type="hidden"
+                       name="id"
+                       value="@Model.Id" />
+
+                <label class="is-wide">
+                    <span>Dịch vụ vận chuyển</span>
+
+                    @if (Model.CanChangeShippingService)
+                    {
+                        <select class="form-select"
+                                asp-for="ShippingServiceId"
+                                asp-items="Model.ShippingServiceOptions">
+                            <option value="">
+                                Chọn dịch vụ vận chuyển
+                            </option>
+                        </select>
+                    }
+                    else
+                    {
+                        <input type="hidden"
+                               name="shippingServiceId"
+                               value="@Model.ShippingServiceId" />
+
+                        <input class="form-control"
+                               value="@(Model.ShippingCarrierName ?? "—") · @(Model.ShippingServiceName ?? "—")"
+                               readonly />
+                    }
+
+                    <small>
+                        Đổi dịch vụ chỉ được phép trước khi đơn bắt đầu giao.
+                    </small>
+                </label>
+
+                <label>
+                    <span>Mã vận đơn</span>
+                    <input class="form-control"
+                           name="trackingNumber"
+                           value="@Model.TrackingNumber"
+                           maxlength="100"
+                           placeholder="Nhập mã từ đơn vị giao nhận" />
+                </label>
+
+                <label>
+                    <span>Ngày dự kiến giao</span>
+                    <input class="form-control"
+                           name="estimatedDeliveryDate"
+                           type="date"
+                           value="@estimatedDate" />
+                </label>
+
+                <label class="is-wide">
+                    <span>Ghi chú vận chuyển</span>
+                    <textarea class="form-control"
+                              name="shippingNote"
+                              rows="4"
+                              maxlength="1000"
+                              placeholder="Ghi chú nội bộ hoặc thông tin giao hàng">@Model.ShippingNote</textarea>
+                </label>
+
+                <div class="is-wide admin-shipment-form__actions">
+                    <button class="btn btn-primary"
+                            type="submit">
+                        <i class="bi bi-save"></i>
+                        Lưu thông tin giao nhận
+                    </button>
+                </div>
+            </form>
+
+            @if (Model.Status == TMDT1_TH.Domain.Enums.OrderStatus.Processing &&
+                 string.IsNullOrWhiteSpace(Model.TrackingNumber))
+            {
+                <div class="admin-shipment-warning">
+                    <i class="bi bi-exclamation-triangle"></i>
+                    Cần lưu mã vận đơn trước khi chuyển đơn sang
+                    “Đang giao hàng”.
                 </div>
             }
         </section>
@@ -80,7 +284,10 @@
                                 </div>
                             </td>
                             <td>@item.Sku</td>
-                            <td>@item.UnitPrice.ToString("N0", culture) @Model.CurrencyCode</td>
+                            <td>
+                                @item.UnitPrice.ToString("N0", culture)
+                                @Model.CurrencyCode
+                            </td>
                             <td>@item.Quantity</td>
                             <td>
                                 <strong>
@@ -98,11 +305,36 @@
 
     <aside class="card panel admin-order-side">
         <h2>Tổng thanh toán</h2>
+
         <dl class="admin-order-totals">
-            <div><dt>Tạm tính</dt><dd>@Model.Subtotal.ToString("N0", culture) @Model.CurrencyCode</dd></div>
-            <div><dt>Vận chuyển</dt><dd>@Model.ShippingFee.ToString("N0", culture) @Model.CurrencyCode</dd></div>
-            <div><dt>Giảm giá</dt><dd>-@Model.DiscountAmount.ToString("N0", culture) @Model.CurrencyCode</dd></div>
-            <div class="is-total"><dt>Tổng cộng</dt><dd>@Model.TotalAmount.ToString("N0", culture) @Model.CurrencyCode</dd></div>
+            <div>
+                <dt>Tạm tính</dt>
+                <dd>
+                    @Model.Subtotal.ToString("N0", culture)
+                    @Model.CurrencyCode
+                </dd>
+            </div>
+            <div>
+                <dt>Vận chuyển</dt>
+                <dd>
+                    @Model.ShippingFee.ToString("N0", culture)
+                    @Model.CurrencyCode
+                </dd>
+            </div>
+            <div>
+                <dt>Giảm giá</dt>
+                <dd>
+                    -@Model.DiscountAmount.ToString("N0", culture)
+                    @Model.CurrencyCode
+                </dd>
+            </div>
+            <div class="is-total">
+                <dt>Tổng cộng</dt>
+                <dd>
+                    @Model.TotalAmount.ToString("N0", culture)
+                    @Model.CurrencyCode
+                </dd>
+            </div>
         </dl>
 
         @if (Model.NextStatusOptions.Count > 0)
@@ -110,7 +342,9 @@
             <form asp-action="ChangeStatus"
                   method="post"
                   class="admin-order-status-form">
-                <input type="hidden" name="id" value="@Model.Id" />
+                <input type="hidden"
+                       name="id"
+                       value="@Model.Id" />
 
                 <label>
                     <span>Chuyển trạng thái</span>
@@ -118,15 +352,20 @@
                             name="nextStatus"
                             required
                             data-order-next-status>
-                        <option value="">Chọn trạng thái</option>
+                        <option value="">
+                            Chọn trạng thái
+                        </option>
                         @foreach (var option in Model.NextStatusOptions)
                         {
-                            <option value="@option.Value">@option.Text</option>
+                            <option value="@option.Value">
+                                @option.Text
+                            </option>
                         }
                     </select>
                 </label>
 
-                <label data-cancellation-reason hidden>
+                <label data-cancellation-reason
+                       hidden>
                     <span>Lý do hủy đơn</span>
                     <textarea class="form-control"
                               name="cancellationReason"
@@ -152,18 +391,35 @@
 @section Scripts {
     <script>
         (() => {
-            const select = document.querySelector("[data-order-next-status]");
-            const reason = document.querySelector("[data-cancellation-reason]");
+            const select =
+                document.querySelector(
+                    "[data-order-next-status]");
+
+            const reason =
+                document.querySelector(
+                    "[data-cancellation-reason]");
+
             if (!select || !reason) return;
 
             const update = () => {
-                const isCancelled = select.value === "6";
+                const isCancelled =
+                    select.value === "6";
+
                 reason.hidden = !isCancelled;
-                const textarea = reason.querySelector("textarea");
-                if (textarea) textarea.required = isCancelled;
+
+                const textarea =
+                    reason.querySelector("textarea");
+
+                if (textarea) {
+                    textarea.required =
+                        isCancelled;
+                }
             };
 
-            select.addEventListener("change", update);
+            select.addEventListener(
+                "change",
+                update);
+
             update();
         })();
     </script>

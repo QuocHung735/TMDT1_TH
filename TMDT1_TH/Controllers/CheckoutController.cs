@@ -6,8 +6,8 @@ using Microsoft.EntityFrameworkCore;
 using TMDT1_TH.Data;
 using TMDT1_TH.Domain.Entities;
 using TMDT1_TH.Domain.Enums;
-using TMDT1_TH.Infrastructure.Cart;
 using TMDT1_TH.Domain.Identity;
+using TMDT1_TH.Infrastructure.Cart;
 using TMDT1_TH.ViewModels.Storefront;
 
 namespace TMDT1_TH.Controllers;
@@ -22,95 +22,186 @@ public sealed class CheckoutController(
 {
     private readonly ApplicationDbContext _db = db;
     private readonly CartSessionStore _cartStore = cartStore;
-    private readonly UserManager<ApplicationUser> _userManager = userManager;
+    private readonly UserManager<ApplicationUser> _userManager =
+        userManager;
     private readonly ILogger<CheckoutController> _logger = logger;
 
     [HttpGet("")]
     public async Task<IActionResult> Index()
     {
         var cartItems = _cartStore.GetItems();
+
         if (cartItems.Count == 0)
         {
-            TempData["CartMessage"] = "Giỏ hàng đang trống.";
-            return RedirectToAction("Index", "Cart");
+            TempData["CartMessage"] =
+                "Giỏ hàng đang trống.";
+
+            return RedirectToAction(
+                "Index",
+                "Cart");
         }
 
-        var resolution = await ResolveCheckoutAsync(cartItems);
+        var resolution =
+            await ResolveCheckoutAsync(cartItems);
+
         if (resolution.Errors.Count > 0)
         {
-            TempData["CartMessage"] = string.Join(" ", resolution.Errors);
-            _cartStore.Save(resolution.ValidSessionItems);
-            return RedirectToAction("Index", "Cart");
+            TempData["CartMessage"] =
+                string.Join(
+                    " ",
+                    resolution.Errors);
+
+            _cartStore.Save(
+                resolution.ValidSessionItems);
+
+            return RedirectToAction(
+                "Index",
+                "Cart");
         }
 
-        var user = await _userManager.GetUserAsync(User);
+        var user =
+            await _userManager.GetUserAsync(User);
+
         if (user is null)
             return Challenge();
+
+        var shippingOptions =
+            await LoadShippingOptionsAsync();
 
         var checkoutModel = new StoreCheckoutViewModel
         {
             CustomerName = user.FullName,
             CustomerEmail = user.Email,
-            CustomerPhone = user.PhoneNumber ?? string.Empty
+            CustomerPhone =
+                user.PhoneNumber ?? string.Empty,
+            Province = user.Province ?? string.Empty,
+            District = user.District ?? string.Empty,
+            Ward = user.Ward ?? string.Empty,
+            AddressLine =
+                user.AddressLine ?? string.Empty,
+            ShippingServiceId =
+                shippingOptions
+                    .FirstOrDefault()
+                    ?.Id
+                ?? 0
         };
 
-        return View(BuildCheckoutViewModel(checkoutModel, resolution));
+        if (shippingOptions.Count == 0)
+        {
+            ModelState.AddModelError(
+                string.Empty,
+                "Cửa hàng chưa cấu hình phương thức giao hàng đang hoạt động.");
+        }
+
+        return View(
+            BuildCheckoutViewModel(
+                checkoutModel,
+                resolution,
+                shippingOptions));
     }
 
     [HttpPost("")]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> PlaceOrder(StoreCheckoutViewModel model)
+    public async Task<IActionResult> PlaceOrder(
+        StoreCheckoutViewModel model)
     {
         NormalizeCustomerInput(model);
 
-        // Chạy lại validation sau khi đã Trim để chuỗi chỉ gồm khoảng trắng
-        // không thể vượt qua kiểm tra Required.
         ModelState.Clear();
         TryValidateModel(model);
 
-        var sessionItems = _cartStore.GetItems();
+        var sessionItems =
+            _cartStore.GetItems();
+
         if (sessionItems.Count == 0)
         {
-            ModelState.AddModelError(string.Empty, "Giỏ hàng đang trống.");
-            return View("Index", model);
+            TempData["CartMessage"] =
+                "Giỏ hàng đang trống.";
+
+            return RedirectToAction(
+                "Index",
+                "Cart");
         }
+
+        var currentOptions =
+            await LoadShippingOptionsAsync();
 
         if (!ModelState.IsValid)
         {
-            var invalidResolution = await ResolveCheckoutAsync(sessionItems);
+            var invalidResolution =
+                await ResolveCheckoutAsync(
+                    sessionItems);
+
             return View(
                 "Index",
-                BuildCheckoutViewModel(model, invalidResolution));
+                BuildCheckoutViewModel(
+                    model,
+                    invalidResolution,
+                    currentOptions));
         }
 
-        var currentUser = await _userManager.GetUserAsync(User);
-        if (currentUser is null || !currentUser.IsActive)
+        var currentUser =
+            await _userManager.GetUserAsync(User);
+
+        if (currentUser is null ||
+            !currentUser.IsActive)
+        {
             return Challenge();
+        }
+
+        await using var transaction =
+            await _db.Database.BeginTransactionAsync(
+                IsolationLevel.Serializable);
 
         try
         {
-            await using var transaction =
-                await _db.Database.BeginTransactionAsync(
-                    IsolationLevel.Serializable);
+            var resolution =
+                await ResolveCheckoutAsync(
+                    sessionItems);
 
-            var resolution = await ResolveCheckoutAsync(sessionItems);
+            foreach (var error in
+                     resolution.Errors)
+            {
+                ModelState.AddModelError(
+                    string.Empty,
+                    error);
+            }
 
-            foreach (var error in resolution.Errors)
-                ModelState.AddModelError(string.Empty, error);
+            var shipping =
+                await ResolveShippingServiceAsync(
+                    model.ShippingServiceId);
+
+            if (shipping is null)
+            {
+                ModelState.AddModelError(
+                    nameof(model.ShippingServiceId),
+                    "Phương thức giao hàng không còn hoạt động. Vui lòng chọn lại.");
+            }
 
             if (!ModelState.IsValid)
             {
                 await transaction.RollbackAsync();
+
+                var refreshedOptions =
+                    await LoadShippingOptionsAsync();
+
                 return View(
                     "Index",
-                    BuildCheckoutViewModel(model, resolution));
+                    BuildCheckoutViewModel(
+                        model,
+                        resolution,
+                        refreshedOptions));
             }
 
-            foreach (var line in resolution.Items)
+            foreach (var line in
+                     resolution.Items)
             {
-                var affected = line.ProductVariantId.HasValue
-                    ? await DeductVariantStockAsync(line)
-                    : await DeductSimpleProductStockAsync(line);
+                var affected =
+                    line.ProductVariantId.HasValue
+                        ? await DeductVariantStockAsync(
+                            line)
+                        : await DeductSimpleProductStockAsync(
+                            line);
 
                 if (affected != 1)
                 {
@@ -119,63 +210,113 @@ public sealed class CheckoutController(
                 }
             }
 
-            await UpdateParentProductStatusesAsync(resolution.Items);
+            await UpdateParentProductStatusesAsync(
+                resolution.Items);
 
-            var userAgent = Request.Headers.UserAgent.ToString();
+            var userAgent =
+                Request.Headers.UserAgent.ToString();
+
+            var shippingFee =
+                shipping!.BaseFee;
 
             var order = new Order
             {
-                OrderNumber = await CreateOrderNumberAsync(),
+                OrderNumber =
+                    await CreateOrderNumberAsync(),
                 PublicToken = Guid.NewGuid(),
                 CustomerUserId = currentUser.Id,
                 MarketId = resolution.MarketId,
-                CurrencyCode = resolution.CurrencyCode,
+                CurrencyCode =
+                    resolution.CurrencyCode,
                 Status = OrderStatus.Pending,
-                PaymentMethod = PaymentMethod.CashOnDelivery,
-                PaymentStatus = PaymentStatus.Unpaid,
-                CustomerName = model.CustomerName,
-                CustomerPhone = model.CustomerPhone,
-                CustomerEmail = NullIfWhiteSpace(model.CustomerEmail),
+                PaymentMethod =
+                    PaymentMethod.CashOnDelivery,
+                PaymentStatus =
+                    PaymentStatus.Unpaid,
+                CustomerName =
+                    model.CustomerName,
+                CustomerPhone =
+                    model.CustomerPhone,
+                CustomerEmail =
+                    NullIfWhiteSpace(
+                        model.CustomerEmail),
                 Province = model.Province,
                 District = model.District,
                 Ward = model.Ward,
                 AddressLine = model.AddressLine,
-                CustomerNote = NullIfWhiteSpace(model.CustomerNote),
-                Subtotal = resolution.Subtotal,
-                ShippingFee = 0,
+                CustomerNote =
+                    NullIfWhiteSpace(
+                        model.CustomerNote),
+                ShippingServiceId =
+                    shipping.Id,
+                ShippingCarrierName =
+                    shipping.CarrierName,
+                ShippingServiceName =
+                    shipping.ServiceName,
+                EstimatedDeliveryAt =
+                    DateTime.UtcNow.AddDays(
+                        shipping.EstimatedMaxDays),
+                Subtotal =
+                    resolution.Subtotal,
+                ShippingFee =
+                    shippingFee,
                 DiscountAmount = 0,
-                TotalAmount = resolution.Subtotal,
-                CustomerIp = HttpContext.Connection.RemoteIpAddress?.ToString(),
-                UserAgent = string.IsNullOrWhiteSpace(userAgent)
-                    ? null
-                    : userAgent[..Math.Min(userAgent.Length, 500)],
-                CreatedBy = currentUser.Email
+                TotalAmount =
+                    resolution.Subtotal +
+                    shippingFee,
+                CustomerIp =
+                    HttpContext.Connection
+                        .RemoteIpAddress
+                        ?.ToString(),
+                UserAgent =
+                    string.IsNullOrWhiteSpace(
+                        userAgent)
+                        ? null
+                        : userAgent[
+                            ..Math.Min(
+                                userAgent.Length,
+                                500)],
+                CreatedBy =
+                    currentUser.Email
                     ?? currentUser.UserName
                     ?? "Storefront"
             };
 
-            foreach (var line in resolution.Items)
+            foreach (var line in
+                     resolution.Items)
             {
-                order.Items.Add(new OrderItem
-                {
-                    ProductId = line.ProductId,
-                    ProductVariantId = line.ProductVariantId,
-                    ProductName = line.ProductName,
-                    VariantName = line.VariantName,
-                    Sku = line.Sku,
-                    ImageUrl = line.ImageUrl,
-                    Unit = line.Unit,
-                    ListPrice = line.ListPrice,
-                    UnitPrice = line.UnitPrice,
-                    Quantity = line.Quantity,
-                    LineTotal = line.LineTotal,
-                    CreatedBy = currentUser.Email
-                        ?? currentUser.UserName
-                        ?? "Storefront"
-                });
+                order.Items.Add(
+                    new OrderItem
+                    {
+                        ProductId =
+                            line.ProductId,
+                        ProductVariantId =
+                            line.ProductVariantId,
+                        ProductName =
+                            line.ProductName,
+                        VariantName =
+                            line.VariantName,
+                        Sku = line.Sku,
+                        ImageUrl =
+                            line.ImageUrl,
+                        Unit = line.Unit,
+                        ListPrice =
+                            line.ListPrice,
+                        UnitPrice =
+                            line.UnitPrice,
+                        Quantity =
+                            line.Quantity,
+                        LineTotal =
+                            line.LineTotal,
+                        CreatedBy =
+                            currentUser.Email
+                            ?? currentUser.UserName
+                            ?? "Storefront"
+                    });
             }
 
             _db.Orders.Add(order);
+
             await _db.SaveChangesAsync();
             await transaction.CommitAsync();
 
@@ -185,12 +326,16 @@ public sealed class CheckoutController(
                 nameof(Confirmation),
                 new
                 {
-                    orderNumber = order.OrderNumber,
-                    publicToken = order.PublicToken
+                    orderNumber =
+                        order.OrderNumber,
+                    publicToken =
+                        order.PublicToken
                 });
         }
         catch (Exception exception)
         {
+            await transaction.RollbackAsync();
+
             _db.ChangeTracker.Clear();
 
             _logger.LogError(
@@ -199,21 +344,30 @@ public sealed class CheckoutController(
 
             ModelState.AddModelError(
                 string.Empty,
-                exception is InvalidOperationException
+                exception is
+                    InvalidOperationException
                     ? exception.Message
                     : "Không thể tạo đơn hàng lúc này. Vui lòng thử lại.");
 
-            var refreshResolution = await ResolveCheckoutAsync(
-                _cartStore.GetItems());
+            var refreshResolution =
+                await ResolveCheckoutAsync(
+                    _cartStore.GetItems());
+
+            var refreshedOptions =
+                await LoadShippingOptionsAsync();
 
             return View(
                 "Index",
-                BuildCheckoutViewModel(model, refreshResolution));
+                BuildCheckoutViewModel(
+                    model,
+                    refreshResolution,
+                    refreshedOptions));
         }
     }
 
     [AllowAnonymous]
-    [HttpGet("/don-hang/{orderNumber}/{publicToken:guid}")]
+    [HttpGet(
+        "/don-hang/{orderNumber}/{publicToken:guid}")]
     public async Task<IActionResult> Confirmation(
         string orderNumber,
         Guid publicToken)
@@ -228,61 +382,153 @@ public sealed class CheckoutController(
         if (order is null)
             return NotFound();
 
-        var model = new StoreOrderConfirmationViewModel
-        {
-            OrderNumber = order.OrderNumber,
-            CreatedAt = order.CreatedAt,
-            StatusName = GetOrderStatusName(order.Status),
-            PaymentMethodName = order.PaymentMethod ==
-                PaymentMethod.CashOnDelivery
-                    ? "Thanh toán khi nhận hàng"
-                    : order.PaymentMethod.ToString(),
-            CustomerName = order.CustomerName,
-            CustomerPhone = order.CustomerPhone,
-            CustomerEmail = order.CustomerEmail,
-            ShippingAddress = string.Join(
-                ", ",
-                new[]
-                {
-                    order.AddressLine,
-                    order.Ward,
-                    order.District,
-                    order.Province
-                }.Where(x => !string.IsNullOrWhiteSpace(x))),
-            CustomerNote = order.CustomerNote,
-            CurrencyCode = order.CurrencyCode,
-            Subtotal = order.Subtotal,
-            ShippingFee = order.ShippingFee,
-            TotalAmount = order.TotalAmount,
-            Items = order.Items
-                .OrderBy(x => x.Id)
-                .Select(x => new StoreOrderConfirmationItemViewModel
-                {
-                    ProductName = x.ProductName,
-                    VariantName = x.VariantName,
-                    Sku = x.Sku,
-                    ImageUrl = x.ImageUrl,
-                    UnitPrice = x.UnitPrice,
-                    Quantity = x.Quantity,
-                    LineTotal = x.LineTotal
-                })
-                .ToList()
-        };
+        var model =
+            new StoreOrderConfirmationViewModel
+            {
+                OrderNumber =
+                    order.OrderNumber,
+                CreatedAt =
+                    order.CreatedAt,
+                StatusName =
+                    GetOrderStatusName(
+                        order.Status),
+                PaymentMethodName =
+                    order.PaymentMethod ==
+                    PaymentMethod.CashOnDelivery
+                        ? "Thanh toán khi nhận hàng"
+                        : order.PaymentMethod
+                            .ToString(),
+                CustomerName =
+                    order.CustomerName,
+                CustomerPhone =
+                    order.CustomerPhone,
+                CustomerEmail =
+                    order.CustomerEmail,
+                ShippingAddress =
+                    string.Join(
+                        ", ",
+                        new[]
+                        {
+                            order.AddressLine,
+                            order.Ward,
+                            order.District,
+                            order.Province
+                        }.Where(x =>
+                            !string.IsNullOrWhiteSpace(
+                                x))),
+                CustomerNote =
+                    order.CustomerNote,
+                ShippingCarrierName =
+                    order.ShippingCarrierName,
+                ShippingServiceName =
+                    order.ShippingServiceName,
+                EstimatedDeliveryAt =
+                    order.EstimatedDeliveryAt,
+                CurrencyCode =
+                    order.CurrencyCode,
+                Subtotal =
+                    order.Subtotal,
+                ShippingFee =
+                    order.ShippingFee,
+                TotalAmount =
+                    order.TotalAmount,
+                Items = order.Items
+                    .OrderBy(x => x.Id)
+                    .Select(x =>
+                        new StoreOrderConfirmationItemViewModel
+                        {
+                            ProductName =
+                                x.ProductName,
+                            VariantName =
+                                x.VariantName,
+                            Sku = x.Sku,
+                            ImageUrl =
+                                x.ImageUrl,
+                            UnitPrice =
+                                x.UnitPrice,
+                            Quantity =
+                                x.Quantity,
+                            LineTotal =
+                                x.LineTotal
+                        })
+                    .ToList()
+            };
 
         return View(model);
     }
 
-    private async Task<CheckoutResolution> ResolveCheckoutAsync(
-        IReadOnlyList<CartSessionItem> sessionItems)
+    private async Task<List<StoreShippingOptionViewModel>>
+        LoadShippingOptionsAsync()
     {
-        var errors = new List<string>();
-        var validSessionItems = new List<CartSessionItem>();
-        var resolvedItems = new List<CheckoutLine>();
+        return await _db.ShippingServices
+            .AsNoTracking()
+            .Where(x =>
+                x.IsActive &&
+                x.ShippingCarrier.IsActive)
+            .OrderBy(x =>
+                x.ShippingCarrier.DisplayOrder)
+            .ThenBy(x =>
+                x.ShippingCarrier.Name)
+            .ThenBy(x => x.DisplayOrder)
+            .ThenBy(x => x.Name)
+            .Select(x =>
+                new StoreShippingOptionViewModel
+                {
+                    Id = x.Id,
+                    CarrierName =
+                        x.ShippingCarrier.Name,
+                    ServiceName = x.Name,
+                    Description =
+                        x.Description,
+                    Fee = x.BaseFee,
+                    EstimatedMinDays =
+                        x.EstimatedMinDays,
+                    EstimatedMaxDays =
+                        x.EstimatedMaxDays
+                })
+            .ToListAsync();
+    }
+
+    private async Task<ShippingSelection?>
+        ResolveShippingServiceAsync(
+            int shippingServiceId)
+    {
+        return await _db.ShippingServices
+            .AsNoTracking()
+            .Where(x =>
+                x.Id == shippingServiceId &&
+                x.IsActive &&
+                x.ShippingCarrier.IsActive)
+            .Select(x =>
+                new ShippingSelection(
+                    x.Id,
+                    x.ShippingCarrier.Name,
+                    x.Name,
+                    x.BaseFee,
+                    x.EstimatedMinDays,
+                    x.EstimatedMaxDays))
+            .FirstOrDefaultAsync();
+    }
+
+    private async Task<CheckoutResolution>
+        ResolveCheckoutAsync(
+            IReadOnlyList<CartSessionItem>
+                sessionItems)
+    {
+        var errors =
+            new List<string>();
+
+        var validSessionItems =
+            new List<CartSessionItem>();
+
+        var resolvedItems =
+            new List<CheckoutLine>();
 
         var market = await _db.Markets
             .AsNoTracking()
             .Where(x => x.IsActive)
-            .OrderByDescending(x => x.IsDefault)
+            .OrderByDescending(x =>
+                x.IsDefault)
             .ThenBy(x => x.Id)
             .Select(x => new
             {
@@ -293,7 +539,9 @@ public sealed class CheckoutController(
 
         if (market is null)
         {
-            errors.Add("Chưa có thị trường đang hoạt động để xác định giá.");
+            errors.Add(
+                "Chưa có thị trường đang hoạt động để xác định giá.");
+
             return new CheckoutResolution(
                 0,
                 "VND",
@@ -312,17 +560,22 @@ public sealed class CheckoutController(
             .Where(x =>
                 productIds.Contains(x.Id) &&
                 !x.IsDeleted &&
-                x.Status == ProductStatus.Active)
+                x.Status ==
+                ProductStatus.Active)
             .Include(x => x.Images)
-            .Include(x => x.PriceSchedules)
+            .Include(x =>
+                x.PriceSchedules)
             .Include(x => x.Variants)
-                .ThenInclude(x => x.Images)
+                .ThenInclude(x =>
+                    x.Images)
             .Include(x => x.Variants)
-                .ThenInclude(x => x.PriceSchedules)
+                .ThenInclude(x =>
+                    x.PriceSchedules)
             .AsSplitQuery()
             .ToDictionaryAsync(x => x.Id);
 
-        foreach (var sessionItem in sessionItems)
+        foreach (var sessionItem in
+                 sessionItems)
         {
             if (!products.TryGetValue(
                     sessionItem.ProductId,
@@ -330,6 +583,7 @@ public sealed class CheckoutController(
             {
                 errors.Add(
                     "Một sản phẩm trong giỏ không còn được bán.");
+
                 continue;
             }
 
@@ -343,13 +597,17 @@ public sealed class CheckoutController(
             if (resolution.Line is null)
             {
                 errors.Add(
-                    resolution.Error ??
-                    $"SKU trong sản phẩm {product.Name} không còn hợp lệ.");
+                    resolution.Error
+                    ?? $"SKU trong sản phẩm {product.Name} không còn hợp lệ.");
+
                 continue;
             }
 
-            resolvedItems.Add(resolution.Line);
-            validSessionItems.Add(sessionItem);
+            resolvedItems.Add(
+                resolution.Line);
+
+            validSessionItems.Add(
+                sessionItem);
         }
 
         return new CheckoutResolution(
@@ -377,16 +635,23 @@ public sealed class CheckoutController(
 
         if (product.HasVariants)
         {
-            if (!sessionItem.ProductVariantId.HasValue)
+            if (!sessionItem
+                .ProductVariantId
+                .HasValue)
             {
                 return LineResolution.Failed(
                     $"Sản phẩm {product.Name} cần chọn phân loại.");
             }
 
-            variant = product.Variants.FirstOrDefault(x =>
-                x.Id == sessionItem.ProductVariantId.Value &&
-                x.IsActive &&
-                !x.IsDeleted);
+            variant =
+                product.Variants
+                    .FirstOrDefault(x =>
+                        x.Id ==
+                        sessionItem
+                            .ProductVariantId
+                            .Value &&
+                        x.IsActive &&
+                        !x.IsDeleted);
 
             if (variant is null)
             {
@@ -398,19 +663,31 @@ public sealed class CheckoutController(
                 variant.PriceSchedules,
                 marketId,
                 now);
-            stockQuantity = variant.StockQuantity;
+
+            stockQuantity =
+                variant.StockQuantity;
+
             sku = variant.Sku;
             variantName = variant.Name;
+
             imageUrl = variant.Images
-                .OrderByDescending(x => x.IsPrimary)
-                .ThenBy(x => x.DisplayOrder)
-                .Select(x => x.ImageUrl)
+                .OrderByDescending(x =>
+                    x.IsPrimary)
+                .ThenBy(x =>
+                    x.DisplayOrder)
+                .Select(x =>
+                    x.ImageUrl)
                 .FirstOrDefault();
-            weight = variant.Weight ?? product.Weight;
+
+            weight =
+                variant.Weight
+                ?? product.Weight;
         }
         else
         {
-            if (sessionItem.ProductVariantId.HasValue)
+            if (sessionItem
+                .ProductVariantId
+                .HasValue)
             {
                 return LineResolution.Failed(
                     $"Sản phẩm {product.Name} không sử dụng phân loại.");
@@ -420,14 +697,18 @@ public sealed class CheckoutController(
                 product.PriceSchedules,
                 marketId,
                 now);
-            stockQuantity = product.StockQuantity;
+
+            stockQuantity =
+                product.StockQuantity;
+
             sku = product.Sku;
             variantName = null;
             imageUrl = null;
             weight = product.Weight;
         }
 
-        if (price is null || price.SalePrice <= 0)
+        if (price is null ||
+            price.SalePrice <= 0)
         {
             return LineResolution.Failed(
                 $"SKU {sku} chưa có giá bán đang áp dụng.");
@@ -436,119 +717,153 @@ public sealed class CheckoutController(
         var minQuantity = Math.Max(
             product.MinPurchaseQuantity,
             1);
+
         var maxByPolicy =
-            product.MaxPurchaseQuantity ?? stockQuantity;
+            product.MaxPurchaseQuantity
+            ?? stockQuantity;
+
         var maxQuantity = Math.Min(
             stockQuantity,
             maxByPolicy);
 
-        if (sessionItem.Quantity < minQuantity ||
-            sessionItem.Quantity > maxQuantity)
+        if (sessionItem.Quantity <
+                minQuantity ||
+            sessionItem.Quantity >
+                maxQuantity)
         {
             return LineResolution.Failed(
                 $"Số lượng của SKU {sku} phải từ {minQuantity} đến {maxQuantity}.");
         }
 
-        imageUrl ??= product.Images
-            .Where(x => x.ProductVariantId == null)
-            .OrderByDescending(x => x.IsPrimary)
-            .ThenBy(x => x.DisplayOrder)
-            .Select(x => x.ImageUrl)
-            .FirstOrDefault();
+        imageUrl ??=
+            product.Images
+                .Where(x =>
+                    x.ProductVariantId == null)
+                .OrderByDescending(x =>
+                    x.IsPrimary)
+                .ThenBy(x =>
+                    x.DisplayOrder)
+                .Select(x =>
+                    x.ImageUrl)
+                .FirstOrDefault();
 
-        return LineResolution.Success(new CheckoutLine(
-            product.Id,
-            variant?.Id,
-            product.Name,
-            variantName,
-            sku,
-            imageUrl,
-            product.Unit,
-            currencyCode,
-            price.ListPrice,
-            price.SalePrice,
-            sessionItem.Quantity,
-            stockQuantity,
-            weight));
+        return LineResolution.Success(
+            new CheckoutLine(
+                product.Id,
+                variant?.Id,
+                product.Name,
+                variantName,
+                sku,
+                imageUrl,
+                product.Unit,
+                currencyCode,
+                price.ListPrice,
+                price.SalePrice,
+                sessionItem.Quantity,
+                stockQuantity,
+                weight));
     }
 
-    private async Task<int> DeductSimpleProductStockAsync(
-        CheckoutLine line)
+    private async Task<int>
+        DeductSimpleProductStockAsync(
+            CheckoutLine line)
     {
         return await _db.Products
             .IgnoreQueryFilters()
             .Where(x =>
                 x.Id == line.ProductId &&
                 !x.IsDeleted &&
-                x.Status == ProductStatus.Active &&
+                x.Status ==
+                ProductStatus.Active &&
                 !x.HasVariants &&
-                x.StockQuantity >= line.Quantity)
-            .ExecuteUpdateAsync(setters => setters
-                .SetProperty(
-                    x => x.StockQuantity,
-                    x => x.StockQuantity - line.Quantity)
-                .SetProperty(
-                    x => x.UpdatedAt,
-                    DateTime.UtcNow)
-                .SetProperty(
-                    x => x.UpdatedBy,
-                    "Storefront"));
+                x.StockQuantity >=
+                line.Quantity)
+            .ExecuteUpdateAsync(setters =>
+                setters
+                    .SetProperty(
+                        x => x.StockQuantity,
+                        x =>
+                            x.StockQuantity -
+                            line.Quantity)
+                    .SetProperty(
+                        x => x.UpdatedAt,
+                        DateTime.UtcNow)
+                    .SetProperty(
+                        x => x.UpdatedBy,
+                        "Storefront"));
     }
 
-    private async Task<int> DeductVariantStockAsync(
-        CheckoutLine line)
+    private async Task<int>
+        DeductVariantStockAsync(
+            CheckoutLine line)
     {
         return await _db.ProductVariants
             .IgnoreQueryFilters()
             .Where(x =>
-                x.Id == line.ProductVariantId!.Value &&
-                x.ProductId == line.ProductId &&
+                x.Id ==
+                line.ProductVariantId!.Value &&
+                x.ProductId ==
+                line.ProductId &&
                 !x.IsDeleted &&
                 x.IsActive &&
-                x.StockQuantity >= line.Quantity)
-            .ExecuteUpdateAsync(setters => setters
-                .SetProperty(
-                    x => x.StockQuantity,
-                    x => x.StockQuantity - line.Quantity)
-                .SetProperty(
-                    x => x.UpdatedAt,
-                    DateTime.UtcNow)
-                .SetProperty(
-                    x => x.UpdatedBy,
-                    "Storefront"));
+                x.StockQuantity >=
+                line.Quantity)
+            .ExecuteUpdateAsync(setters =>
+                setters
+                    .SetProperty(
+                        x => x.StockQuantity,
+                        x =>
+                            x.StockQuantity -
+                            line.Quantity)
+                    .SetProperty(
+                        x => x.UpdatedAt,
+                        DateTime.UtcNow)
+                    .SetProperty(
+                        x => x.UpdatedBy,
+                        "Storefront"));
     }
 
-    private async Task UpdateParentProductStatusesAsync(
-        IReadOnlyList<CheckoutLine> lines)
+    private async Task
+        UpdateParentProductStatusesAsync(
+            IReadOnlyList<CheckoutLine> lines)
     {
         foreach (var productId in lines
-            .Select(x => x.ProductId)
-            .Distinct())
+                     .Select(x => x.ProductId)
+                     .Distinct())
         {
-            var hasVariants = lines
-                .Any(x =>
-                    x.ProductId == productId &&
-                    x.ProductVariantId.HasValue);
+            var hasVariants =
+                lines.Any(x =>
+                    x.ProductId ==
+                    productId &&
+                    x.ProductVariantId
+                        .HasValue);
 
             int remainingStock;
 
             if (hasVariants)
             {
-                remainingStock = await _db.ProductVariants
-                    .IgnoreQueryFilters()
-                    .Where(x =>
-                        x.ProductId == productId &&
-                        x.IsActive &&
-                        !x.IsDeleted)
-                    .SumAsync(x => x.StockQuantity);
+                remainingStock =
+                    await _db.ProductVariants
+                        .IgnoreQueryFilters()
+                        .Where(x =>
+                            x.ProductId ==
+                            productId &&
+                            x.IsActive &&
+                            !x.IsDeleted)
+                        .SumAsync(x =>
+                            x.StockQuantity);
             }
             else
             {
-                remainingStock = await _db.Products
-                    .IgnoreQueryFilters()
-                    .Where(x => x.Id == productId)
-                    .Select(x => x.StockQuantity)
-                    .SingleAsync();
+                remainingStock =
+                    await _db.Products
+                        .IgnoreQueryFilters()
+                        .Where(x =>
+                            x.Id ==
+                            productId)
+                        .Select(x =>
+                            x.StockQuantity)
+                        .SingleAsync();
             }
 
             if (remainingStock == 0)
@@ -556,29 +871,36 @@ public sealed class CheckoutController(
                 await _db.Products
                     .IgnoreQueryFilters()
                     .Where(x =>
-                        x.Id == productId &&
-                        x.Status == ProductStatus.Active)
-                    .ExecuteUpdateAsync(setters => setters
-                        .SetProperty(
-                            x => x.Status,
-                            ProductStatus.OutOfStock)
-                        .SetProperty(
-                            x => x.UpdatedAt,
-                            DateTime.UtcNow)
-                        .SetProperty(
-                            x => x.UpdatedBy,
-                            "Storefront"));
+                        x.Id ==
+                        productId &&
+                        x.Status ==
+                        ProductStatus.Active)
+                    .ExecuteUpdateAsync(setters =>
+                        setters
+                            .SetProperty(
+                                x => x.Status,
+                                ProductStatus.OutOfStock)
+                            .SetProperty(
+                                x => x.UpdatedAt,
+                                DateTime.UtcNow)
+                            .SetProperty(
+                                x => x.UpdatedBy,
+                                "Storefront"));
             }
         }
     }
 
-    private async Task<string> CreateOrderNumberAsync()
+    private async Task<string>
+        CreateOrderNumberAsync()
     {
-        for (var attempt = 0; attempt < 10; attempt++)
+        for (var attempt = 0;
+             attempt < 10;
+             attempt++)
         {
-            var randomPart = Guid.NewGuid()
-                .ToString("N")[..8]
-                .ToUpperInvariant();
+            var randomPart =
+                Guid.NewGuid()
+                    .ToString("N")[..8]
+                    .ToUpperInvariant();
 
             var candidate =
                 $"MH-{DateTime.UtcNow:yyMMdd}-{randomPart}";
@@ -586,7 +908,8 @@ public sealed class CheckoutController(
             var exists = await _db.Orders
                 .AsNoTracking()
                 .AnyAsync(x =>
-                    x.OrderNumber == candidate);
+                    x.OrderNumber ==
+                    candidate);
 
             if (!exists)
                 return candidate;
@@ -596,10 +919,11 @@ public sealed class CheckoutController(
             "Không thể tạo mã đơn hàng duy nhất. Vui lòng thử lại.");
     }
 
-    private static PriceSchedule? GetCurrentPrice(
-        IEnumerable<PriceSchedule> schedules,
-        int marketId,
-        DateTime now)
+    private static PriceSchedule?
+        GetCurrentPrice(
+            IEnumerable<PriceSchedule> schedules,
+            int marketId,
+            DateTime now)
     {
         return schedules
             .Where(x =>
@@ -608,38 +932,86 @@ public sealed class CheckoutController(
                 x.ValidFrom <= now &&
                 (!x.ValidTo.HasValue ||
                  x.ValidTo.Value > now))
-            .OrderByDescending(x => x.ValidFrom)
-            .ThenByDescending(x => x.Id)
+            .OrderByDescending(x =>
+                x.ValidFrom)
+            .ThenByDescending(x =>
+                x.Id)
             .FirstOrDefault();
     }
 
-    private static StoreCheckoutViewModel BuildCheckoutViewModel(
-        StoreCheckoutViewModel model,
-        CheckoutResolution resolution)
+    private static StoreCheckoutViewModel
+        BuildCheckoutViewModel(
+            StoreCheckoutViewModel model,
+            CheckoutResolution resolution,
+            IReadOnlyList<StoreShippingOptionViewModel>
+                shippingOptions)
     {
-        model.CurrencyCode = resolution.CurrencyCode;
+        model.CurrencyCode =
+            resolution.CurrencyCode;
+
         model.Items = resolution.Items
-            .Select(x => new StoreCheckoutItemViewModel
-            {
-                ProductId = x.ProductId,
-                ProductVariantId = x.ProductVariantId,
-                ProductName = x.ProductName,
-                VariantName = x.VariantName,
-                Sku = x.Sku,
-                ImageUrl = x.ImageUrl,
-                Unit = x.Unit,
-                ListPrice = x.ListPrice,
-                UnitPrice = x.UnitPrice,
-                Quantity = x.Quantity,
-                StockQuantity = x.StockQuantity
-            })
+            .Select(x =>
+                new StoreCheckoutItemViewModel
+                {
+                    ProductId =
+                        x.ProductId,
+                    ProductVariantId =
+                        x.ProductVariantId,
+                    ProductName =
+                        x.ProductName,
+                    VariantName =
+                        x.VariantName,
+                    Sku = x.Sku,
+                    ImageUrl =
+                        x.ImageUrl,
+                    Unit = x.Unit,
+                    ListPrice =
+                        x.ListPrice,
+                    UnitPrice =
+                        x.UnitPrice,
+                    Quantity =
+                        x.Quantity,
+                    StockQuantity =
+                        x.StockQuantity
+                })
             .ToList();
+
+        model.ShippingOptions =
+            shippingOptions;
+
         model.TotalQuantity =
-            resolution.Items.Sum(x => x.Quantity);
+            resolution.Items
+                .Sum(x => x.Quantity);
+
         model.Subtotal =
-            resolution.Items.Sum(x => x.LineTotal);
-        model.ShippingFee = 0;
-        model.TotalAmount = model.Subtotal;
+            resolution.Items
+                .Sum(x => x.LineTotal);
+
+        var selected =
+            shippingOptions
+                .FirstOrDefault(x =>
+                    x.Id ==
+                    model.ShippingServiceId);
+
+        if (selected is null)
+        {
+            selected =
+                shippingOptions
+                    .FirstOrDefault();
+
+            if (selected is not null)
+            {
+                model.ShippingServiceId =
+                    selected.Id;
+            }
+        }
+
+        model.ShippingFee =
+            selected?.Fee ?? 0;
+
+        model.TotalAmount =
+            model.Subtotal +
+            model.ShippingFee;
 
         return model;
     }
@@ -647,20 +1019,41 @@ public sealed class CheckoutController(
     private static void NormalizeCustomerInput(
         StoreCheckoutViewModel model)
     {
-        model.CustomerName = model.CustomerName.Trim();
-        model.CustomerPhone = model.CustomerPhone.Trim();
+        model.CustomerName =
+            model.CustomerName?.Trim()
+            ?? string.Empty;
+
+        model.CustomerPhone =
+            model.CustomerPhone?.Trim()
+            ?? string.Empty;
+
         model.CustomerEmail =
-            NullIfWhiteSpace(model.CustomerEmail);
-        model.Province = model.Province.Trim();
-        model.District = model.District.Trim();
-        model.Ward = model.Ward.Trim();
-        model.AddressLine = model.AddressLine.Trim();
+            NullIfWhiteSpace(
+                model.CustomerEmail);
+
+        model.Province =
+            model.Province?.Trim()
+            ?? string.Empty;
+
+        model.District =
+            model.District?.Trim()
+            ?? string.Empty;
+
+        model.Ward =
+            model.Ward?.Trim()
+            ?? string.Empty;
+
+        model.AddressLine =
+            model.AddressLine?.Trim()
+            ?? string.Empty;
+
         model.CustomerNote =
-            NullIfWhiteSpace(model.CustomerNote);
+            NullIfWhiteSpace(
+                model.CustomerNote);
     }
 
-    private static string? NullIfWhiteSpace(
-        string? value)
+    private static string?
+        NullIfWhiteSpace(string? value)
     {
         return string.IsNullOrWhiteSpace(value)
             ? null
@@ -672,15 +1065,29 @@ public sealed class CheckoutController(
     {
         return status switch
         {
-            OrderStatus.Pending => "Chờ xác nhận",
-            OrderStatus.Confirmed => "Đã xác nhận",
-            OrderStatus.Processing => "Đang chuẩn bị hàng",
-            OrderStatus.Shipping => "Đang giao hàng",
-            OrderStatus.Completed => "Hoàn thành",
-            OrderStatus.Cancelled => "Đã hủy",
+            OrderStatus.Pending =>
+                "Chờ xác nhận",
+            OrderStatus.Confirmed =>
+                "Đã xác nhận",
+            OrderStatus.Processing =>
+                "Đang chuẩn bị hàng",
+            OrderStatus.Shipping =>
+                "Đang giao hàng",
+            OrderStatus.Completed =>
+                "Hoàn thành",
+            OrderStatus.Cancelled =>
+                "Đã hủy",
             _ => status.ToString()
         };
     }
+
+    private sealed record ShippingSelection(
+        int Id,
+        string CarrierName,
+        string ServiceName,
+        decimal BaseFee,
+        int EstimatedMinDays,
+        int EstimatedMaxDays);
 
     private sealed record CheckoutLine(
         int ProductId,
@@ -705,7 +1112,8 @@ public sealed class CheckoutController(
         int MarketId,
         string CurrencyCode,
         IReadOnlyList<CheckoutLine> Items,
-        IReadOnlyList<CartSessionItem> ValidSessionItems,
+        IReadOnlyList<CartSessionItem>
+            ValidSessionItems,
         IReadOnlyList<string> Errors)
     {
         public decimal Subtotal =>

@@ -21,6 +21,10 @@ public sealed class CustomerOrderListItemViewModel
     public string? FirstImageUrl { get; init; }
     public string FirstProductName { get; init; } = string.Empty;
     public int AdditionalItemCount { get; init; }
+
+    public string? ShippingCarrierName { get; init; }
+    public string? ShippingServiceName { get; init; }
+    public string? TrackingNumber { get; init; }
 }
 
 public sealed class CustomerOrderDetailsViewModel
@@ -39,6 +43,15 @@ public sealed class CustomerOrderDetailsViewModel
     public string ShippingAddress { get; init; } = string.Empty;
     public string? CustomerNote { get; init; }
     public string? CancellationReason { get; init; }
+
+    public string? ShippingCarrierName { get; init; }
+    public string? ShippingServiceName { get; init; }
+    public string? TrackingNumber { get; init; }
+    public string? TrackingUrl { get; init; }
+    public string? ShippingNote { get; init; }
+    public DateTime? EstimatedDeliveryAt { get; init; }
+    public DateTime? ShippedAt { get; init; }
+    public DateTime? DeliveredAt { get; init; }
 
     public PaymentStatus PaymentStatus { get; init; }
     public string PaymentStatusName { get; init; } = string.Empty;

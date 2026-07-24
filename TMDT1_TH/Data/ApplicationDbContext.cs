@@ -26,6 +26,8 @@ public class ApplicationDbContext(
     public DbSet<Order> Orders => Set<Order>();
     public DbSet<OrderItem> OrderItems => Set<OrderItem>();
     public DbSet<ProductReview> ProductReviews => Set<ProductReview>();
+    public DbSet<ShippingCarrier> ShippingCarriers => Set<ShippingCarrier>();
+    public DbSet<ShippingService> ShippingServices => Set<ShippingService>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

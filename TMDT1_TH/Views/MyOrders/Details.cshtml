@@ -19,11 +19,14 @@
         <div class="order-page-heading">
             <div>
                 <a class="order-back-link"
-                   asp-action="Index">← Tất cả đơn hàng</a>
+                   asp-action="Index">
+                    ← Tất cả đơn hàng
+                </a>
                 <h1>@Model.OrderNumber</h1>
                 <p>
                     Đặt lúc
-                    @Model.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm")
+                    @Model.CreatedAt.ToLocalTime()
+                        .ToString("dd/MM/yyyy HH:mm")
                 </p>
             </div>
             <span class="customer-order-status @Model.StatusClass">
@@ -51,6 +54,7 @@
                     {
                         var step = index + 1;
                         var active = step <= Model.ProgressStep;
+
                         <div class="order-track-step @(active ? "is-active" : "")">
                             <span>@(active ? "✓" : step)</span>
                             <strong>@steps[index]</strong>
@@ -59,6 +63,129 @@
                 </div>
             </section>
         }
+
+        <section class="customer-shipment-card">
+            <div class="customer-shipment-card__heading">
+                <div>
+                    <span class="eyebrow">GIAO NHẬN</span>
+                    <h2>Theo dõi vận chuyển</h2>
+                </div>
+
+                @if (!string.IsNullOrWhiteSpace(Model.TrackingNumber))
+                {
+                    <span class="shipment-code">
+                        @Model.TrackingNumber
+                    </span>
+                }
+            </div>
+
+            <div class="customer-shipment-grid">
+                <div>
+                    <small>Đơn vị giao nhận</small>
+                    <strong>
+                        @(Model.ShippingCarrierName
+                            ?? "Đang cập nhật")
+                    </strong>
+                </div>
+                <div>
+                    <small>Dịch vụ</small>
+                    <strong>
+                        @(Model.ShippingServiceName
+                            ?? "Đang cập nhật")
+                    </strong>
+                </div>
+                <div>
+                    <small>Dự kiến giao</small>
+                    <strong>
+                        @(Model.EstimatedDeliveryAt.HasValue
+                            ? Model.EstimatedDeliveryAt.Value
+                                .ToLocalTime()
+                                .ToString("dd/MM/yyyy")
+                            : "Đang cập nhật")
+                    </strong>
+                </div>
+                <div>
+                    <small>Trạng thái giao hàng</small>
+                    <strong>
+                        @(Model.DeliveredAt.HasValue
+                            ? "Đã giao thành công"
+                            : Model.ShippedAt.HasValue
+                                ? "Đang vận chuyển"
+                                : "Chờ bàn giao")
+                    </strong>
+                </div>
+            </div>
+
+            <div class="customer-shipment-timeline">
+                <div class="is-done">
+                    <span>✓</span>
+                    <div>
+                        <strong>Đã đặt hàng</strong>
+                        <small>
+                            @Model.CreatedAt.ToLocalTime()
+                                .ToString("dd/MM/yyyy HH:mm")
+                        </small>
+                    </div>
+                </div>
+
+                <div class="@(Model.ShippedAt.HasValue ? "is-done" : "")">
+                    <span>
+                        @(Model.ShippedAt.HasValue ? "✓" : "2")
+                    </span>
+                    <div>
+                        <strong>Bàn giao đơn vị vận chuyển</strong>
+                        <small>
+                            @(Model.ShippedAt.HasValue
+                                ? Model.ShippedAt.Value
+                                    .ToLocalTime()
+                                    .ToString("dd/MM/yyyy HH:mm")
+                                : "Chưa bàn giao")
+                        </small>
+                    </div>
+                </div>
+
+                <div class="@(Model.DeliveredAt.HasValue ? "is-done" : "")">
+                    <span>
+                        @(Model.DeliveredAt.HasValue ? "✓" : "3")
+                    </span>
+                    <div>
+                        <strong>Giao hàng thành công</strong>
+                        <small>
+                            @(Model.DeliveredAt.HasValue
+                                ? Model.DeliveredAt.Value
+                                    .ToLocalTime()
+                                    .ToString("dd/MM/yyyy HH:mm")
+                                : "Chưa hoàn thành")
+                        </small>
+                    </div>
+                </div>
+            </div>
+
+            @if (!string.IsNullOrWhiteSpace(Model.ShippingNote))
+            {
+                <div class="customer-shipment-note">
+                    <strong>Ghi chú giao nhận</strong>
+                    <p>@Model.ShippingNote</p>
+                </div>
+            }
+
+            @if (!string.IsNullOrWhiteSpace(Model.TrackingUrl))
+            {
+                <a class="store-button store-button--primary"
+                   href="@Model.TrackingUrl"
+                   target="_blank"
+                   rel="noopener noreferrer">
+                    Tra cứu trên website đơn vị vận chuyển
+                </a>
+            }
+            else if (!string.IsNullOrWhiteSpace(Model.TrackingNumber))
+            {
+                <p class="customer-shipment-help">
+                    Mã vận đơn đã được cập nhật.
+                    Đơn vị vận chuyển chưa cấu hình liên kết tra cứu.
+                </p>
+            }
+        </section>
 
         <div class="customer-order-layout">
             <div class="customer-order-main">
@@ -79,14 +206,19 @@
                                         <span>Mây Home</span>
                                     }
                                 </div>
+
                                 <div>
                                     <b>@item.ProductName</b>
                                     @if (!string.IsNullOrWhiteSpace(item.VariantName))
                                     {
                                         <small>@item.VariantName</small>
                                     }
-                                    <small>@item.Sku · SL @item.Quantity @item.Unit</small>
+                                    <small>
+                                        @item.Sku ·
+                                        SL @item.Quantity @item.Unit
+                                    </small>
                                 </div>
+
                                 <strong>
                                     @item.LineTotal.ToString("N0", culture)
                                     @Model.CurrencyCode
@@ -99,16 +231,31 @@
                 <section class="checkout-card">
                     <h2>Thông tin nhận hàng</h2>
                     <dl class="order-recipient">
-                        <div><dt>Người nhận</dt><dd>@Model.CustomerName</dd></div>
-                        <div><dt>Điện thoại</dt><dd>@Model.CustomerPhone</dd></div>
+                        <div>
+                            <dt>Người nhận</dt>
+                            <dd>@Model.CustomerName</dd>
+                        </div>
+                        <div>
+                            <dt>Điện thoại</dt>
+                            <dd>@Model.CustomerPhone</dd>
+                        </div>
                         @if (!string.IsNullOrWhiteSpace(Model.CustomerEmail))
                         {
-                            <div><dt>Email</dt><dd>@Model.CustomerEmail</dd></div>
+                            <div>
+                                <dt>Email</dt>
+                                <dd>@Model.CustomerEmail</dd>
+                            </div>
                         }
-                        <div><dt>Địa chỉ</dt><dd>@Model.ShippingAddress</dd></div>
+                        <div>
+                            <dt>Địa chỉ</dt>
+                            <dd>@Model.ShippingAddress</dd>
+                        </div>
                         @if (!string.IsNullOrWhiteSpace(Model.CustomerNote))
                         {
-                            <div><dt>Ghi chú</dt><dd>@Model.CustomerNote</dd></div>
+                            <div>
+                                <dt>Ghi chú</dt>
+                                <dd>@Model.CustomerNote</dd>
+                            </div>
                         }
                     </dl>
                 </section>
@@ -116,25 +263,42 @@
 
             <aside class="checkout-summary">
                 <h2>Thanh toán</h2>
+
                 <dl class="order-recipient">
-                    <div><dt>Phương thức</dt><dd>@Model.PaymentMethodName</dd></div>
-                    <div><dt>Trạng thái</dt><dd>@Model.PaymentStatusName</dd></div>
+                    <div>
+                        <dt>Phương thức</dt>
+                        <dd>@Model.PaymentMethodName</dd>
+                    </div>
+                    <div>
+                        <dt>Trạng thái</dt>
+                        <dd>@Model.PaymentStatusName</dd>
+                    </div>
                 </dl>
 
                 <dl class="checkout-totals">
                     <div>
                         <dt>Tạm tính</dt>
-                        <dd>@Model.Subtotal.ToString("N0", culture) @Model.CurrencyCode</dd>
+                        <dd>
+                            @Model.Subtotal.ToString("N0", culture)
+                            @Model.CurrencyCode
+                        </dd>
                     </div>
                     <div>
                         <dt>Vận chuyển</dt>
-                        <dd>@(Model.ShippingFee == 0 ? "Miễn phí" : $"{Model.ShippingFee:N0} {Model.CurrencyCode}")</dd>
+                        <dd>
+                            @(Model.ShippingFee == 0
+                                ? "Miễn phí"
+                                : $"{Model.ShippingFee:N0} {Model.CurrencyCode}")
+                        </dd>
                     </div>
                     @if (Model.DiscountAmount > 0)
                     {
                         <div>
                             <dt>Giảm giá</dt>
-                            <dd>-@Model.DiscountAmount.ToString("N0", culture) @Model.CurrencyCode</dd>
+                            <dd>
+                                -@Model.DiscountAmount.ToString("N0", culture)
+                                @Model.CurrencyCode
+                            </dd>
                         </div>
                     }
                 </dl>

@@ -7,6 +7,7 @@ public sealed class AdminOrdersViewModel
 {
     public string? Query { get; init; }
     public OrderStatus? Status { get; init; }
+
     public IReadOnlyList<AdminOrderListItemViewModel> Items { get; init; }
         = Array.Empty<AdminOrderListItemViewModel>();
 
@@ -22,12 +23,19 @@ public sealed class AdminOrderListItemViewModel
     public int Id { get; init; }
     public string OrderNumber { get; init; } = string.Empty;
     public DateTime CreatedAt { get; init; }
+
     public string CustomerName { get; init; } = string.Empty;
     public string CustomerPhone { get; init; } = string.Empty;
     public string? CustomerEmail { get; init; }
+
     public OrderStatus Status { get; init; }
     public string StatusName { get; init; } = string.Empty;
     public string StatusClass { get; init; } = string.Empty;
+
+    public string? ShippingCarrierName { get; init; }
+    public string? ShippingServiceName { get; init; }
+    public string? TrackingNumber { get; init; }
+
     public int TotalQuantity { get; init; }
     public string CurrencyCode { get; init; } = "VND";
     public decimal TotalAmount { get; init; }
@@ -38,9 +46,11 @@ public sealed class AdminOrderDetailsViewModel
     public int Id { get; init; }
     public string OrderNumber { get; init; } = string.Empty;
     public DateTime CreatedAt { get; init; }
+
     public OrderStatus Status { get; init; }
     public string StatusName { get; init; } = string.Empty;
     public string StatusClass { get; init; } = string.Empty;
+
     public PaymentStatus PaymentStatus { get; init; }
     public string PaymentStatusName { get; init; } = string.Empty;
 
@@ -51,6 +61,17 @@ public sealed class AdminOrderDetailsViewModel
     public string? CustomerNote { get; init; }
     public string? CancellationReason { get; init; }
 
+    public int? ShippingServiceId { get; init; }
+    public string? ShippingCarrierName { get; init; }
+    public string? ShippingServiceName { get; init; }
+    public string? TrackingNumber { get; init; }
+    public string? TrackingUrl { get; init; }
+    public string? ShippingNote { get; init; }
+    public DateTime? EstimatedDeliveryAt { get; init; }
+    public DateTime? ShippedAt { get; init; }
+    public DateTime? DeliveredAt { get; init; }
+    public bool CanChangeShippingService { get; init; }
+
     public string CurrencyCode { get; init; } = "VND";
     public decimal Subtotal { get; init; }
     public decimal ShippingFee { get; init; }
@@ -59,7 +80,11 @@ public sealed class AdminOrderDetailsViewModel
 
     public IReadOnlyList<AdminOrderItemViewModel> Items { get; init; }
         = Array.Empty<AdminOrderItemViewModel>();
+
     public IReadOnlyList<SelectListItem> NextStatusOptions { get; init; }
+        = Array.Empty<SelectListItem>();
+
+    public IReadOnlyList<SelectListItem> ShippingServiceOptions { get; init; }
         = Array.Empty<SelectListItem>();
 }
 

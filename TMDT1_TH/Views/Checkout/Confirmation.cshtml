@@ -14,7 +14,7 @@
         <p>
             Mã đơn hàng của bạn là
             <strong>@Model.OrderNumber</strong>.
-            Hãy lưu lại đường dẫn trang này để xem thông tin đơn hàng.
+            Bạn có thể theo dõi đơn trong Hồ sơ khách hàng.
         </p>
     </div>
 </section>
@@ -31,17 +31,61 @@
                     </div>
                     <div>
                         <dt>Ngày đặt</dt>
-                        <dd>@Model.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</dd>
+                        <dd>
+                            @Model.CreatedAt.ToLocalTime()
+                                .ToString("dd/MM/yyyy HH:mm")
+                        </dd>
                     </div>
                     <div>
                         <dt>Trạng thái</dt>
-                        <dd><span class="order-status">@Model.StatusName</span></dd>
+                        <dd>
+                            <span class="order-status">
+                                @Model.StatusName
+                            </span>
+                        </dd>
                     </div>
                     <div>
                         <dt>Thanh toán</dt>
                         <dd>@Model.PaymentMethodName</dd>
                     </div>
                 </dl>
+            </section>
+
+            <section class="checkout-card shipment-confirmation">
+                <h2>Phương thức giao hàng</h2>
+
+                <div class="shipment-confirmation__carrier">
+                    <span>
+                        <i class="bi bi-truck"></i>
+                    </span>
+                    <div>
+                        <strong>
+                            @(Model.ShippingServiceName
+                                ?? "Chưa xác định")
+                        </strong>
+                        <small>
+                            @(Model.ShippingCarrierName
+                                ?? "Đơn vị giao nhận đang được cập nhật")
+                        </small>
+                    </div>
+                </div>
+
+                @if (Model.EstimatedDeliveryAt.HasValue)
+                {
+                    <p>
+                        Dự kiến giao trước:
+                        <strong>
+                            @Model.EstimatedDeliveryAt.Value
+                                .ToLocalTime()
+                                .ToString("dd/MM/yyyy")
+                        </strong>
+                    </p>
+                }
+
+                <small>
+                    Mã vận đơn sẽ được hiển thị sau khi Admin
+                    bàn giao đơn cho đơn vị vận chuyển.
+                </small>
             </section>
 
             <section class="checkout-card">
@@ -53,13 +97,15 @@
                             <div class="checkout-item__image">
                                 @if (!string.IsNullOrWhiteSpace(item.ImageUrl))
                                 {
-                                    <img src="@item.ImageUrl" alt="@item.ProductName" />
+                                    <img src="@item.ImageUrl"
+                                         alt="@item.ProductName" />
                                 }
                                 else
                                 {
                                     <span>Mây Home</span>
                                 }
                             </div>
+
                             <div>
                                 <b>@item.ProductName</b>
                                 @if (!string.IsNullOrWhiteSpace(item.VariantName))
@@ -68,6 +114,7 @@
                                 }
                                 <small>@item.Sku · SL @item.Quantity</small>
                             </div>
+
                             <strong>
                                 @item.LineTotal.ToString("N0", culture)
                                 @Model.CurrencyCode
@@ -80,6 +127,7 @@
 
         <aside class="checkout-summary">
             <h2>Thông tin nhận hàng</h2>
+
             <dl class="order-recipient">
                 <div>
                     <dt>Người nhận</dt>
@@ -112,17 +160,27 @@
             <dl class="checkout-totals">
                 <div>
                     <dt>Tạm tính</dt>
-                    <dd>@Model.Subtotal.ToString("N0", culture) @Model.CurrencyCode</dd>
+                    <dd>
+                        @Model.Subtotal.ToString("N0", culture)
+                        @Model.CurrencyCode
+                    </dd>
                 </div>
                 <div>
                     <dt>Phí vận chuyển</dt>
-                    <dd>@(Model.ShippingFee == 0 ? "Miễn phí" : $"{Model.ShippingFee:N0} {Model.CurrencyCode}")</dd>
+                    <dd>
+                        @(Model.ShippingFee == 0
+                            ? "Miễn phí"
+                            : $"{Model.ShippingFee.ToString("N0", culture)} {Model.CurrencyCode}")
+                    </dd>
                 </div>
             </dl>
 
             <div class="checkout-total">
                 <span>Tổng thanh toán</span>
-                <strong>@Model.TotalAmount.ToString("N0", culture) @Model.CurrencyCode</strong>
+                <strong>
+                    @Model.TotalAmount.ToString("N0", culture)
+                    @Model.CurrencyCode
+                </strong>
             </div>
 
             @if (User.Identity?.IsAuthenticated == true)
@@ -137,7 +195,9 @@
 
             <a class="store-button store-button--ghost store-button--full"
                asp-controller="Home"
-               asp-action="Catalog">Tiếp tục mua sắm</a>
+               asp-action="Catalog">
+                Tiếp tục mua sắm
+            </a>
         </aside>
     </div>
 </section>

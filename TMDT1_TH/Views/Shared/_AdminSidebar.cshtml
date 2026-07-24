@@ -63,6 +63,12 @@
            asp-action="Index">
             <i class="bi bi-bar-chart-line"></i><span>Báo cáo bán hàng</span>
         </a>
+        <a class="admin-nav__link @(controller == "Shipping" ? "is-active" : "")"
+           asp-area="Admin"
+           asp-controller="Shipping"
+           asp-action="Index">
+            <i class="bi bi-truck"></i><span>Giao nhận</span>
+        </a>
         <a class="admin-nav__link @(controller == "Reviews" ? "is-active" : "")"
            asp-area="Admin"
            asp-controller="Reviews"
