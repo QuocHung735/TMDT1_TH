@@ -110,6 +110,24 @@ app.MapControllerRoute(
 
 app.MapControllers();
 
+// Luôn áp dụng migration trên chính connection string mà website
+// đang sử dụng. Điều này tránh trường hợp Visual Studio dùng
+// User Secrets nhưng script EF lại cập nhật một database khác.
+await using (var migrationScope =
+             app.Services.CreateAsyncScope())
+{
+    var dbContext =
+        migrationScope.ServiceProvider
+            .GetRequiredService<ApplicationDbContext>();
+
+    app.Logger.LogInformation(
+        "Applying EF Core migrations to database {Database} on {DataSource}.",
+        dbContext.Database.GetDbConnection().Database,
+        dbContext.Database.GetDbConnection().DataSource);
+
+    await dbContext.Database.MigrateAsync();
+}
+
 await MarketplaceProductSchemaInstaller.EnsureUpgradedAsync(
     app.Services,
     app.Logger);
