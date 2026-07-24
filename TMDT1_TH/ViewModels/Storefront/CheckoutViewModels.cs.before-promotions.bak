@@ -51,14 +51,6 @@ public sealed class StoreCheckoutViewModel
     [Display(Name = "Ghi chú")]
     public string? CustomerNote { get; set; }
 
-    [StringLength(
-        50,
-        ErrorMessage = "Mã khuyến mãi tối đa 50 ký tự.")]
-    [Display(Name = "Mã khuyến mãi")]
-    public string? PromotionCode { get; set; }
-
-    public string? AppliedPromotionName { get; set; }
-
     [Range(
         1,
         int.MaxValue,
@@ -76,7 +68,6 @@ public sealed class StoreCheckoutViewModel
     public int TotalQuantity { get; set; }
     public decimal Subtotal { get; set; }
     public decimal ShippingFee { get; set; }
-    public decimal DiscountAmount { get; set; }
     public decimal TotalAmount { get; set; }
 }
 
@@ -132,9 +123,6 @@ public sealed class StoreOrderConfirmationViewModel
     public string CurrencyCode { get; init; } = "VND";
     public decimal Subtotal { get; init; }
     public decimal ShippingFee { get; init; }
-    public decimal DiscountAmount { get; init; }
-    public string? PromotionCode { get; init; }
-    public string? PromotionName { get; init; }
     public decimal TotalAmount { get; init; }
 
     public IReadOnlyList<StoreOrderConfirmationItemViewModel> Items { get; init; }
@@ -151,5 +139,4 @@ public sealed class StoreOrderConfirmationItemViewModel
     public int Quantity { get; init; }
     public decimal LineTotal { get; init; }
 }
-
 

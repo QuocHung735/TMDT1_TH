@@ -43,8 +43,6 @@ public sealed class Order : AuditableEntity
     public decimal Subtotal { get; set; }
     public decimal ShippingFee { get; set; }
     public decimal DiscountAmount { get; set; }
-    public string? PromotionCode { get; set; }
-    public string? PromotionName { get; set; }
     public decimal TotalAmount { get; set; }
 
     public DateTime? ConfirmedAt { get; set; }
@@ -61,4 +59,3 @@ public sealed class Order : AuditableEntity
     public ICollection<OrderItem> Items { get; set; } =
         new List<OrderItem>();
 }
-

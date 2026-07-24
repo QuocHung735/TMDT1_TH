@@ -173,22 +173,6 @@
                             : $"{Model.ShippingFee.ToString("N0", culture)} {Model.CurrencyCode}")
                     </dd>
                 </div>
-                @if (Model.DiscountAmount > 0)
-                {
-                    <div>
-                        <dt>
-                            Khuyến mãi
-                            @if (!string.IsNullOrWhiteSpace(Model.PromotionCode))
-                            {
-                                <small>(@Model.PromotionCode)</small>
-                            }
-                        </dt>
-                        <dd>
-                            - @Model.DiscountAmount.ToString("N0", culture)
-                            @Model.CurrencyCode
-                        </dd>
-                    </div>
-                }
             </dl>
 
             <div class="checkout-total">
@@ -217,4 +201,3 @@
         </aside>
     </div>
 </section>
-

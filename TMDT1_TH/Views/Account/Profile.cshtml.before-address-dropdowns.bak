@@ -118,9 +118,7 @@
 
             <form asp-action="Profile"
                   method="post"
-                  class="customer-profile-form"
-                   data-vn-address-form
-                   data-vn-address-required="false">
+                  class="customer-profile-form">
                 <div asp-validation-summary="ModelOnly"
                      class="account-validation"></div>
 
@@ -193,33 +191,27 @@
                     <div class="customer-profile-fields">
                         <label class="account-field">
                             <span>@Html.DisplayNameFor(x => x.Province)</span>
-                            <select asp-for="Province"
-                                    autocomplete="address-level1"
-                                    data-vn-province
-                                    data-current-value="@Model.Province">
-                                <option value="">Đang tải tỉnh/thành phố...</option>
-                            </select>
+                            <input asp-for="Province"
+                                   autocomplete="address-level1"
+                                   placeholder="Ví dụ: TP. Hồ Chí Minh" />
                             <small asp-validation-for="Province"></small>
                         </label>
 
-                        <input asp-for="District"
-                               type="hidden"
-                               data-vn-district />
+                        <label class="account-field">
+                            <span>@Html.DisplayNameFor(x => x.District)</span>
+                            <input asp-for="District"
+                                   autocomplete="address-level2"
+                                   placeholder="Ví dụ: Quận 10" />
+                            <small asp-validation-for="District"></small>
+                        </label>
 
                         <label class="account-field">
                             <span>@Html.DisplayNameFor(x => x.Ward)</span>
-                            <select asp-for="Ward"
-                                    autocomplete="address-level2"
-                                    data-vn-ward
-                                    data-current-value="@Model.Ward">
-                                <option value="">Chọn tỉnh/thành phố trước</option>
-                            </select>
+                            <input asp-for="Ward"
+                                   autocomplete="address-level3"
+                                   placeholder="Ví dụ: Phường 12" />
                             <small asp-validation-for="Ward"></small>
                         </label>
-
-                        <div class="account-field customer-profile-field--wide vn-address-status"
-                             data-vn-address-status
-                             hidden></div>
 
                         <label class="account-field customer-profile-field--wide">
                             <span>@Html.DisplayNameFor(x => x.AddressLine)</span>
@@ -244,7 +236,3 @@
         </div>
     </div>
 </section>
-@section Scripts {
-    <script src="~/store/js/vietnam-address.js"
-            asp-append-version="true"></script>
-}

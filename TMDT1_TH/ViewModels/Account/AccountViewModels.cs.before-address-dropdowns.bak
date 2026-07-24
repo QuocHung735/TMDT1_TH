@@ -124,7 +124,7 @@ public sealed class ProfileViewModel
     public string? District { get; set; }
 
     [StringLength(150)]
-    [Display(Name = "Phường/Xã/Đặc khu")]
+    [Display(Name = "Phường/Xã")]
     public string? Ward { get; set; }
 
     [StringLength(500)]
@@ -142,7 +142,7 @@ public sealed class ProfileViewModel
 
     public bool HasDefaultAddress =>
         !string.IsNullOrWhiteSpace(Province) &&
+        !string.IsNullOrWhiteSpace(District) &&
         !string.IsNullOrWhiteSpace(Ward) &&
         !string.IsNullOrWhiteSpace(AddressLine);
 }
-

@@ -18,14 +18,11 @@ namespace TMDT1_TH.Controllers;
 public sealed class CheckoutController(
     ApplicationDbContext db,
     CartSessionStore cartStore,
-    PromotionService promotionService,
     UserManager<ApplicationUser> userManager,
     ILogger<CheckoutController> logger) : Controller
 {
     private readonly ApplicationDbContext _db = db;
     private readonly CartSessionStore _cartStore = cartStore;
-    private readonly PromotionService _promotionService =
-        promotionService;
     private readonly UserManager<ApplicationUser> _userManager =
         userManager;
     private readonly ILogger<CheckoutController> _logger = logger;
@@ -182,21 +179,6 @@ public sealed class CheckoutController(
                     "Phương thức giao hàng không còn hoạt động. Vui lòng chọn lại.");
             }
 
-            var promotion =
-                await _promotionService.ResolveAsync(
-                    model.PromotionCode,
-                    resolution.Subtotal,
-                    resolution.MarketId,
-                    StorePriceClock.Now);
-
-            if (!promotion.IsValid)
-            {
-                ModelState.AddModelError(
-                    nameof(model.PromotionCode),
-                    promotion.Error
-                    ?? "Mã khuyến mãi không hợp lệ.");
-            }
-
             if (!ModelState.IsValid)
             {
                 await transaction.RollbackAsync();
@@ -237,20 +219,6 @@ public sealed class CheckoutController(
 
             var shippingFee =
                 shipping!.BaseFee;
-
-            if (promotion.PromotionId.HasValue)
-            {
-                var claimed =
-                    await _promotionService.TryClaimAsync(
-                        promotion.PromotionId.Value,
-                        StorePriceClock.Now);
-
-                if (!claimed)
-                {
-                    throw new InvalidOperationException(
-                        "Mã khuyến mãi vừa hết lượt hoặc không còn hiệu lực.");
-                }
-            }
 
             var order = new Order
             {
@@ -293,16 +261,10 @@ public sealed class CheckoutController(
                     resolution.Subtotal,
                 ShippingFee =
                     shippingFee,
-                DiscountAmount =
-                    promotion.DiscountAmount,
-                PromotionCode =
-                    promotion.Code,
-                PromotionName =
-                    promotion.Name,
+                DiscountAmount = 0,
                 TotalAmount =
                     resolution.Subtotal +
-                    shippingFee -
-                    promotion.DiscountAmount,
+                    shippingFee,
                 CustomerIp =
                     HttpContext.Connection
                         .RemoteIpAddress
@@ -469,12 +431,6 @@ public sealed class CheckoutController(
                     order.Subtotal,
                 ShippingFee =
                     order.ShippingFee,
-                DiscountAmount =
-                    order.DiscountAmount,
-                PromotionCode =
-                    order.PromotionCode,
-                PromotionName =
-                    order.PromotionName,
                 TotalAmount =
                     order.TotalAmount,
                 Items = order.Items
@@ -1056,8 +1012,7 @@ public sealed class CheckoutController(
 
         model.TotalAmount =
             model.Subtotal +
-            model.ShippingFee -
-            model.DiscountAmount;
+            model.ShippingFee;
 
         return model;
     }
@@ -1096,10 +1051,6 @@ public sealed class CheckoutController(
         model.CustomerNote =
             NullIfWhiteSpace(
                 model.CustomerNote);
-
-        model.PromotionCode =
-            PromotionService.NormalizeCode(
-                model.PromotionCode);
     }
 
     private static string?
@@ -1183,5 +1134,4 @@ public sealed class CheckoutController(
             new(null, error);
     }
 }
-
 

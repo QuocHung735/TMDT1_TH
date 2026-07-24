@@ -25,11 +25,8 @@
               method="post"
               class="checkout-form"
               data-shipping-checkout
-               data-vn-address-form
-               data-vn-address-required="true"
               data-subtotal="@Model.Subtotal.ToString("0.##", invariant)"
-              data-currency="@Model.CurrencyCode"
-               data-promotion-url="@Url.Action("Preview", "PromotionCheckout")">
+              data-currency="@Model.CurrencyCode">
             <div asp-validation-summary="ModelOnly"
                  class="checkout-validation"></div>
 
@@ -86,35 +83,27 @@
                 <div class="checkout-fields checkout-fields--two">
                     <label>
                         <span>@Html.DisplayNameFor(x => x.Province)</span>
-                        <select asp-for="Province"
-                                required
-                                autocomplete="address-level1"
-                                data-vn-province
-                                data-current-value="@Model.Province">
-                            <option value="">Đang tải tỉnh/thành phố...</option>
-                        </select>
+                        <input asp-for="Province"
+                               autocomplete="address-level1"
+                               maxlength="150" />
                         <small asp-validation-for="Province"></small>
                     </label>
 
-                    <input asp-for="District"
-                           type="hidden"
-                           data-vn-district />
+                    <label>
+                        <span>@Html.DisplayNameFor(x => x.District)</span>
+                        <input asp-for="District"
+                               autocomplete="address-level2"
+                               maxlength="150" />
+                        <small asp-validation-for="District"></small>
+                    </label>
 
                     <label>
                         <span>@Html.DisplayNameFor(x => x.Ward)</span>
-                        <select asp-for="Ward"
-                                required
-                                autocomplete="address-level2"
-                                data-vn-ward
-                                data-current-value="@Model.Ward">
-                            <option value="">Chọn tỉnh/thành phố trước</option>
-                        </select>
+                        <input asp-for="Ward"
+                               autocomplete="address-level3"
+                               maxlength="150" />
                         <small asp-validation-for="Ward"></small>
                     </label>
-
-                    <div class="checkout-field--full vn-address-status"
-                         data-vn-address-status
-                         hidden></div>
 
                     <label>
                         <span>@Html.DisplayNameFor(x => x.AddressLine)</span>
@@ -268,33 +257,6 @@
                 }
             </div>
 
-            <section class="checkout-promotion-box">
-                <div>
-                    <strong>Mã khuyến mãi</strong>
-                    <small>
-                        Nhập mã do Mây Home phát hành. Mỗi đơn chỉ áp dụng một mã.
-                    </small>
-                </div>
-
-                <div class="checkout-promotion-box__input">
-                    <input asp-for="PromotionCode"
-                           maxlength="50"
-                           autocomplete="off"
-                           data-checkout-promotion-code
-                           placeholder="Ví dụ: MAYHOME20" />
-
-                    <button type="button"
-                            data-apply-promotion>
-                        Áp dụng
-                    </button>
-                </div>
-
-                <small asp-validation-for="PromotionCode"
-                       class="field-error"></small>
-
-                <small class="checkout-promotion-message"
-                       data-promotion-message></small>
-            </section>
             <dl class="checkout-totals">
                 <div>
                     <dt>Số lượng</dt>
@@ -313,15 +275,6 @@
                         @(Model.ShippingFee == 0
                             ? "Miễn phí"
                             : $"{Model.ShippingFee.ToString("N0", culture)} {Model.CurrencyCode}")
-                    </dd>
-                </div>
-                <div>
-                    <dt>Khuyến mãi</dt>
-                    <dd data-checkout-discount
-                        data-discount="@Model.DiscountAmount.ToString("0.##", invariant)">
-                        @(Model.DiscountAmount > 0
-                            ? $"- {Model.DiscountAmount.ToString("N0", culture)} {Model.CurrencyCode}"
-                            : $"0 {Model.CurrencyCode}")
                     </dd>
                 </div>
             </dl>
@@ -344,14 +297,10 @@
 </section>
 
 @section Scripts {
-    <script src="~/store/js/vietnam-address.js"
-            asp-append-version="true"></script>
     <script>
         (() => {
             const form =
-                document.querySelector("[data-shipping-checkout
-               data-vn-address-form
-               data-vn-address-required="true"]");
+                document.querySelector("[data-shipping-checkout]");
 
             if (!form) return;
 
@@ -417,62 +366,4 @@
             update();
         })();
     </script>
-    <script src="~/store/js/checkout-promotions.js" asp-append-version="true"></script>
 }
-
-
-
-<style>
-    .checkout-promotion-box {
-        margin-bottom: 16px;
-        padding: 14px;
-        background: #faf9ff;
-        border: 1px solid #e3def7;
-        border-radius: 13px;
-    }
-
-    .checkout-promotion-box strong,
-    .checkout-promotion-box small {
-        display: block;
-    }
-
-    .checkout-promotion-box small {
-        margin-top: 3px;
-        color: #756f87;
-        line-height: 1.5;
-    }
-
-    .checkout-promotion-box__input {
-        display: grid;
-        grid-template-columns: 1fr auto;
-        gap: 8px;
-        margin-top: 11px;
-    }
-
-    .checkout-promotion-box__input input {
-        min-width: 0;
-        height: 42px;
-        padding: 0 12px;
-        text-transform: uppercase;
-        border: 1px solid #dcd6ec;
-        border-radius: 10px;
-    }
-
-    .checkout-promotion-box__input button {
-        padding: 0 14px;
-        color: #fff;
-        cursor: pointer;
-        background: #6d58dd;
-        border: 0;
-        border-radius: 10px;
-        font-weight: 700;
-    }
-
-    .checkout-promotion-message.is-success {
-        color: #237a4d;
-    }
-
-    .checkout-promotion-message.is-error {
-        color: #b53d54;
-    }
-</style>

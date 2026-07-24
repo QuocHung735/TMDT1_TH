@@ -33,13 +33,14 @@ public sealed class StoreCheckoutViewModel
     [Display(Name = "Tỉnh/Thành phố")]
     public string Province { get; set; } = string.Empty;
 
+    [Required(ErrorMessage = "Vui lòng nhập quận hoặc huyện.")]
     [StringLength(150)]
-    [Display(Name = "Quận/Huyện (địa chỉ cũ)")]
+    [Display(Name = "Quận/Huyện")]
     public string District { get; set; } = string.Empty;
 
     [Required(ErrorMessage = "Vui lòng nhập phường hoặc xã.")]
     [StringLength(150)]
-    [Display(Name = "Phường/Xã/Đặc khu")]
+    [Display(Name = "Phường/Xã")]
     public string Ward { get; set; } = string.Empty;
 
     [Required(ErrorMessage = "Vui lòng nhập số nhà và tên đường.")]
@@ -50,14 +51,6 @@ public sealed class StoreCheckoutViewModel
     [StringLength(1000)]
     [Display(Name = "Ghi chú")]
     public string? CustomerNote { get; set; }
-
-    [StringLength(
-        50,
-        ErrorMessage = "Mã khuyến mãi tối đa 50 ký tự.")]
-    [Display(Name = "Mã khuyến mãi")]
-    public string? PromotionCode { get; set; }
-
-    public string? AppliedPromotionName { get; set; }
 
     [Range(
         1,
@@ -76,7 +69,6 @@ public sealed class StoreCheckoutViewModel
     public int TotalQuantity { get; set; }
     public decimal Subtotal { get; set; }
     public decimal ShippingFee { get; set; }
-    public decimal DiscountAmount { get; set; }
     public decimal TotalAmount { get; set; }
 }
 
@@ -132,9 +124,6 @@ public sealed class StoreOrderConfirmationViewModel
     public string CurrencyCode { get; init; } = "VND";
     public decimal Subtotal { get; init; }
     public decimal ShippingFee { get; init; }
-    public decimal DiscountAmount { get; init; }
-    public string? PromotionCode { get; init; }
-    public string? PromotionName { get; init; }
     public decimal TotalAmount { get; init; }
 
     public IReadOnlyList<StoreOrderConfirmationItemViewModel> Items { get; init; }
@@ -151,5 +140,3 @@ public sealed class StoreOrderConfirmationItemViewModel
     public int Quantity { get; init; }
     public decimal LineTotal { get; init; }
 }
-
-

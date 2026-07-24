@@ -103,13 +103,6 @@ public sealed class OrderConfiguration : IEntityTypeConfiguration<Order>
         builder.Property(x => x.DiscountAmount)
             .HasPrecision(18, 2);
 
-        builder.Property(x => x.PromotionCode)
-            .HasMaxLength(50)
-            .IsUnicode(false);
-
-        builder.Property(x => x.PromotionName)
-            .HasMaxLength(200);
-
         builder.Property(x => x.TotalAmount)
             .HasPrecision(18, 2);
 
@@ -140,7 +133,6 @@ public sealed class OrderConfiguration : IEntityTypeConfiguration<Order>
         builder.HasIndex(x => x.CustomerUserId);
         builder.HasIndex(x => x.ShippingServiceId);
         builder.HasIndex(x => x.TrackingNumber);
-        builder.HasIndex(x => x.PromotionCode);
         builder.HasIndex(x => new { x.Status, x.CreatedAt });
         builder.HasIndex(x => new { x.CustomerPhone, x.CreatedAt });
 
@@ -160,4 +152,3 @@ public sealed class OrderConfiguration : IEntityTypeConfiguration<Order>
             .OnDelete(DeleteBehavior.Restrict);
     }
 }
-

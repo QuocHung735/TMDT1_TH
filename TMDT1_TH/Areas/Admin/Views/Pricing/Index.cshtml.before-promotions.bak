@@ -1,4 +1,4 @@
-﻿@model PricingIndexViewModel
+@model PricingIndexViewModel
 @{
     ViewData["Title"] = "Quản lý giá";
     ViewData["Description"] = "Thiết lập ba mức giá theo sản phẩm hoặc biến thể, thị trường và thời gian áp dụng.";
@@ -8,7 +8,6 @@
 }
 @section PageActions {
     <a class="btn btn-light" asp-action="ExportHistory"><i class="bi bi-download"></i> Xuất lịch sử</a>
-    <a class="btn btn-light" asp-controller="Promotions" asp-action="Index"><i class="bi bi-ticket-perforated"></i> Khuyến mãi</a>
     <button class="btn btn-primary" type="button" data-modal-target="price-modal"><i class="bi bi-plus-lg"></i> Thiết lập giá</button>
 }
 
@@ -259,4 +258,3 @@
         </form>
     </div>
 </div>
-
