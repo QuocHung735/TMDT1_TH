@@ -13,6 +13,24 @@ public sealed class ApplicationUserConfiguration
             .HasMaxLength(150)
             .IsRequired();
 
+        builder.Property(x => x.DateOfBirth)
+            .HasColumnType("date");
+
+        builder.Property(x => x.Gender)
+            .HasMaxLength(20);
+
+        builder.Property(x => x.Province)
+            .HasMaxLength(150);
+
+        builder.Property(x => x.District)
+            .HasMaxLength(150);
+
+        builder.Property(x => x.Ward)
+            .HasMaxLength(150);
+
+        builder.Property(x => x.AddressLine)
+            .HasMaxLength(500);
+
         builder.Property(x => x.IsActive)
             .HasDefaultValue(true);
 

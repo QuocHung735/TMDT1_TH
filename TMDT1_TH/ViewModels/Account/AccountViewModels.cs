@@ -89,7 +89,10 @@ public sealed class ChangePasswordViewModel
 public sealed class ProfileViewModel
 {
     [Required(ErrorMessage = "Vui lòng nhập họ tên.")]
-    [StringLength(150, MinimumLength = 2)]
+    [StringLength(
+        150,
+        MinimumLength = 2,
+        ErrorMessage = "Họ tên cần từ 2 đến 150 ký tự.")]
     [Display(Name = "Họ và tên")]
     public string FullName { get; set; } = string.Empty;
 
@@ -103,4 +106,43 @@ public sealed class ProfileViewModel
         ErrorMessage = "Số điện thoại chưa hợp lệ.")]
     [Display(Name = "Số điện thoại")]
     public string PhoneNumber { get; set; } = string.Empty;
+
+    [DataType(DataType.Date)]
+    [Display(Name = "Ngày sinh")]
+    public DateTime? DateOfBirth { get; set; }
+
+    [StringLength(20)]
+    [Display(Name = "Giới tính")]
+    public string? Gender { get; set; }
+
+    [StringLength(150)]
+    [Display(Name = "Tỉnh/Thành phố")]
+    public string? Province { get; set; }
+
+    [StringLength(150)]
+    [Display(Name = "Quận/Huyện")]
+    public string? District { get; set; }
+
+    [StringLength(150)]
+    [Display(Name = "Phường/Xã")]
+    public string? Ward { get; set; }
+
+    [StringLength(500)]
+    [Display(Name = "Số nhà và tên đường")]
+    public string? AddressLine { get; set; }
+
+    public DateTime CreatedAt { get; set; }
+    public string Initials { get; set; } = "KH";
+    public string RoleName { get; set; } = "Khách hàng";
+
+    public int TotalOrders { get; set; }
+    public int ActiveOrders { get; set; }
+    public int CompletedOrders { get; set; }
+    public int TotalReviews { get; set; }
+
+    public bool HasDefaultAddress =>
+        !string.IsNullOrWhiteSpace(Province) &&
+        !string.IsNullOrWhiteSpace(District) &&
+        !string.IsNullOrWhiteSpace(Ward) &&
+        !string.IsNullOrWhiteSpace(AddressLine);
 }

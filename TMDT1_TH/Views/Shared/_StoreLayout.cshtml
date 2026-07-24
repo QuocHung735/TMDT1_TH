@@ -1,6 +1,10 @@
 ﻿@{
     var title = ViewData["Title"] as string ?? "Mây Home";
     var authenticated = User.Identity?.IsAuthenticated == true;
+    var accountName = User.Identity?.Name ?? string.Empty;
+    var accountInitial = string.IsNullOrWhiteSpace(accountName)
+        ? "K"
+        : accountName[..1].ToUpperInvariant();
 }
 <!DOCTYPE html>
 <html lang="vi">
@@ -14,6 +18,7 @@
     <link rel="stylesheet" href="~/store/css/checkout.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/store/css/account.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/store/css/reviews.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/store/css/profile.css" asp-append-version="true" />
 </head>
 <body>
     <div class="store-announcement">
@@ -59,9 +64,16 @@
                            asp-action="Index">Quản trị</a>
                     }
 
-                    <a asp-area=""
+                    <a class="store-profile-link"
+                       asp-area=""
                        asp-controller="Account"
-                       asp-action="Profile">Tài khoản</a>
+                       asp-action="Profile"
+                       title="Mở hồ sơ khách hàng">
+                        <span class="store-profile-link__avatar">
+                            @accountInitial
+                        </span>
+                        <span>Hồ sơ</span>
+                    </a>
 
                     <form asp-area=""
                           asp-controller="Account"
@@ -125,9 +137,9 @@
                 <h3>Tài khoản</h3>
                 @if (authenticated)
                 {
+                    <a asp-controller="Account" asp-action="Profile">Hồ sơ khách hàng</a>
                     <a asp-controller="MyOrders" asp-action="Index">Đơn hàng của tôi</a>
                     <a asp-controller="MyReviews" asp-action="Index">Đánh giá của tôi</a>
-                    <a asp-controller="Account" asp-action="Profile">Thông tin cá nhân</a>
                 }
                 else
                 {

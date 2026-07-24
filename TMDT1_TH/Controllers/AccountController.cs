@@ -1,6 +1,9 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using TMDT1_TH.Data;
+using TMDT1_TH.Domain.Enums;
 using TMDT1_TH.Domain.Identity;
 using TMDT1_TH.ViewModels.Account;
 
@@ -9,12 +12,21 @@ namespace TMDT1_TH.Controllers;
 [Route("tai-khoan")]
 public sealed class AccountController(
     UserManager<ApplicationUser> userManager,
-    SignInManager<ApplicationUser> signInManager) : Controller
+    SignInManager<ApplicationUser> signInManager,
+    ApplicationDbContext db) : Controller
 {
+    private static readonly string[] AllowedGenders =
+    {
+        "Nam",
+        "Nữ",
+        "Khác"
+    };
+
     private readonly UserManager<ApplicationUser> _userManager =
         userManager;
     private readonly SignInManager<ApplicationUser> _signInManager =
         signInManager;
+    private readonly ApplicationDbContext _db = db;
 
     [AllowAnonymous]
     [HttpGet("dang-ky")]
@@ -97,8 +109,8 @@ public sealed class AccountController(
 
         return RedirectToLocalOrDefault(
             model.ReturnUrl,
-            "MyOrders",
-            "Index");
+            "Account",
+            nameof(Profile));
     }
 
     [AllowAnonymous]
@@ -119,7 +131,9 @@ public sealed class AccountController(
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Login(LoginViewModel model)
     {
-        model.Email = model.Email.Trim().ToLowerInvariant();
+        model.Email =
+            model.Email?.Trim().ToLowerInvariant()
+            ?? string.Empty;
         model.ReturnUrl = LocalReturnUrl(model.ReturnUrl);
 
         ModelState.Clear();
@@ -159,7 +173,7 @@ public sealed class AccountController(
                     new { area = "Admin" });
             }
 
-            return RedirectToAction("Index", "MyOrders");
+            return RedirectToAction(nameof(Profile));
         }
 
         ModelState.AddModelError(
@@ -181,12 +195,7 @@ public sealed class AccountController(
         if (user is null)
             return Challenge();
 
-        return View(new ProfileViewModel
-        {
-            FullName = user.FullName,
-            Email = user.Email ?? string.Empty,
-            PhoneNumber = user.PhoneNumber ?? string.Empty
-        });
+        return View(await BuildProfileModelAsync(user));
     }
 
     [Authorize]
@@ -195,22 +204,72 @@ public sealed class AccountController(
     public async Task<IActionResult> Profile(
         ProfileViewModel model)
     {
-        model.FullName = model.FullName.Trim();
-        model.PhoneNumber = model.PhoneNumber.Trim();
-
-        ModelState.Remove(nameof(model.Email));
-
-        if (!ModelState.IsValid)
-            return View(model);
-
         var user =
             await _userManager.GetUserAsync(User);
 
         if (user is null)
             return Challenge();
 
+        Normalize(model);
+
+        // Chạy lại validation sau khi đã Trim để chuỗi chỉ gồm
+        // khoảng trắng không thể vượt qua kiểm tra Required.
+        ModelState.Clear();
+        TryValidateModel(model);
+
+        ModelState.Remove(nameof(model.Email));
+        ModelState.Remove(nameof(model.CreatedAt));
+        ModelState.Remove(nameof(model.Initials));
+        ModelState.Remove(nameof(model.RoleName));
+        ModelState.Remove(nameof(model.TotalOrders));
+        ModelState.Remove(nameof(model.ActiveOrders));
+        ModelState.Remove(nameof(model.CompletedOrders));
+        ModelState.Remove(nameof(model.TotalReviews));
+
+        if (model.DateOfBirth.HasValue)
+        {
+            var date = model.DateOfBirth.Value.Date;
+            var today = DateTime.Today;
+
+            if (date > today)
+            {
+                ModelState.AddModelError(
+                    nameof(model.DateOfBirth),
+                    "Ngày sinh không thể lớn hơn ngày hiện tại.");
+            }
+            else if (date < today.AddYears(-120))
+            {
+                ModelState.AddModelError(
+                    nameof(model.DateOfBirth),
+                    "Ngày sinh chưa hợp lệ.");
+            }
+        }
+
+        if (!string.IsNullOrWhiteSpace(model.Gender) &&
+            !AllowedGenders.Contains(model.Gender))
+        {
+            ModelState.AddModelError(
+                nameof(model.Gender),
+                "Giới tính chưa hợp lệ.");
+        }
+
+        if (!ModelState.IsValid)
+        {
+            await PopulateProfileSummaryAsync(
+                model,
+                user);
+
+            return View(model);
+        }
+
         user.FullName = model.FullName;
         user.PhoneNumber = model.PhoneNumber;
+        user.DateOfBirth = model.DateOfBirth?.Date;
+        user.Gender = NullIfWhiteSpace(model.Gender);
+        user.Province = NullIfWhiteSpace(model.Province);
+        user.District = NullIfWhiteSpace(model.District);
+        user.Ward = NullIfWhiteSpace(model.Ward);
+        user.AddressLine = NullIfWhiteSpace(model.AddressLine);
 
         var result =
             await _userManager.UpdateAsync(user);
@@ -218,14 +277,18 @@ public sealed class AccountController(
         if (!result.Succeeded)
         {
             AddIdentityErrors(result);
-            model.Email = user.Email ?? string.Empty;
+
+            await PopulateProfileSummaryAsync(
+                model,
+                user);
+
             return View(model);
         }
 
         await _signInManager.RefreshSignInAsync(user);
 
         TempData["AccountMessage"] =
-            "Đã cập nhật thông tin tài khoản.";
+            "Đã cập nhật hồ sơ khách hàng.";
 
         return RedirectToAction(nameof(Profile));
     }
@@ -285,6 +348,63 @@ public sealed class AccountController(
         return View();
     }
 
+    private async Task<ProfileViewModel> BuildProfileModelAsync(
+        ApplicationUser user)
+    {
+        var model = new ProfileViewModel
+        {
+            FullName = user.FullName,
+            Email = user.Email ?? string.Empty,
+            PhoneNumber = user.PhoneNumber ?? string.Empty,
+            DateOfBirth = user.DateOfBirth,
+            Gender = user.Gender,
+            Province = user.Province,
+            District = user.District,
+            Ward = user.Ward,
+            AddressLine = user.AddressLine
+        };
+
+        await PopulateProfileSummaryAsync(
+            model,
+            user);
+
+        return model;
+    }
+
+    private async Task PopulateProfileSummaryAsync(
+        ProfileViewModel model,
+        ApplicationUser user)
+    {
+        var orderSummary = await _db.Orders
+            .AsNoTracking()
+            .Where(x => x.CustomerUserId == user.Id)
+            .GroupBy(_ => 1)
+            .Select(group => new
+            {
+                Total = group.Count(),
+                Active = group.Count(x =>
+                    x.Status != OrderStatus.Completed &&
+                    x.Status != OrderStatus.Cancelled),
+                Completed = group.Count(x =>
+                    x.Status == OrderStatus.Completed)
+            })
+            .FirstOrDefaultAsync();
+
+        model.Email = user.Email ?? string.Empty;
+        model.CreatedAt = user.CreatedAt;
+        model.Initials = BuildInitials(user.FullName);
+        model.RoleName = User.IsInRole("Admin")
+            ? "Quản trị viên"
+            : "Khách hàng";
+        model.TotalOrders = orderSummary?.Total ?? 0;
+        model.ActiveOrders = orderSummary?.Active ?? 0;
+        model.CompletedOrders = orderSummary?.Completed ?? 0;
+        model.TotalReviews = await _db.ProductReviews
+            .AsNoTracking()
+            .CountAsync(x =>
+                x.CustomerUserId == user.Id);
+    }
+
     private IActionResult RedirectToLocalOrDefault(
         string? returnUrl,
         string controller,
@@ -329,6 +449,8 @@ public sealed class AccountController(
                 "Mật khẩu cần ít nhất một chữ thường.",
             "PasswordRequiresUpper" =>
                 "Mật khẩu cần ít nhất một chữ hoa.",
+            "PasswordMismatch" =>
+                "Mật khẩu hiện tại không chính xác.",
             "DuplicateEmail" or "DuplicateUserName" =>
                 "Email này đã được sử dụng.",
             _ => error.Description
@@ -337,8 +459,58 @@ public sealed class AccountController(
 
     private static void Normalize(RegisterViewModel model)
     {
-        model.FullName = model.FullName.Trim();
-        model.Email = model.Email.Trim().ToLowerInvariant();
-        model.PhoneNumber = model.PhoneNumber.Trim();
+        model.FullName =
+            model.FullName?.Trim() ?? string.Empty;
+        model.Email =
+            model.Email?.Trim().ToLowerInvariant()
+            ?? string.Empty;
+        model.PhoneNumber =
+            model.PhoneNumber?.Trim() ?? string.Empty;
+    }
+
+    private static void Normalize(ProfileViewModel model)
+    {
+        model.FullName =
+            model.FullName?.Trim() ?? string.Empty;
+        model.PhoneNumber =
+            model.PhoneNumber?.Trim() ?? string.Empty;
+        model.Gender = NullIfWhiteSpace(model.Gender);
+        model.Province = NullIfWhiteSpace(model.Province);
+        model.District = NullIfWhiteSpace(model.District);
+        model.Ward = NullIfWhiteSpace(model.Ward);
+        model.AddressLine =
+            NullIfWhiteSpace(model.AddressLine);
+    }
+
+    private static string BuildInitials(string fullName)
+    {
+        var parts = fullName
+            .Split(
+                ' ',
+                StringSplitOptions.RemoveEmptyEntries);
+
+        if (parts.Length == 0)
+            return "KH";
+
+        if (parts.Length == 1)
+        {
+            return parts[0]
+                .Substring(
+                    0,
+                    Math.Min(2, parts[0].Length))
+                .ToUpperInvariant();
+        }
+
+        return string.Concat(
+            char.ToUpperInvariant(parts[0][0]),
+            char.ToUpperInvariant(parts[^1][0]));
+    }
+
+    private static string? NullIfWhiteSpace(
+        string? value)
+    {
+        return string.IsNullOrWhiteSpace(value)
+            ? null
+            : value.Trim();
     }
 }
