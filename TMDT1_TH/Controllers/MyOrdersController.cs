@@ -1,10 +1,12 @@
-﻿using Microsoft.AspNetCore.Authorization;
+using System.Data;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using TMDT1_TH.Data;
 using TMDT1_TH.Domain.Enums;
 using TMDT1_TH.Domain.Identity;
+using TMDT1_TH.Infrastructure.Orders;
 using TMDT1_TH.ViewModels.Storefront;
 
 namespace TMDT1_TH.Controllers;
@@ -13,11 +15,20 @@ namespace TMDT1_TH.Controllers;
 [Route("tai-khoan/don-hang")]
 public sealed class MyOrdersController(
     ApplicationDbContext db,
-    UserManager<ApplicationUser> userManager) : Controller
+    UserManager<ApplicationUser> userManager,
+    CustomerOrderCancellationService cancellationService,
+    ILogger<MyOrdersController> logger) : Controller
 {
     private readonly ApplicationDbContext _db = db;
+
     private readonly UserManager<ApplicationUser> _userManager =
         userManager;
+
+    private readonly CustomerOrderCancellationService
+        _cancellationService = cancellationService;
+
+    private readonly ILogger<MyOrdersController> _logger =
+        logger;
 
     [HttpGet("")]
     public async Task<IActionResult> Index()
@@ -207,6 +218,123 @@ public sealed class MyOrdersController(
             };
 
         return View(model);
+    }
+
+    [HttpPost("{orderNumber}/huy")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Cancel(
+        string orderNumber,
+        string? cancellationReason,
+        CancellationToken cancellationToken)
+    {
+        var normalizedReason =
+            CustomerOrderCancellationPolicy
+                .NormalizeReason(
+                    cancellationReason);
+
+        if (!CustomerOrderCancellationPolicy
+                .IsReasonValid(
+                    normalizedReason))
+        {
+            TempData["OrderError"] =
+                $"Vui lòng nhập lý do hủy ít nhất " +
+                $"{CustomerOrderCancellationPolicy.MinimumReasonLength} ký tự.";
+
+            return RedirectToAction(
+                nameof(Details),
+                new { orderNumber });
+        }
+
+        var userId = CurrentUserId();
+
+        await using var transaction =
+            await _db.Database.BeginTransactionAsync(
+                IsolationLevel.Serializable,
+                cancellationToken);
+
+        try
+        {
+            var order = await _db.Orders
+                .Include(x => x.Items)
+                .FirstOrDefaultAsync(
+                    x =>
+                        x.CustomerUserId ==
+                        userId &&
+                        x.OrderNumber ==
+                        orderNumber,
+                    cancellationToken);
+
+            if (order is null)
+            {
+                await transaction.RollbackAsync(
+                    cancellationToken);
+
+                return NotFound();
+            }
+
+            if (!CustomerOrderCancellationPolicy
+                    .CanCancel(
+                        order.Status,
+                        order.PaymentStatus))
+            {
+                await transaction.RollbackAsync(
+                    cancellationToken);
+
+                TempData["OrderError"] =
+                    "Đơn hàng không còn ở trạng thái Chờ xác nhận nên không thể tự hủy.";
+
+                return RedirectToAction(
+                    nameof(Details),
+                    new { orderNumber });
+            }
+
+            var actor =
+                User.Identity?.Name
+                ?? $"Customer:{userId}";
+
+            await _cancellationService.CancelAsync(
+                order,
+                normalizedReason!,
+                actor,
+                DateTime.UtcNow,
+                cancellationToken);
+
+            await _db.SaveChangesAsync(
+                cancellationToken);
+
+            await transaction.CommitAsync(
+                cancellationToken);
+
+            TempData["OrderSuccess"] =
+                $"Đã hủy đơn {order.OrderNumber}. " +
+                "Số lượng sản phẩm và lượt khuyến mãi đã được hoàn lại.";
+
+            return RedirectToAction(
+                nameof(Details),
+                new { orderNumber });
+        }
+        catch (Exception exception)
+        {
+            await transaction.RollbackAsync(
+                cancellationToken);
+
+            _db.ChangeTracker.Clear();
+
+            _logger.LogError(
+                exception,
+                "Khách hàng {UserId} không thể hủy đơn {OrderNumber}.",
+                userId,
+                orderNumber);
+
+            TempData["OrderError"] =
+                exception is InvalidOperationException
+                    ? exception.Message
+                    : "Không thể hủy đơn hàng lúc này. Vui lòng thử lại.";
+
+            return RedirectToAction(
+                nameof(Details),
+                new { orderNumber });
+        }
     }
 
     private int CurrentUserId()

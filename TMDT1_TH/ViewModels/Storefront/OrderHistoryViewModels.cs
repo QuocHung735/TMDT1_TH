@@ -1,4 +1,5 @@
-﻿using TMDT1_TH.Domain.Enums;
+using TMDT1_TH.Domain.Enums;
+using TMDT1_TH.Infrastructure.Orders;
 
 namespace TMDT1_TH.ViewModels.Storefront;
 
@@ -35,7 +36,15 @@ public sealed class CustomerOrderDetailsViewModel
     public string StatusName { get; init; } = string.Empty;
     public string StatusClass { get; init; } = string.Empty;
     public int ProgressStep { get; init; }
-    public bool IsCancelled => Status == OrderStatus.Cancelled;
+
+    public bool IsCancelled =>
+        Status == OrderStatus.Cancelled;
+
+    public bool CanCustomerCancel =>
+        CustomerOrderCancellationPolicy
+            .CanCancel(
+                Status,
+                PaymentStatus);
 
     public string CustomerName { get; init; } = string.Empty;
     public string CustomerPhone { get; init; } = string.Empty;

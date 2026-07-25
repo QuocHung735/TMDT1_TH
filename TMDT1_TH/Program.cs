@@ -5,6 +5,7 @@ using TMDT1_TH.Data.Database;
 using TMDT1_TH.Data.Identity;
 using TMDT1_TH.Domain.Identity;
 using TMDT1_TH.Infrastructure.Cart;
+using TMDT1_TH.Infrastructure.Orders;
 using TMDT1_TH.Infrastructure.Pricing;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -77,6 +78,7 @@ builder.Services.AddSession(options =>
 builder.Services.AddScoped<CartSessionStore>();
 builder.Services.AddScoped<MultiMarketPriceFilter>();
 builder.Services.AddScoped<PromotionService>();
+builder.Services.AddScoped<CustomerOrderCancellationService>();
 builder.Services.AddScoped<PromotionCartPreviewResolver>();
 builder.Services.AddControllersWithViews(options =>
 {
@@ -149,6 +151,9 @@ await IdentitySeeder.SeedAsync(
     app.Logger);
 
 app.Run();
+
+
+
 
 
 

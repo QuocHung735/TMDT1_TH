@@ -33,6 +33,24 @@
             </span>
         </div>
 
+        @if (TempData["OrderSuccess"] is string successMessage)
+        {
+            <div class="customer-order-alert is-success"
+                 role="status">
+                <strong>Thành công</strong>
+                <span>@successMessage</span>
+            </div>
+        }
+
+        @if (TempData["OrderError"] is string errorMessage)
+        {
+            <div class="customer-order-alert is-error"
+                 role="alert">
+                <strong>Không thể thực hiện</strong>
+                <span>@errorMessage</span>
+            </div>
+        }
+
         @if (Model.IsCancelled)
         {
             <div class="order-cancelled-box">
@@ -302,8 +320,233 @@
                         @Model.CurrencyCode
                     </strong>
                 </div>
+
+                @if (Model.CanCustomerCancel)
+                {
+                    <div class="customer-cancel-panel">
+                        <button class="store-button customer-cancel-button"
+                                type="button"
+                                data-cancel-dialog-open>
+                            Hủy đơn hàng
+                        </button>
+                        <small>
+                            Chỉ có thể hủy khi đơn đang chờ xác nhận.
+                            Thao tác này không thể hoàn tác.
+                        </small>
+                    </div>
+                }
             </aside>
         </div>
     </div>
 </section>
+
+@if (Model.CanCustomerCancel)
+{
+    <dialog class="customer-cancel-dialog"
+            data-cancel-dialog>
+        <form asp-action="Cancel"
+              asp-route-orderNumber="@Model.OrderNumber"
+              method="post">
+            <div class="customer-cancel-dialog__heading">
+                <div>
+                    <span class="eyebrow">XÁC NHẬN HỦY</span>
+                    <h2>Hủy đơn @Model.OrderNumber?</h2>
+                </div>
+                <button type="button"
+                        aria-label="Đóng"
+                        data-cancel-dialog-close>
+                    ×
+                </button>
+            </div>
+
+            <p>
+                Sản phẩm sẽ được hoàn lại kho và lượt khuyến mãi
+                của đơn sẽ được trả lại.
+            </p>
+
+            <label for="cancellationReason">
+                Lý do hủy đơn
+            </label>
+            <textarea id="cancellationReason"
+                      name="cancellationReason"
+                      rows="4"
+                      minlength="5"
+                      maxlength="450"
+                      required
+                      placeholder="Ví dụ: Tôi đổi ý và không còn nhu cầu mua sản phẩm này."></textarea>
+            <small>
+                Nhập từ 5 đến 450 ký tự.
+            </small>
+
+            <div class="customer-cancel-dialog__actions">
+                <button class="store-button"
+                        type="button"
+                        data-cancel-dialog-close>
+                    Giữ lại đơn
+                </button>
+                <button class="store-button customer-cancel-confirm"
+                        type="submit">
+                    Xác nhận hủy
+                </button>
+            </div>
+        </form>
+    </dialog>
+}
+
+<style>
+    .customer-order-alert {
+        display: grid;
+        gap: 4px;
+        margin: 18px 0;
+        padding: 14px 16px;
+        border: 1px solid;
+        border-radius: 14px;
+    }
+
+    .customer-order-alert.is-success {
+        border-color: #b8dfc7;
+        background: #f1fbf4;
+        color: #21683c;
+    }
+
+    .customer-order-alert.is-error {
+        border-color: #f0b8b8;
+        background: #fff4f4;
+        color: #a42b2b;
+    }
+
+    .customer-cancel-panel {
+        display: grid;
+        gap: 10px;
+        margin-top: 18px;
+        padding-top: 18px;
+        border-top: 1px solid #ece8f2;
+    }
+
+    .customer-cancel-panel small {
+        color: #77718c;
+        line-height: 1.5;
+    }
+
+    .customer-cancel-button,
+    .customer-cancel-confirm {
+        border-color: #c83d3d;
+        background: #c83d3d;
+        color: #fff;
+    }
+
+    .customer-cancel-button:hover,
+    .customer-cancel-confirm:hover {
+        border-color: #aa2e2e;
+        background: #aa2e2e;
+    }
+
+    .customer-cancel-dialog {
+        width: min(520px, calc(100vw - 32px));
+        padding: 0;
+        border: 0;
+        border-radius: 20px;
+        box-shadow: 0 24px 70px rgba(35, 24, 53, .28);
+    }
+
+    .customer-cancel-dialog::backdrop {
+        background: rgba(27, 18, 39, .58);
+        backdrop-filter: blur(3px);
+    }
+
+    .customer-cancel-dialog form {
+        display: grid;
+        gap: 16px;
+        padding: 24px;
+    }
+
+    .customer-cancel-dialog__heading {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 18px;
+    }
+
+    .customer-cancel-dialog__heading h2 {
+        margin: 4px 0 0;
+    }
+
+    .customer-cancel-dialog__heading > button {
+        width: 36px;
+        height: 36px;
+        border: 0;
+        border-radius: 50%;
+        background: #f1eef5;
+        font-size: 24px;
+        cursor: pointer;
+    }
+
+    .customer-cancel-dialog label {
+        font-weight: 700;
+    }
+
+    .customer-cancel-dialog textarea {
+        width: 100%;
+        resize: vertical;
+        min-height: 110px;
+        padding: 12px 14px;
+        border: 1px solid #d9d3e2;
+        border-radius: 12px;
+        font: inherit;
+    }
+
+    .customer-cancel-dialog textarea:focus {
+        outline: 2px solid rgba(143, 96, 171, .2);
+        border-color: #8f60ab;
+    }
+
+    .customer-cancel-dialog > form > small {
+        margin-top: -10px;
+        color: #77718c;
+    }
+
+    .customer-cancel-dialog__actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+        margin-top: 4px;
+    }
+
+    @@media (max-width: 560px) {
+        .customer-cancel-dialog__actions {
+            display: grid;
+        }
+    }
+</style>
+
+<script>
+    (() => {
+        const dialog =
+            document.querySelector("[data-cancel-dialog]");
+
+        if (!dialog) {
+            return;
+        }
+
+        document
+            .querySelector("[data-cancel-dialog-open]")
+            ?.addEventListener("click", () => {
+                dialog.showModal();
+            });
+
+        dialog
+            .querySelectorAll("[data-cancel-dialog-close]")
+            .forEach(button => {
+                button.addEventListener("click", () => {
+                    dialog.close();
+                });
+            });
+
+        dialog.addEventListener("click", event => {
+            if (event.target === dialog) {
+                dialog.close();
+            }
+        });
+    })();
+</script>
 
