@@ -89,6 +89,10 @@ public sealed class ProductEditorViewModel
     [Range(1, int.MaxValue, ErrorMessage = "Vui lòng chọn thương hiệu.")]
     public int? BrandId { get; set; }
 
+    [Required(ErrorMessage = "Vui lòng chọn cửa hàng.")]
+    [Range(1, int.MaxValue, ErrorMessage = "Vui lòng chọn cửa hàng.")]
+    public int? StoreId { get; set; }
+
     [StringLength(600, ErrorMessage = "Mô tả ngắn tối đa 600 ký tự.")]
     public string? ShortDescription { get; set; }
 
@@ -180,6 +184,9 @@ public sealed class ProductEditorViewModel
 
     [ValidateNever]
     public IReadOnlyList<SelectListItem> BrandOptions { get; set; } = Array.Empty<SelectListItem>();
+
+    [ValidateNever]
+    public IReadOnlyList<SelectListItem> StoreOptions { get; set; } = Array.Empty<SelectListItem>();
 
     [ValidateNever]
     public IReadOnlyList<SelectListItem> MarketOptions { get; set; } = Array.Empty<SelectListItem>();

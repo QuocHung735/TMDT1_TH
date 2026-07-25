@@ -44,6 +44,13 @@ public sealed class StoreProductDetailsViewModel
     public string CategoryName { get; init; } = string.Empty;
     public string CategorySlug { get; init; } = string.Empty;
     public string BrandName { get; init; } = string.Empty;
+    public string StoreName { get; init; } = string.Empty;
+    public string StoreSlug { get; init; } = string.Empty;
+    public string? StoreDescription { get; init; }
+    public string? StoreLogoUrl { get; init; }
+    public string StoreLocation { get; init; } = string.Empty;
+    public bool StoreIsVerified { get; init; }
+    public decimal? StoreReliabilityScore { get; init; }
     public string? CountryOfOrigin { get; init; }
     public string? ManufacturerName { get; init; }
     public string? ManufacturerAddress { get; init; }

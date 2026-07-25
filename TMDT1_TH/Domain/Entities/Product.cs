@@ -1,4 +1,4 @@
-using TMDT1_TH.Domain.Common;
+﻿using TMDT1_TH.Domain.Common;
 using TMDT1_TH.Domain.Enums;
 
 namespace TMDT1_TH.Domain.Entities;
@@ -7,6 +7,8 @@ public class Product : AuditableEntity
 {
     public int CategoryId { get; set; }
     public int BrandId { get; set; }
+    public int StoreId { get; set; } =
+        StoreDefaults.OfficialStoreId;
     public string Name { get; set; } = string.Empty;
     public string Slug { get; set; } = string.Empty;
     public string Sku { get; set; } = string.Empty;
@@ -33,9 +35,12 @@ public class Product : AuditableEntity
 
     public Category Category { get; set; } = null!;
     public Brand Brand { get; set; } = null!;
+    public Store Store { get; set; } = null!;
     public ICollection<ProductImage> Images { get; set; } = new List<ProductImage>();
     public ICollection<ProductOption> Options { get; set; } = new List<ProductOption>();
     public ICollection<ProductVariant> Variants { get; set; } = new List<ProductVariant>();
     public ICollection<ProductSpecification> Specifications { get; set; } = new List<ProductSpecification>();
     public ICollection<PriceSchedule> PriceSchedules { get; set; } = new List<PriceSchedule>();
 }
+
+

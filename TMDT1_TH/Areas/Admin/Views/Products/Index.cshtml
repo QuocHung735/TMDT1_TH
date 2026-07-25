@@ -1,10 +1,11 @@
-@using TMDT1_TH.Domain.Enums
+﻿@using TMDT1_TH.Domain.Enums
 @model ProductsViewModel
 @{
     ViewData["Title"] = "Quản lý sản phẩm";
     ViewData["Description"] = "Quản lý sản phẩm đồ gia dụng, biến thể, tồn kho và bảng giá từ dữ liệu thật.";
 }
 @section PageActions {
+    <a class="btn btn-light" asp-controller="Stores" asp-action="Index"><i class="bi bi-shop"></i> Cửa hàng</a>
     <a class="btn btn-primary" asp-action="Create"><i class="bi bi-plus-lg"></i> Thêm sản phẩm</a>
 }
 

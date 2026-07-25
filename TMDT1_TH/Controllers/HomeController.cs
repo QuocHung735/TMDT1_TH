@@ -96,6 +96,7 @@ public class HomeController(ApplicationDbContext db) : Controller
         {
             query = query.Where(x =>
                 x.Name.Contains(q) ||
+                x.Store.Name.Contains(q) ||
                 x.Sku.Contains(q) ||
                 (x.ModelNumber != null && x.ModelNumber.Contains(q)) ||
                 x.Category.Name.Contains(q) ||
@@ -298,6 +299,21 @@ public class HomeController(ApplicationDbContext db) : Controller
             CategoryName = product.Category.Name,
             CategorySlug = product.Category.Slug,
             BrandName = product.Brand.Name,
+            StoreName = product.Store.Name,
+            StoreSlug = product.Store.Slug,
+            StoreDescription = product.Store.Description,
+            StoreLogoUrl = product.Store.LogoUrl,
+            StoreLocation = string.Join(
+                ", ",
+                new[]
+                {
+                    product.Store.Ward,
+                    product.Store.District,
+                    product.Store.Province
+                }.Where(x =>
+                    !string.IsNullOrWhiteSpace(x))),
+            StoreIsVerified = product.Store.IsVerified,
+            StoreReliabilityScore = product.Store.ReliabilityScore,
             CountryOfOrigin = product.CountryOfOrigin,
             ManufacturerName = product.ManufacturerName,
             ManufacturerAddress = product.ManufacturerAddress,
@@ -337,9 +353,12 @@ public class HomeController(ApplicationDbContext db) : Controller
             .AsNoTracking()
             .Where(x =>
                 !x.IsDeleted &&
-                x.Status == ProductStatus.Active)
+                x.Status == ProductStatus.Active &&
+                x.Store.IsActive &&
+                !x.Store.IsDeleted)
             .Include(x => x.Category)
             .Include(x => x.Brand)
+            .Include(x => x.Store)
             .Include(x => x.Images)
             .Include(x => x.PriceSchedules)
             .Include(x => x.Variants)
