@@ -3,7 +3,7 @@
 @model ProductEditorViewModel
 @{
     ViewData["Title"] = Model.IsEdit ? "Chỉnh sửa sản phẩm" : "Thêm sản phẩm";
-    ViewData["Description"] = "Quản lý nội dung đăng bán, hình ảnh, SKU biến thể, giá, tồn kho và thông tin vận chuyển.";
+    ViewData["Description"] = "Nhập thông tin theo từng bước; phần biến thể được tách riêng và chỉ mở chi tiết khi cần.";
     var saveDisabled = Model.CategoryOptions.Count == 0 || Model.BrandOptions.Count == 0;
     var validFromValue = Model.ValidFrom.ToString("yyyy-MM-ddTHH:mm");
     var validToValue = Model.ValidTo?.ToString("yyyy-MM-ddTHH:mm");
@@ -11,6 +11,11 @@
     {
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase
     });
+}
+@section Styles {
+    <link rel="stylesheet"
+          href="~/admin/css/product-editor-simplified.css"
+          asp-append-version="true" />
 }
 @section PageActions {
     <a class="btn btn-light" asp-action="Index">Hủy</a>
@@ -30,7 +35,7 @@
 }
 
 <div class="editor-layout marketplace-editor">
-    <aside class="editor-steps card">
+    <aside class="editor-steps card" data-product-editor-navigation>
         <a href="#general" class="editor-step is-active"><span>1</span><div><strong>Thông tin chung</strong><small>Tên, phân loại và mô tả</small></div></a>
         <a href="#media" class="editor-step"><span>2</span><div><strong>Hình ảnh</strong><small>Tối đa 9 ảnh sản phẩm</small></div></a>
         <a href="#variants" class="editor-step"><span>3</span><div><strong>Phân loại & SKU</strong><small>Giá và kho từng biến thể</small></div></a>

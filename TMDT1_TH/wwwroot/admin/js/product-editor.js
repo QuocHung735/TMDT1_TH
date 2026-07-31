@@ -270,57 +270,249 @@
     const hiddenInput = (name, value, field) => `<input type="hidden" name="${name}" value="${escapeHtml(value)}" data-field="${field}" />`;
 
     const variantRowHtml = (item, index) => `
-        <tr data-variant-row>
-            <td class="variant-name-column">
-                ${hiddenInput(`Variants[${index}].Id`, item.id || '', 'id')}
-                ${hiddenInput(`Variants[${index}].PriceScheduleId`, item.priceScheduleId || '', 'priceScheduleId')}
-                ${hiddenInput(`Variants[${index}].CombinationKey`, item.combinationKey, 'combinationKey')}
-                ${hiddenInput(`Variants[${index}].Value1`, item.value1, 'value1')}
-                ${hiddenInput(`Variants[${index}].Value2`, item.value2 || '', 'value2')}
-                ${hiddenInput(`Variants[${index}].Name`, item.name, 'name')}
-                <strong>${escapeHtml(item.name)}</strong>
-            </td>
-            <td class="variant-check-cell">
-                <input type="radio" name="variant-default-ui" ${item.isDefault ? 'checked' : ''} data-variant-default-radio />
-                <input type="hidden" name="Variants[${index}].IsDefault" value="${item.isDefault ? 'true' : 'false'}" data-field="isDefault" />
-            </td>
-            <td><input class="table-input variant-sku-input" name="Variants[${index}].Sku" value="${escapeHtml(item.sku)}" maxlength="100" required data-field="sku" /></td>
-            <td><input class="table-input" name="Variants[${index}].Barcode" value="${escapeHtml(item.barcode)}" maxlength="100" data-field="barcode" /></td>
-            <td><input class="table-input table-input--money" type="number" min="0" step="1" name="Variants[${index}].CostPrice" value="${escapeHtml(item.costPrice)}" data-field="costPrice" /></td>
-            <td><input class="table-input table-input--money" type="number" min="0" step="1" name="Variants[${index}].ListPrice" value="${escapeHtml(item.listPrice)}" data-field="listPrice" /></td>
-            <td><input class="table-input table-input--money" type="number" min="0" step="1" name="Variants[${index}].SalePrice" value="${escapeHtml(item.salePrice)}" data-field="salePrice" /></td>
-            <td><input class="table-input table-input--small" type="number" min="0" step="1" name="Variants[${index}].StockQuantity" value="${escapeHtml(item.stockQuantity)}" data-field="stockQuantity" /></td>
-            <td><input class="table-input table-input--small" type="number" min="0" step="1" name="Variants[${index}].LowStockThreshold" value="${escapeHtml(item.lowStockThreshold)}" data-field="lowStockThreshold" /></td>
-            <td><input class="table-input table-input--small" type="number" min="0" step="0.001" name="Variants[${index}].Weight" value="${escapeHtml(item.weight)}" data-field="weight" /></td>
-            <td class="variant-check-cell">
-                <label class="mini-switch"><input type="checkbox" name="Variants[${index}].IsActive" value="true" ${item.isActive ? 'checked' : ''} data-field="isActive" /><i></i></label>
-                <input type="hidden" name="Variants[${index}].IsActive" value="false" />
+        <tr data-variant-row class="variant-card-row">
+            <td colspan="11">
+                <article class="variant-card ${item.isActive ? '' : 'is-inactive'}">
+                    ${hiddenInput(`Variants[${index}].Id`, item.id || '', 'id')}
+                    ${hiddenInput(`Variants[${index}].PriceScheduleId`, item.priceScheduleId || '', 'priceScheduleId')}
+                    ${hiddenInput(`Variants[${index}].CombinationKey`, item.combinationKey, 'combinationKey')}
+                    ${hiddenInput(`Variants[${index}].Value1`, item.value1, 'value1')}
+                    ${hiddenInput(`Variants[${index}].Value2`, item.value2 || '', 'value2')}
+                    ${hiddenInput(`Variants[${index}].Name`, item.name, 'name')}
+
+                    <header class="variant-card__header">
+                        <div class="variant-card__identity">
+                            <span class="variant-card__number">${index + 1}</span>
+                            <div>
+                                <strong>${escapeHtml(item.name)}</strong>
+                                <small data-variant-summary-sku>
+                                    ${escapeHtml(item.sku || 'Chưa có SKU')}
+                                </small>
+                            </div>
+                        </div>
+
+                        <div class="variant-card__controls">
+                            <label class="variant-default-choice">
+                                <input type="radio"
+                                       name="variant-default-ui"
+                                       ${item.isDefault ? 'checked' : ''}
+                                       data-variant-default-radio />
+                                <input type="hidden"
+                                       name="Variants[${index}].IsDefault"
+                                       value="${item.isDefault ? 'true' : 'false'}"
+                                       data-field="isDefault" />
+                                Mặc định
+                            </label>
+
+                            <label class="variant-active-choice">
+                                <span>Bán</span>
+                                <span class="mini-switch">
+                                    <input type="checkbox"
+                                           name="Variants[${index}].IsActive"
+                                           value="true"
+                                           ${item.isActive ? 'checked' : ''}
+                                           data-field="isActive" />
+                                    <i></i>
+                                </span>
+                                <input type="hidden"
+                                       name="Variants[${index}].IsActive"
+                                       value="false" />
+                            </label>
+
+                            <button class="btn btn-light btn-sm"
+                                    type="button"
+                                    data-toggle-variant-details
+                                    aria-expanded="false">
+                                <i class="bi bi-sliders"></i>
+                                Chi tiết
+                            </button>
+                        </div>
+                    </header>
+
+                    <div class="variant-card__quick-fields">
+                        <label class="form-field">
+                            <span>Giá bán</span>
+                            <div class="input-suffix">
+                                <input class="table-input"
+                                       type="number"
+                                       min="0"
+                                       step="1"
+                                       name="Variants[${index}].SalePrice"
+                                       value="${escapeHtml(item.salePrice)}"
+                                       data-field="salePrice" />
+                                <i>₫</i>
+                            </div>
+                        </label>
+
+                        <label class="form-field">
+                            <span>Giá niêm yết</span>
+                            <div class="input-suffix">
+                                <input class="table-input"
+                                       type="number"
+                                       min="0"
+                                       step="1"
+                                       name="Variants[${index}].ListPrice"
+                                       value="${escapeHtml(item.listPrice)}"
+                                       data-field="listPrice" />
+                                <i>₫</i>
+                            </div>
+                        </label>
+
+                        <label class="form-field">
+                            <span>Tồn kho</span>
+                            <input class="table-input"
+                                   type="number"
+                                   min="0"
+                                   step="1"
+                                   name="Variants[${index}].StockQuantity"
+                                   value="${escapeHtml(item.stockQuantity)}"
+                                   data-field="stockQuantity" />
+                        </label>
+                    </div>
+
+                    <div class="variant-card__details"
+                         data-variant-details
+                         hidden>
+                        <label class="form-field">
+                            <span>SKU biến thể</span>
+                            <input class="table-input variant-sku-input"
+                                   name="Variants[${index}].Sku"
+                                   value="${escapeHtml(item.sku)}"
+                                   maxlength="100"
+                                   required
+                                   data-field="sku" />
+                        </label>
+
+                        <label class="form-field">
+                            <span>Barcode</span>
+                            <input class="table-input"
+                                   name="Variants[${index}].Barcode"
+                                   value="${escapeHtml(item.barcode)}"
+                                   maxlength="100"
+                                   data-field="barcode" />
+                        </label>
+
+                        <label class="form-field">
+                            <span>Giá vốn</span>
+                            <div class="input-suffix">
+                                <input class="table-input"
+                                       type="number"
+                                       min="0"
+                                       step="1"
+                                       name="Variants[${index}].CostPrice"
+                                       value="${escapeHtml(item.costPrice)}"
+                                       data-field="costPrice" />
+                                <i>₫</i>
+                            </div>
+                        </label>
+
+                        <label class="form-field">
+                            <span>Ngưỡng cảnh báo tồn</span>
+                            <input class="table-input"
+                                   type="number"
+                                   min="0"
+                                   step="1"
+                                   name="Variants[${index}].LowStockThreshold"
+                                   value="${escapeHtml(item.lowStockThreshold)}"
+                                   data-field="lowStockThreshold" />
+                        </label>
+
+                        <label class="form-field">
+                            <span>Khối lượng</span>
+                            <div class="input-suffix">
+                                <input class="table-input"
+                                       type="number"
+                                       min="0"
+                                       step="0.001"
+                                       name="Variants[${index}].Weight"
+                                       value="${escapeHtml(item.weight)}"
+                                       data-field="weight" />
+                                <i>kg</i>
+                            </div>
+                        </label>
+                    </div>
+                </article>
             </td>
         </tr>`;
 
     const bindVariantRowEvents = () => {
         variantBody?.querySelectorAll('[data-variant-default-radio]').forEach((radio) => {
             radio.addEventListener('change', () => {
-                variantBody.querySelectorAll('[data-field="isDefault"]').forEach((hidden) => { hidden.value = 'false'; });
+                variantBody
+                    .querySelectorAll('[data-field="isDefault"]')
+                    .forEach((hidden) => {
+                        hidden.value = 'false';
+                    });
+
                 const row = radio.closest('[data-variant-row]');
-                const hiddenDefault = row?.querySelector('[data-field="isDefault"]');
+                const hiddenDefault =
+                    row?.querySelector('[data-field="isDefault"]');
+
                 if (hiddenDefault) hiddenDefault.value = 'true';
             });
         });
 
-        variantBody?.querySelectorAll('input').forEach((input) => {
-            input.addEventListener('input', () => {
-                validateVariantRow(input.closest('[data-variant-row]'));
-                updateReadiness();
-            });
-            input.addEventListener('change', () => {
-                validateVariantRow(input.closest('[data-variant-row]'));
-                updateReadiness();
-            });
-        });
-    };
+        variantBody
+            ?.querySelectorAll('[data-toggle-variant-details]')
+            .forEach((button) => {
+                button.addEventListener('click', () => {
+                    const row =
+                        button.closest('[data-variant-row]');
 
-    const validateVariantRow = (row) => {
+                    const details =
+                        row?.querySelector('[data-variant-details]');
+
+                    if (!details) return;
+
+                    const expanded = details.hidden;
+                    details.hidden = !expanded;
+                    button.setAttribute(
+                        'aria-expanded',
+                        String(expanded));
+
+                    button.innerHTML = expanded
+                        ? '<i class="bi bi-chevron-up"></i> Thu gọn'
+                        : '<i class="bi bi-sliders"></i> Chi tiết';
+                });
+            });
+
+        variantBody?.querySelectorAll('input').forEach((input) => {
+            const updateRow = () => {
+                const row =
+                    input.closest('[data-variant-row]');
+
+                validateVariantRow(row);
+
+                if (input.matches('[data-field="sku"]')) {
+                    const summary =
+                        row?.querySelector(
+                            '[data-variant-summary-sku]');
+
+                    if (summary) {
+                        summary.textContent =
+                            input.value.trim() ||
+                            'Chưa có SKU';
+                    }
+                }
+
+                if (input.matches('[data-field="isActive"]')) {
+                    row?.querySelector('.variant-card')
+                        ?.classList.toggle(
+                            'is-inactive',
+                            !input.checked);
+                }
+
+                updateReadiness();
+            };
+
+            input.addEventListener('input', updateRow);
+            input.addEventListener('change', updateRow);
+        });
+
+        variantBody
+            ?.querySelectorAll('[data-variant-row]')
+            .forEach(validateVariantRow);
+    };    const validateVariantRow = (row) => {
         if (!row) return true;
         const active = row.querySelector('[data-field="isActive"]')?.checked ?? false;
         const list = row.querySelector('[data-field="listPrice"]');

@@ -39,6 +39,9 @@
     <link rel="stylesheet"
           href="~/admin/css/media-upload.css"
           asp-append-version="true" />
+    @await RenderSectionAsync(
+        "Styles",
+        required: false)
 </head>
 <body>
     <div class="app-shell" data-app-shell>
