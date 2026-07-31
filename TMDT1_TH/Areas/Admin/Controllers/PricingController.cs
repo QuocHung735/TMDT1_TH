@@ -527,15 +527,26 @@ public class PricingController : Controller
             AddMoneyHistory(rows, history, target, market, "Giá niêm yết", history.OldListPrice, history.NewListPrice);
             AddMoneyHistory(rows, history, target, market, "Giá bán", history.OldSalePrice, history.NewSalePrice);
 
-            if (history.OldValidFrom != history.NewValidFrom || history.OldValidTo != history.NewValidTo)
+            var oldPeriod = FormatNullablePeriod(
+                history.OldValidFrom,
+                history.OldValidTo);
+
+            var newPeriod = FormatNullablePeriod(
+                history.NewValidFrom,
+                history.NewValidTo);
+
+            if (!string.Equals(
+                    oldPeriod,
+                    newPeriod,
+                    StringComparison.Ordinal))
             {
                 rows.Add(CreateHistoryRow(
                     history,
                     target,
                     market,
                     "Thời gian áp dụng",
-                    FormatNullablePeriod(history.OldValidFrom, history.OldValidTo),
-                    FormatNullablePeriod(history.NewValidFrom, history.NewValidTo),
+                    oldPeriod,
+                    newPeriod,
                     "Đã đổi",
                     "neutral"));
             }
