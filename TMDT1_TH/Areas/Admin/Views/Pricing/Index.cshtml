@@ -5,9 +5,29 @@
     var modalClass = Model.OpenFormModal ? "is-open" : string.Empty;
     var modalHidden = Model.OpenFormModal ? "false" : "true";
     var formTitle = Model.Form.IsEdit ? "Chỉnh sửa lịch giá" : "Thiết lập lịch giá";
+    var historyTabActive = string.Equals(
+        Model.ActiveTab,
+        "history",
+        StringComparison.OrdinalIgnoreCase);
+    var priceTabActive = !historyTabActive;
+    var historyStartPage = Math.Max(
+        1,
+        Model.HistoryPage - 2);
+    var historyEndPage = Math.Min(
+        Model.HistoryTotalPages,
+        Model.HistoryPage + 2);
 }
 @section PageActions {
-    <a class="btn btn-light" asp-action="ExportHistory"><i class="bi bi-download"></i> Xuất lịch sử</a>
+    <a class="btn btn-light"
+       asp-action="ExportHistory"
+       asp-route-historyQuery="@Model.HistoryQuery"
+       asp-route-historyProductId="@Model.HistoryProductId"
+       asp-route-historyMarketId="@Model.HistoryMarketId"
+       asp-route-historyFrom="@(Model.HistoryFrom?.ToString("yyyy-MM-dd"))"
+       asp-route-historyTo="@(Model.HistoryTo?.ToString("yyyy-MM-dd"))">
+        <i class="bi bi-download"></i>
+        Xuất lịch sử
+    </a>
     <a class="btn btn-light" asp-controller="Promotions" asp-action="Index"><i class="bi bi-ticket-perforated"></i> Khuyến mãi</a>
     <button class="btn btn-primary" type="button" data-modal-target="price-modal"><i class="bi bi-plus-lg"></i> Thiết lập giá</button>
 }
@@ -32,11 +52,20 @@
 </section>
 
 <div class="tabs" data-tabs>
-    <button class="is-active" type="button" data-tab="current-prices">Lịch giá</button>
-    <button type="button" data-tab="price-history">Lịch sử biến động</button>
+    <button class="@(priceTabActive ? "is-active" : string.Empty)"
+            type="button"
+            data-tab="current-prices">
+        Lịch giá
+    </button>
+    <button class="@(historyTabActive ? "is-active" : string.Empty)"
+            type="button"
+            data-tab="price-history">
+        Lịch sử biến động
+    </button>
 </div>
 
-<section class="card panel" data-tab-panel="current-prices">
+<section class="card panel @(priceTabActive ? string.Empty : "is-hidden")"
+         data-tab-panel="current-prices">
     <form method="get" class="toolbar toolbar--wrap">
         <label class="field-search">
             <i class="bi bi-search"></i>
@@ -121,32 +150,161 @@
     <div class="pagination"><span>Hiển thị @Model.Items.Count lịch giá</span></div>
 </section>
 
-<section class="card panel is-hidden" data-tab-panel="price-history">
+<section class="card panel @(historyTabActive ? string.Empty : "is-hidden")"
+         data-tab-panel="price-history">
     <div class="panel__header">
-        <div><h2>Lịch sử biến động giá</h2><p>Dữ liệu được trigger SQL Server ghi tự động khi thêm, sửa hoặc xóa lịch giá.</p></div>
-        <a class="btn btn-light" asp-action="ExportHistory"><i class="bi bi-download"></i> Xuất CSV</a>
+        <div>
+            <h2>Lịch sử biến động giá</h2>
+            <p>
+                Dữ liệu được trigger SQL Server ghi tự động khi
+                thêm, sửa hoặc xóa lịch giá.
+            </p>
+        </div>
+        <a class="btn btn-light"
+           asp-action="ExportHistory"
+           asp-route-historyQuery="@Model.HistoryQuery"
+           asp-route-historyProductId="@Model.HistoryProductId"
+           asp-route-historyMarketId="@Model.HistoryMarketId"
+           asp-route-historyFrom="@(Model.HistoryFrom?.ToString("yyyy-MM-dd"))"
+           asp-route-historyTo="@(Model.HistoryTo?.ToString("yyyy-MM-dd"))">
+            <i class="bi bi-download"></i>
+            Xuất CSV theo bộ lọc
+        </a>
     </div>
+
+    <form method="get"
+          class="form-stack">
+        <input type="hidden"
+               name="tab"
+               value="history" />
+        <input type="hidden"
+               name="q"
+               value="@Model.Query" />
+        <input type="hidden"
+               name="marketId"
+               value="@Model.MarketId" />
+        <input type="hidden"
+               name="state"
+               value="@Model.State" />
+
+        <div class="form-grid form-grid--3">
+            <label class="form-field">
+                <span>Từ khóa</span>
+                <input asp-for="HistoryQuery"
+                       type="search"
+                       placeholder="Tên sản phẩm, SKU, người cập nhật hoặc lý do..." />
+            </label>
+
+            <label class="form-field">
+                <span>Sản phẩm</span>
+                <select asp-for="HistoryProductId"
+                        asp-items="Model.HistoryProductFilterOptions">
+                    <option value="">Tất cả sản phẩm</option>
+                </select>
+            </label>
+
+            <label class="form-field">
+                <span>Thị trường</span>
+                <select asp-for="HistoryMarketId"
+                        asp-items="Model.HistoryMarketFilterOptions">
+                    <option value="">Tất cả thị trường</option>
+                </select>
+            </label>
+        </div>
+
+        <div class="form-grid form-grid--2">
+            <label class="form-field">
+                <span>Từ ngày</span>
+                <input type="date"
+                       name="historyFrom"
+                       value="@(Model.HistoryFrom?.ToString("yyyy-MM-dd"))" />
+            </label>
+
+            <label class="form-field">
+                <span>Đến ngày</span>
+                <input type="date"
+                       name="historyTo"
+                       value="@(Model.HistoryTo?.ToString("yyyy-MM-dd"))" />
+            </label>
+        </div>
+
+        <div class="toolbar__filters">
+            <button class="btn btn-primary"
+                    type="submit">
+                <i class="bi bi-funnel"></i>
+                Áp dụng bộ lọc
+            </button>
+
+            <a class="btn btn-light"
+               asp-action="Index"
+               asp-route-tab="history"
+               asp-route-q="@Model.Query"
+               asp-route-marketId="@Model.MarketId"
+               asp-route-state="@Model.State">
+                <i class="bi bi-arrow-counterclockwise"></i>
+                Xóa bộ lọc
+            </a>
+        </div>
+    </form>
+
     <div class="table-wrap">
         <table class="data-table">
             <thead>
-                <tr><th>Sản phẩm / Biến thể</th><th>Thị trường</th><th>Nội dung</th><th>Giá trị cũ</th><th>Giá trị mới</th><th>Thay đổi</th><th>Người cập nhật</th><th>Thời gian</th></tr>
+                <tr>
+                    <th>Sản phẩm / Biến thể</th>
+                    <th>Thị trường</th>
+                    <th>Nội dung</th>
+                    <th>Giá trị cũ</th>
+                    <th>Giá trị mới</th>
+                    <th>Thay đổi</th>
+                    <th>Người cập nhật</th>
+                    <th>Thời gian</th>
+                </tr>
             </thead>
             <tbody>
             @if (Model.History.Count == 0)
             {
-                <tr><td colspan="8"><div class="empty-state"><i class="bi bi-clock-history"></i><strong>Chưa có lịch sử</strong><p>Lịch sử sẽ xuất hiện sau lần thay đổi giá đầu tiên.</p></div></td></tr>
+                <tr>
+                    <td colspan="8">
+                        <div class="empty-state">
+                            <i class="bi bi-clock-history"></i>
+                            <strong>
+                                Không có lịch sử phù hợp
+                            </strong>
+                            <p>
+                                Hãy thay đổi bộ lọc hoặc chờ lần
+                                cập nhật giá tiếp theo.
+                            </p>
+                        </div>
+                    </td>
+                </tr>
             }
             else
             {
                 @foreach (var item in Model.History)
                 {
                     <tr title="@item.Reason">
-                        <td><div class="stacked-text"><strong>@item.Product</strong><small>@item.Variant · @item.Action</small></div></td>
+                        <td>
+                            <div class="stacked-text">
+                                <strong>@item.Product</strong>
+                                <small>
+                                    @item.Variant · @item.Action
+                                </small>
+                            </div>
+                        </td>
                         <td>@item.Market</td>
                         <td>@item.ChangeType</td>
-                        <td class="muted-price">@item.OldValue</td>
-                        <td><strong>@item.NewValue</strong></td>
-                        <td><span class="change-pill change-pill--@item.Tone">@item.Change</span></td>
+                        <td class="muted-price">
+                            @item.OldValue
+                        </td>
+                        <td>
+                            <strong>@item.NewValue</strong>
+                        </td>
+                        <td>
+                            <span class="change-pill change-pill--@item.Tone">
+                                @item.Change
+                            </span>
+                        </td>
                         <td>@item.User</td>
                         <td>@item.Time</td>
                     </tr>
@@ -154,6 +312,74 @@
             }
             </tbody>
         </table>
+    </div>
+
+    <div class="pagination">
+        <span>
+            Sự kiện @Model.HistoryFirstEvent–@Model.HistoryLastEvent
+            trong tổng số @Model.HistoryTotalEvents
+        </span>
+
+        @if (Model.HistoryTotalPages > 1)
+        {
+            <div class="toolbar__filters">
+                @if (Model.HistoryHasPreviousPage)
+                {
+                    <a class="btn btn-light"
+                       asp-action="Index"
+                       asp-route-tab="history"
+                       asp-route-historyPage="@(Model.HistoryPage - 1)"
+                       asp-route-historyQuery="@Model.HistoryQuery"
+                       asp-route-historyProductId="@Model.HistoryProductId"
+                       asp-route-historyMarketId="@Model.HistoryMarketId"
+                       asp-route-historyFrom="@(Model.HistoryFrom?.ToString("yyyy-MM-dd"))"
+                       asp-route-historyTo="@(Model.HistoryTo?.ToString("yyyy-MM-dd"))"
+                       asp-route-q="@Model.Query"
+                       asp-route-marketId="@Model.MarketId"
+                       asp-route-state="@Model.State">
+                        <i class="bi bi-chevron-left"></i>
+                    </a>
+                }
+
+                @for (var pageNumber = historyStartPage;
+                      pageNumber <= historyEndPage;
+                      pageNumber++)
+                {
+                    <a class="btn @(pageNumber == Model.HistoryPage ? "btn-primary" : "btn-light")"
+                       asp-action="Index"
+                       asp-route-tab="history"
+                       asp-route-historyPage="@pageNumber"
+                       asp-route-historyQuery="@Model.HistoryQuery"
+                       asp-route-historyProductId="@Model.HistoryProductId"
+                       asp-route-historyMarketId="@Model.HistoryMarketId"
+                       asp-route-historyFrom="@(Model.HistoryFrom?.ToString("yyyy-MM-dd"))"
+                       asp-route-historyTo="@(Model.HistoryTo?.ToString("yyyy-MM-dd"))"
+                       asp-route-q="@Model.Query"
+                       asp-route-marketId="@Model.MarketId"
+                       asp-route-state="@Model.State">
+                        @pageNumber
+                    </a>
+                }
+
+                @if (Model.HistoryHasNextPage)
+                {
+                    <a class="btn btn-light"
+                       asp-action="Index"
+                       asp-route-tab="history"
+                       asp-route-historyPage="@(Model.HistoryPage + 1)"
+                       asp-route-historyQuery="@Model.HistoryQuery"
+                       asp-route-historyProductId="@Model.HistoryProductId"
+                       asp-route-historyMarketId="@Model.HistoryMarketId"
+                       asp-route-historyFrom="@(Model.HistoryFrom?.ToString("yyyy-MM-dd"))"
+                       asp-route-historyTo="@(Model.HistoryTo?.ToString("yyyy-MM-dd"))"
+                       asp-route-q="@Model.Query"
+                       asp-route-marketId="@Model.MarketId"
+                       asp-route-state="@Model.State">
+                        <i class="bi bi-chevron-right"></i>
+                    </a>
+                }
+            </div>
+        }
     </div>
 </section>
 
@@ -166,6 +392,13 @@
             <input asp-for="Query" type="hidden" />
             <input asp-for="MarketId" type="hidden" />
             <input asp-for="State" type="hidden" />
+            <input asp-for="HistoryQuery" type="hidden" />
+            <input asp-for="HistoryProductId" type="hidden" />
+            <input asp-for="HistoryMarketId" type="hidden" />
+            <input asp-for="HistoryFrom" type="hidden" />
+            <input asp-for="HistoryTo" type="hidden" />
+            <input asp-for="HistoryPage" type="hidden" />
+            <input asp-for="ActiveTab" type="hidden" />
 
             <div class="modal__header">
                 <div>

@@ -15,6 +15,8 @@ namespace TMDT1_TH.Areas.Admin.Controllers;
 [Area("Admin")]
 public class PricingController : Controller
 {
+    private const int DefaultHistoryPageSize = 25;
+
     private readonly ApplicationDbContext _db;
     private static readonly CultureInfo ViCulture = CultureInfo.GetCultureInfo("vi-VN");
 
@@ -28,7 +30,14 @@ public class PricingController : Controller
         string? q,
         int? marketId,
         string? state,
-        int? editId)
+        int? editId,
+        string? historyQuery,
+        int? historyProductId,
+        int? historyMarketId,
+        DateTime? historyFrom,
+        DateTime? historyTo,
+        int historyPage = 1,
+        string? tab = null)
     {
         PricingScheduleFormViewModel form;
         var openModal = false;
@@ -82,7 +91,20 @@ public class PricingController : Controller
             };
         }
 
-        var model = await BuildIndexModelAsync(q, marketId, state, form, openModal);
+        var model = await BuildIndexModelAsync(
+            q,
+            marketId,
+            state,
+            form,
+            openModal,
+            historyQuery,
+            historyProductId,
+            historyMarketId,
+            historyFrom,
+            historyTo,
+            historyPage,
+            tab);
+
         return View(model);
     }
 
@@ -242,9 +264,30 @@ public class PricingController : Controller
     }
 
     [HttpGet]
-    public async Task<IActionResult> ExportHistory()
+    public async Task<IActionResult> ExportHistory(
+        string? historyQuery,
+        int? historyProductId,
+        int? historyMarketId,
+        DateTime? historyFrom,
+        DateTime? historyTo)
     {
-        var rows = await BuildHistoryRowsAsync(1000);
+        NormalizeHistoryDateRange(
+            ref historyFrom,
+            ref historyTo);
+
+        var histories = await BuildHistoryQuery(
+                historyQuery,
+                historyProductId,
+                historyMarketId,
+                historyFrom,
+                historyTo)
+            .OrderByDescending(x => x.ChangedAt)
+            .ThenByDescending(x => x.Id)
+            .ToListAsync();
+
+        var rows = await BuildHistoryRowsAsync(
+            histories);
+
         var csv = new StringBuilder();
         csv.AppendLine("Sản phẩm,Biến thể,Thị trường,Nội dung,Giá trị cũ,Giá trị mới,Thay đổi,Hành động,Người cập nhật,Thời gian,Lý do");
 
@@ -266,8 +309,17 @@ public class PricingController : Controller
             }));
         }
 
-        var bytes = Encoding.UTF8.GetPreamble().Concat(Encoding.UTF8.GetBytes(csv.ToString())).ToArray();
-        return File(bytes, "text/csv; charset=utf-8", $"lich-su-gia-{StorePriceClock.Now:yyyyMMdd-HHmm}.csv");
+        var bytes = Encoding.UTF8
+            .GetPreamble()
+            .Concat(
+                Encoding.UTF8.GetBytes(
+                    csv.ToString()))
+            .ToArray();
+
+        return File(
+            bytes,
+            "text/csv; charset=utf-8",
+            $"lich-su-gia-{StorePriceClock.Now:yyyyMMdd-HHmm}.csv");
     }
 
     private async Task<PricingIndexViewModel> BuildIndexModelAsync(
@@ -275,9 +327,67 @@ public class PricingController : Controller
         int? marketId,
         string? state,
         PricingScheduleFormViewModel form,
-        bool openModal)
+        bool openModal,
+        string? historyQuery = null,
+        int? historyProductId = null,
+        int? historyMarketId = null,
+        DateTime? historyFrom = null,
+        DateTime? historyTo = null,
+        int historyPage = 1,
+        string? activeTab = null)
     {
         await LoadFormOptionsAsync(form);
+
+        NormalizeHistoryDateRange(
+            ref historyFrom,
+            ref historyTo);
+
+        var historySource = BuildHistoryQuery(
+            historyQuery,
+            historyProductId,
+            historyMarketId,
+            historyFrom,
+            historyTo);
+
+        var historyTotalEvents =
+            await historySource.CountAsync();
+
+        var historyTotalPages = Math.Max(
+            1,
+            (int)Math.Ceiling(
+                historyTotalEvents /
+                (double)DefaultHistoryPageSize));
+
+        historyPage = Math.Clamp(
+            historyPage,
+            1,
+            historyTotalPages);
+
+        var historyEvents = await historySource
+            .OrderByDescending(x => x.ChangedAt)
+            .ThenByDescending(x => x.Id)
+            .Skip(
+                (historyPage - 1) *
+                DefaultHistoryPageSize)
+            .Take(DefaultHistoryPageSize)
+            .ToListAsync();
+
+        var historyRows =
+            await BuildHistoryRowsAsync(
+                historyEvents);
+
+        var historyTabRequested =
+            string.Equals(
+                activeTab,
+                "history",
+                StringComparison.OrdinalIgnoreCase) ||
+            !string.IsNullOrWhiteSpace(
+                historyQuery) ||
+            historyProductId.HasValue ||
+            historyMarketId.HasValue ||
+            historyFrom.HasValue ||
+            historyTo.HasValue ||
+            historyPage > 1;
 
         var now = StorePriceClock.Now;
         var nextSevenDays = now.AddDays(7);
@@ -358,13 +468,32 @@ public class PricingController : Controller
         var model = new PricingIndexViewModel
         {
             Items = rows,
-            History = await BuildHistoryRowsAsync(200),
+            History = historyRows,
             MarketFilterOptions = await BuildMarketOptionsAsync(marketId, false),
+            HistoryProductFilterOptions =
+                await BuildHistoryProductOptionsAsync(
+                    historyProductId),
+            HistoryMarketFilterOptions =
+                await BuildHistoryMarketOptionsAsync(
+                    historyMarketId),
             Form = form,
             Query = q,
             MarketId = marketId,
             State = state,
             OpenFormModal = openModal,
+            HistoryQuery = historyQuery,
+            HistoryProductId = historyProductId,
+            HistoryMarketId = historyMarketId,
+            HistoryFrom = historyFrom,
+            HistoryTo = historyTo,
+            HistoryPage = historyPage,
+            HistoryPageSize =
+                DefaultHistoryPageSize,
+            HistoryTotalEvents =
+                historyTotalEvents,
+            ActiveTab = historyTabRequested
+                ? "history"
+                : "prices",
             CurrentCount = await _db.PriceSchedules.CountAsync(x => x.IsActive && x.ValidFrom <= now &&
                 (!x.ValidTo.HasValue || x.ValidTo.Value > now)),
             UpcomingCount = await _db.PriceSchedules.CountAsync(x => x.IsActive && x.ValidFrom > now && x.ValidFrom <= nextSevenDays),
@@ -476,14 +605,189 @@ public class PricingController : Controller
         return await query.AnyAsync();
     }
 
-    private async Task<IReadOnlyList<PricingHistoryListItem>> BuildHistoryRowsAsync(int take)
+    private IQueryable<PriceHistory> BuildHistoryQuery(
+        string? queryText,
+        int? productId,
+        int? marketId,
+        DateTime? from,
+        DateTime? to)
     {
-        var histories = await _db.PriceHistories
+        var query = _db.PriceHistories
             .AsNoTracking()
-            .OrderByDescending(x => x.ChangedAt)
-            .Take(take)
+            .AsQueryable();
+
+        if (from.HasValue)
+        {
+            var fromUtc =
+                VietnamDateTime.ToUtc(
+                    from.Value.Date);
+
+            query = query.Where(x =>
+                x.ChangedAt >= fromUtc);
+        }
+
+        if (to.HasValue)
+        {
+            var toUtcExclusive =
+                VietnamDateTime.ToUtc(
+                    to.Value.Date.AddDays(1));
+
+            query = query.Where(x =>
+                x.ChangedAt < toUtcExclusive);
+        }
+
+        if (marketId.HasValue)
+        {
+            query = query.Where(x =>
+                x.MarketId == marketId.Value);
+        }
+
+        if (productId.HasValue)
+        {
+            var productVariantIds =
+                _db.ProductVariants
+                    .IgnoreQueryFilters()
+                    .Where(x =>
+                        x.ProductId ==
+                        productId.Value)
+                    .Select(x => x.Id);
+
+            query = query.Where(x =>
+                x.ProductId == productId.Value ||
+                (x.ProductVariantId.HasValue &&
+                 productVariantIds.Contains(
+                     x.ProductVariantId.Value)));
+        }
+
+        if (!string.IsNullOrWhiteSpace(
+                queryText))
+        {
+            var keyword = queryText.Trim();
+
+            var matchingProductIds =
+                _db.Products
+                    .IgnoreQueryFilters()
+                    .Where(x =>
+                        x.Name.Contains(keyword) ||
+                        x.Sku.Contains(keyword) ||
+                        (x.ModelNumber != null &&
+                         x.ModelNumber.Contains(
+                             keyword)))
+                    .Select(x => x.Id);
+
+            var matchingVariantIds =
+                _db.ProductVariants
+                    .IgnoreQueryFilters()
+                    .Where(x =>
+                        x.Name.Contains(keyword) ||
+                        x.Sku.Contains(keyword) ||
+                        (x.Barcode != null &&
+                         x.Barcode.Contains(
+                             keyword)) ||
+                        x.Product.Name.Contains(
+                            keyword) ||
+                        x.Product.Sku.Contains(
+                            keyword))
+                    .Select(x => x.Id);
+
+            var matchingMarketIds =
+                _db.Markets
+                    .Where(x =>
+                        x.Name.Contains(keyword) ||
+                        x.Code.Contains(keyword))
+                    .Select(x => x.Id);
+
+            query = query.Where(x =>
+                (x.ProductId.HasValue &&
+                 matchingProductIds.Contains(
+                     x.ProductId.Value)) ||
+                (x.ProductVariantId.HasValue &&
+                 matchingVariantIds.Contains(
+                     x.ProductVariantId.Value)) ||
+                matchingMarketIds.Contains(
+                    x.MarketId) ||
+                x.ChangedBy.Contains(keyword) ||
+                (x.Reason != null &&
+                 x.Reason.Contains(keyword)));
+        }
+
+        return query;
+    }
+
+    private async Task<IReadOnlyList<SelectListItem>>
+        BuildHistoryProductOptionsAsync(
+            int? selectedId)
+    {
+        var products = await _db.Products
+            .IgnoreQueryFilters()
+            .AsNoTracking()
+            .OrderBy(x => x.Name)
+            .Select(x => new
+            {
+                x.Id,
+                x.Name,
+                x.Sku,
+                x.IsDeleted
+            })
             .ToListAsync();
 
+        return products
+            .Select(x => new SelectListItem
+            {
+                Value = x.Id.ToString(),
+                Text =
+                    $"{x.Name} ({x.Sku})" +
+                    (x.IsDeleted
+                        ? " — đã xóa"
+                        : string.Empty),
+                Selected = selectedId == x.Id
+            })
+            .ToList();
+    }
+
+    private async Task<IReadOnlyList<SelectListItem>>
+        BuildHistoryMarketOptionsAsync(
+            int? selectedId)
+    {
+        var markets = await _db.Markets
+            .AsNoTracking()
+            .OrderByDescending(x => x.IsActive)
+            .ThenBy(x => x.Name)
+            .ToListAsync();
+
+        return markets
+            .Select(x => new SelectListItem
+            {
+                Value = x.Id.ToString(),
+                Text =
+                    $"{x.Name} ({x.Code})" +
+                    (!x.IsActive
+                        ? " — đã tắt"
+                        : string.Empty),
+                Selected = selectedId == x.Id
+            })
+            .ToList();
+    }
+
+    private static void NormalizeHistoryDateRange(
+        ref DateTime? from,
+        ref DateTime? to)
+    {
+        from = from?.Date;
+        to = to?.Date;
+
+        if (from.HasValue &&
+            to.HasValue &&
+            from.Value > to.Value)
+        {
+            (from, to) = (to, from);
+        }
+    }
+
+    private async Task<IReadOnlyList<PricingHistoryListItem>>
+        BuildHistoryRowsAsync(
+            IReadOnlyList<PriceHistory> histories)
+    {
         if (histories.Count == 0)
             return Array.Empty<PricingHistoryListItem>();
 
@@ -565,7 +869,7 @@ public class PricingController : Controller
             }
         }
 
-        return rows.Take(take).ToList();
+        return rows;
     }
 
     private static void AddMoneyHistory(

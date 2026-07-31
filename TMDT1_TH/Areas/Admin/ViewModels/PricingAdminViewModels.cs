@@ -1,4 +1,4 @@
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Mvc.ModelBinding.Validation;
 using Microsoft.AspNetCore.Mvc.Rendering;
 
@@ -9,6 +9,8 @@ public sealed class PricingIndexViewModel
     public IReadOnlyList<PricingScheduleListItem> Items { get; set; } = Array.Empty<PricingScheduleListItem>();
     public IReadOnlyList<PricingHistoryListItem> History { get; set; } = Array.Empty<PricingHistoryListItem>();
     public IReadOnlyList<SelectListItem> MarketFilterOptions { get; set; } = Array.Empty<SelectListItem>();
+    public IReadOnlyList<SelectListItem> HistoryProductFilterOptions { get; set; } = Array.Empty<SelectListItem>();
+    public IReadOnlyList<SelectListItem> HistoryMarketFilterOptions { get; set; } = Array.Empty<SelectListItem>();
 
     public PricingScheduleFormViewModel Form { get; set; } = new PricingScheduleFormViewModel();
 
@@ -16,6 +18,40 @@ public sealed class PricingIndexViewModel
     public int? MarketId { get; set; }
     public string? State { get; set; }
     public bool OpenFormModal { get; set; }
+
+    public string? HistoryQuery { get; set; }
+    public int? HistoryProductId { get; set; }
+    public int? HistoryMarketId { get; set; }
+    public DateTime? HistoryFrom { get; set; }
+    public DateTime? HistoryTo { get; set; }
+    public int HistoryPage { get; set; } = 1;
+    public int HistoryPageSize { get; set; } = 25;
+    public int HistoryTotalEvents { get; set; }
+    public string ActiveTab { get; set; } = "prices";
+
+    public int HistoryTotalPages =>
+        Math.Max(
+            1,
+            (int)Math.Ceiling(
+                HistoryTotalEvents /
+                (double)HistoryPageSize));
+
+    public bool HistoryHasPreviousPage =>
+        HistoryPage > 1;
+
+    public bool HistoryHasNextPage =>
+        HistoryPage < HistoryTotalPages;
+
+    public int HistoryFirstEvent =>
+        HistoryTotalEvents == 0
+            ? 0
+            : (HistoryPage - 1) *
+              HistoryPageSize + 1;
+
+    public int HistoryLastEvent =>
+        Math.Min(
+            HistoryPage * HistoryPageSize,
+            HistoryTotalEvents);
 
     public int CurrentCount { get; set; }
     public int UpcomingCount { get; set; }
