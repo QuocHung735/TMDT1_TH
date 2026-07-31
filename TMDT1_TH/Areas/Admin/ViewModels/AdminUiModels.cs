@@ -57,6 +57,7 @@ public sealed record ProductRow(
     string Price,
     int Stock,
     string Status,
+    ProductStatus StatusValue,
     string Initials,
     string Tone,
     string? ImageUrl,

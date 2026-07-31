@@ -149,19 +149,32 @@ else
                             </button>
                         </form>
 
-                        <form asp-action="Delete"
-                              method="post"
-                              onsubmit="return confirm('Bạn chắc chắn muốn xóa thương hiệu này?');">
-                            @Html.AntiForgeryToken()
-                            <input type="hidden"
-                                   name="id"
-                                   value="@item.Id" />
-                            <button class="icon-btn icon-btn--danger"
-                                    type="submit"
-                                    title="Xóa">
-                                <i class="bi bi-trash3"></i>
+                        @if (!item.IsActive &&
+                             item.ProductCount == 0)
+                        {
+                            <form asp-action="Delete"
+                                  method="post"
+                                  onsubmit="return confirm('Xóa mềm thương hiệu này? Thương hiệu không được thuộc khuyến mãi đang hoạt động.');">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden"
+                                       name="id"
+                                       value="@item.Id" />
+                                <button class="icon-btn icon-btn--danger"
+                                        type="submit"
+                                        title="Xóa mềm">
+                                    <i class="bi bi-trash3"></i>
+                                </button>
+                            </form>
+                        }
+                        else
+                        {
+                            <button class="icon-btn"
+                                    type="button"
+                                    disabled
+                                    title="Hãy tạm ẩn thương hiệu và chuyển hết sản phẩm trước khi xóa mềm.">
+                                <i class="bi bi-shield-lock"></i>
                             </button>
-                        </form>
+                        }
                     </div>
                 </div>
 

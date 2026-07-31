@@ -124,6 +124,7 @@ public class ProductsController : Controller
                 FormatPriceRange(currentPrices, culture),
                 stock,
                 GetStatusLabel(product.Status, stock),
+                product.Status,
                 GetInitials(product.Name),
                 tones[index % tones.Length],
                 imageUrl,
@@ -587,6 +588,63 @@ public class ProductsController : Controller
         if (product is null)
             return NotFound();
 
+        if (product.Status is
+            ProductStatus.Active or
+            ProductStatus.OutOfStock)
+        {
+            TempData["Error"] =
+                "Hãy chuyển sản phẩm sang Tạm ẩn hoặc " +
+                "Ngừng kinh doanh trước khi xóa mềm.";
+
+            return RedirectToAction(nameof(Index));
+        }
+
+        var totalStock = product.HasVariants
+            ? product.Variants
+                .Where(x => !x.IsDeleted)
+                .Sum(x => x.StockQuantity)
+            : product.StockQuantity;
+
+        if (totalStock > 0)
+        {
+            TempData["Error"] =
+                $"Không thể xóa sản phẩm đang còn {totalStock:N0} " +
+                "đơn vị tồn kho. Hãy xử lý hoặc điều chỉnh tồn kho " +
+                "về 0 trước.";
+
+            return RedirectToAction(nameof(Index));
+        }
+
+        var hasOpenOrders = await _db.OrderItems
+            .AnyAsync(x =>
+                x.ProductId == id &&
+                x.Order.Status != OrderStatus.Completed &&
+                x.Order.Status != OrderStatus.Cancelled);
+
+        if (hasOpenOrders)
+        {
+            TempData["Error"] =
+                "Không thể xóa sản phẩm đang có đơn hàng chưa " +
+                "hoàn tất. Hãy hoàn thành hoặc hủy các đơn liên quan trước.";
+
+            return RedirectToAction(nameof(Index));
+        }
+
+        var hasActivePromotion =
+            await _db.PromotionProducts
+                .AnyAsync(x =>
+                    x.ProductId == id &&
+                    x.Promotion.IsActive);
+
+        if (hasActivePromotion)
+        {
+            TempData["Error"] =
+                "Không thể xóa sản phẩm đang nằm trong khuyến mãi " +
+                "hoạt động. Hãy tắt hoặc chỉnh lại khuyến mãi trước.";
+
+            return RedirectToAction(nameof(Index));
+        }
+
         product.IsDeleted = true;
         product.Status = ProductStatus.Discontinued;
         product.UpdatedBy = CurrentUserName();
@@ -597,6 +655,7 @@ public class ProductsController : Controller
             variant.IsActive = false;
             variant.IsDefault = false;
             variant.UpdatedBy = CurrentUserName();
+
             foreach (var price in variant.PriceSchedules)
                 price.IsActive = false;
         }
@@ -605,7 +664,11 @@ public class ProductsController : Controller
             price.IsActive = false;
 
         await _db.SaveChangesAsync();
-        TempData["Success"] = $"Đã xóa mềm sản phẩm “{product.Name}”.";
+
+        TempData["Success"] =
+            $"Đã xóa mềm sản phẩm “{product.Name}”. " +
+            "Đơn hàng, lịch sử giá và dữ liệu liên quan vẫn được giữ lại.";
+
         return RedirectToAction(nameof(Index));
     }
 

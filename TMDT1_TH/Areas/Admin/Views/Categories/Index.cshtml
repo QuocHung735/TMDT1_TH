@@ -1,4 +1,4 @@
-@model CategoriesViewModel
+﻿@model CategoriesViewModel
 @{
     ViewData["Title"] = "Quản lý danh mục";
     ViewData["Description"] = "Tổ chức sản phẩm theo cấu trúc dễ tìm kiếm và thuận tiện cho người mua.";
@@ -63,11 +63,31 @@
                                 <input type="hidden" name="id" value="@item.Id" />
                                 <button class="icon-btn" type="submit" title="@(item.IsActive ? "Ẩn danh mục" : "Hiển thị danh mục")"><i class="bi @(item.IsActive ? "bi-eye-slash" : "bi-eye")"></i></button>
                             </form>
-                            <form asp-action="Delete" method="post" onsubmit="return confirm('Bạn chắc chắn muốn xóa danh mục này?');">
-                                @Html.AntiForgeryToken()
-                                <input type="hidden" name="id" value="@item.Id" />
-                                <button class="icon-btn icon-btn--danger" type="submit" title="Xóa"><i class="bi bi-trash3"></i></button>
-                            </form>
+                            @if (!item.IsActive && item.ProductCount == 0)
+                            {
+                                <form asp-action="Delete"
+                                      method="post"
+                                      onsubmit="return confirm('Xóa mềm danh mục này? Danh mục chỉ được xóa khi không còn danh mục con và không thuộc khuyến mãi hoạt động.');">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden"
+                                           name="id"
+                                           value="@item.Id" />
+                                    <button class="icon-btn icon-btn--danger"
+                                            type="submit"
+                                            title="Xóa mềm">
+                                        <i class="bi bi-trash3"></i>
+                                    </button>
+                                </form>
+                            }
+                            else
+                            {
+                                <button class="icon-btn"
+                                        type="button"
+                                        disabled
+                                        title="Hãy ẩn danh mục và chuyển hết sản phẩm trước khi xóa mềm.">
+                                    <i class="bi bi-shield-lock"></i>
+                                </button>
+                            }
                         </td>
                     </tr>
                 }

@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using TMDT1_TH.Areas.Admin.ViewModels;
@@ -138,31 +138,89 @@ public class CategoriesController(ApplicationDbContext dbContext) : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Delete(int id, CancellationToken cancellationToken)
+    public async Task<IActionResult> Delete(
+        int id,
+        CancellationToken cancellationToken)
     {
-        var category = await dbContext.Categories.FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
+        var category = await dbContext.Categories
+            .FirstOrDefaultAsync(
+                x => x.Id == id,
+                cancellationToken);
+
         if (category is null)
         {
-            TempData["Error"] = "Không tìm thấy danh mục.";
+            TempData["Error"] =
+                "Không tìm thấy danh mục.";
+
             return RedirectToAction(nameof(Index));
         }
 
-        var hasChildren = await dbContext.Categories.AnyAsync(x => x.ParentId == id, cancellationToken);
-        var hasProducts = await dbContext.Products.AnyAsync(x => x.CategoryId == id, cancellationToken);
-
-        if (hasChildren || hasProducts)
+        if (category.IsActive)
         {
-            TempData["Error"] = hasChildren
-                ? "Không thể xóa danh mục đang có danh mục con. Hãy di chuyển hoặc xóa danh mục con trước."
-                : "Không thể xóa danh mục đang có sản phẩm. Bạn có thể chuyển sang trạng thái ẩn.";
+            TempData["Error"] =
+                "Hãy ẩn danh mục trước khi xóa mềm. " +
+                "Bước này giúp tránh xóa nhầm danh mục đang hiển thị.";
+
+            return RedirectToAction(nameof(Index));
+        }
+
+        var hasChildren = await dbContext.Categories
+            .AnyAsync(
+                x => x.ParentId == id,
+                cancellationToken);
+
+        if (hasChildren)
+        {
+            TempData["Error"] =
+                "Không thể xóa danh mục đang có danh mục con. " +
+                "Hãy di chuyển hoặc xóa mềm danh mục con trước.";
+
+            return RedirectToAction(nameof(Index));
+        }
+
+        var hasProducts = await dbContext.Products
+            .AnyAsync(
+                x => x.CategoryId == id,
+                cancellationToken);
+
+        if (hasProducts)
+        {
+            TempData["Error"] =
+                "Không thể xóa danh mục đang có sản phẩm. " +
+                "Hãy chuyển sản phẩm sang danh mục khác trước.";
+
+            return RedirectToAction(nameof(Index));
+        }
+
+        var hasActivePromotion =
+            await dbContext.PromotionCategories
+                .AnyAsync(
+                    x =>
+                        x.CategoryId == id &&
+                        x.Promotion.IsActive,
+                    cancellationToken);
+
+        if (hasActivePromotion)
+        {
+            TempData["Error"] =
+                "Không thể xóa danh mục đang được dùng bởi " +
+                "khuyến mãi hoạt động. Hãy tắt hoặc chỉnh lại " +
+                "khuyến mãi trước.";
+
             return RedirectToAction(nameof(Index));
         }
 
         category.IsDeleted = true;
         category.IsActive = false;
-        await dbContext.SaveChangesAsync(cancellationToken);
+        category.UpdatedBy = CurrentUserName();
 
-        TempData["Success"] = $"Đã xóa danh mục “{category.Name}”.";
+        await dbContext.SaveChangesAsync(
+            cancellationToken);
+
+        TempData["Success"] =
+            $"Đã xóa mềm danh mục “{category.Name}”. " +
+            "Dữ liệu vẫn được giữ trong cơ sở dữ liệu.";
+
         return RedirectToAction(nameof(Index));
     }
 
@@ -351,7 +409,13 @@ public class CategoriesController(ApplicationDbContext dbContext) : Controller
         return result;
     }
 
-    private static string? Clean(string? value) => string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+    private string CurrentUserName() =>
+        User.Identity?.Name ?? "Admin";
+
+    private static string? Clean(string? value) =>
+        string.IsNullOrWhiteSpace(value)
+            ? null
+            : value.Trim();
 
     private sealed record CategoryData(
         int Id,

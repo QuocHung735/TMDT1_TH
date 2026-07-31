@@ -1,4 +1,4 @@
-@using TMDT1_TH.Domain.Enums
+﻿@using TMDT1_TH.Domain.Enums
 @model ProductsViewModel
 @{
     ViewData["Title"] = "Quản lý sản phẩm";
@@ -114,10 +114,37 @@
                                 @Html.AntiForgeryToken()
                                 <button class="icon-btn" type="submit" title="Bật hoặc tạm ẩn"><i class="bi bi-eye"></i></button>
                             </form>
-                            <form asp-action="Delete" asp-route-id="@item.Id" method="post" style="display:inline" onsubmit="return confirm('Xóa sản phẩm này? Dữ liệu sẽ được xóa mềm và lịch sử giá vẫn được giữ lại.');">
-                                @Html.AntiForgeryToken()
-                                <button class="icon-btn" type="submit" title="Xóa"><i class="bi bi-trash"></i></button>
-                            </form>
+                            @{
+                                var canRequestDelete =
+                                    item.Stock == 0 &&
+                                    item.StatusValue != ProductStatus.Active &&
+                                    item.StatusValue != ProductStatus.OutOfStock;
+                            }
+
+                            @if (canRequestDelete)
+                            {
+                                <form asp-action="Delete"
+                                      asp-route-id="@item.Id"
+                                      method="post"
+                                      style="display:inline"
+                                      onsubmit="return confirm('Xóa mềm sản phẩm này? Thao tác chỉ thành công khi không còn đơn chưa hoàn tất và không thuộc khuyến mãi hoạt động.');">
+                                    @Html.AntiForgeryToken()
+                                    <button class="icon-btn icon-btn--danger"
+                                            type="submit"
+                                            title="Xóa mềm">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </form>
+                            }
+                            else
+                            {
+                                <button class="icon-btn"
+                                        type="button"
+                                        disabled
+                                        title="Hãy tạm ẩn/ngừng bán và xử lý tồn kho về 0 trước khi xóa mềm.">
+                                    <i class="bi bi-shield-lock"></i>
+                                </button>
+                            }
                         </td>
                     </tr>
                 }

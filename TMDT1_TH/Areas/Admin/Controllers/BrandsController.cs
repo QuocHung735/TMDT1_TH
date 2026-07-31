@@ -316,6 +316,15 @@ public class BrandsController(
             return RedirectToAction(nameof(Index));
         }
 
+        if (brand.IsActive)
+        {
+            TempData["Error"] =
+                "Hãy tạm ẩn thương hiệu trước khi xóa mềm. " +
+                "Bước này giúp tránh xóa nhầm thương hiệu đang sử dụng.";
+
+            return RedirectToAction(nameof(Index));
+        }
+
         var hasProducts = await dbContext.Products
             .AnyAsync(
                 x => x.BrandId == id,
@@ -325,24 +334,41 @@ public class BrandsController(
         {
             TempData["Error"] =
                 "Không thể xóa thương hiệu đang có sản phẩm. " +
-                "Bạn có thể chuyển sang trạng thái tạm ẩn.";
+                "Hãy chuyển sản phẩm sang thương hiệu khác trước.";
 
             return RedirectToAction(nameof(Index));
         }
 
-        var oldLogoUrl = brand.LogoUrl;
+        var hasActivePromotion =
+            await dbContext.PromotionBrands
+                .AnyAsync(
+                    x =>
+                        x.BrandId == id &&
+                        x.Promotion.IsActive,
+                    cancellationToken);
+
+        if (hasActivePromotion)
+        {
+            TempData["Error"] =
+                "Không thể xóa thương hiệu đang được dùng bởi " +
+                "khuyến mãi hoạt động. Hãy tắt hoặc chỉnh lại " +
+                "khuyến mãi trước.";
+
+            return RedirectToAction(nameof(Index));
+        }
 
         brand.IsDeleted = true;
         brand.IsActive = false;
-        brand.LogoUrl = null;
         brand.UpdatedBy = CurrentUserName();
 
-        await dbContext.SaveChangesAsync(cancellationToken);
-
-        DeleteLocalLogo(oldLogoUrl);
+        // Đây là xóa mềm nên giữ lại LogoUrl và tệp logo.
+        // Dữ liệu có thể được kiểm tra hoặc phục hồi về sau.
+        await dbContext.SaveChangesAsync(
+            cancellationToken);
 
         TempData["Success"] =
-            $"Đã xóa thương hiệu “{brand.Name}”.";
+            $"Đã xóa mềm thương hiệu “{brand.Name}”. " +
+            "Thông tin và logo vẫn được giữ trong cơ sở dữ liệu.";
 
         return RedirectToAction(nameof(Index));
     }
