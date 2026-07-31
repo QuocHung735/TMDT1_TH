@@ -150,6 +150,10 @@ await IdentitySeeder.SeedAsync(
     app.Configuration,
     app.Logger);
 
+await HouseholdCatalogSeeder.TrySeedAsync(
+    app.Services,
+    app.Logger);
+
 app.Run();
 
 

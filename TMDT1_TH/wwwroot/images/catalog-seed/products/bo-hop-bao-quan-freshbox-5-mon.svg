@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="1200" viewBox="0 0 1200 1200">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#7fcdb5" stop-opacity=".92"/>
+      <stop offset="1" stop-color="#f7f4ff"/>
+    </linearGradient>
+    <filter id="shadow" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="18" stdDeviation="24" flood-color="#514b6b" flood-opacity=".16"/>
+    </filter>
+  </defs>
+  <rect width="1200" height="1200" rx="80" fill="url(#bg)"/>
+  <circle cx="1000" cy="180" r="170" fill="#ffffff" opacity=".28"/>
+  <circle cx="1040" cy="1040" r="250" fill="#ffffff" opacity=".20"/>
+  <rect x="92" y="92" width="270" height="54" rx="27" fill="#ffffff" opacity=".88"/>
+  <text x="227" y="128" text-anchor="middle" font-family="Arial, sans-serif" font-size="24" font-weight="700" fill="#514b6b">MÂY HOME • DEMO</text>
+  <g filter="url(#shadow)">
+    <rect x="140" y="270" width="920" height="520" rx="64" fill="#ffffff" opacity=".90"/>
+    <rect x="245" y="365" width="710" height="330" rx="48" fill="#7fcdb5" opacity=".22"/>
+    <circle cx="600" cy="530" r="118" fill="#ffffff" opacity=".92"/>
+    <path d="M540 550h120M560 505h80M575 595h50" stroke="#625c78" stroke-width="22" stroke-linecap="round" opacity=".72"/>
+  </g>
+  <text x="92" y="890" font-family="Arial, sans-serif" font-size="52" font-weight="700" fill="#322f43"><tspan x="92" dy="0">Bộ hộp bảo quản FreshBox</tspan>
+<tspan x="92" dy="62">5 món</tspan></text>
+  <text x="92" y="1100" font-family="Arial, sans-serif" font-size="28" fill="#5e596f">Lưu trữ thực phẩm · HOME-BOX-FB5</text>
+</svg>

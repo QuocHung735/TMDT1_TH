@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="720" viewBox="0 0 1200 720">
+  <defs>
+    <linearGradient id="c" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#f3b37a"/>
+      <stop offset="1" stop-color="#f5f1ff"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="720" rx="52" fill="url(#c)"/>
+  <circle cx="1010" cy="130" r="180" fill="#fff" opacity=".25"/>
+  <circle cx="1030" cy="610" r="260" fill="#fff" opacity=".18"/>
+  <rect x="70" y="70" width="250" height="48" rx="24" fill="#fff" opacity=".86"/>
+  <text x="195" y="102" text-anchor="middle" font-family="Arial, sans-serif" font-size="21" font-weight="700" fill="#514b6b">MÂY HOME</text>
+  <text x="70" y="350" font-family="Arial, sans-serif" font-size="48" font-weight="700" fill="#322f43"><tspan x="70" dy="0">Nhà bếp</tspan></text>
+  <text x="70" y="555" font-family="Arial, sans-serif" font-size="25" fill="#5e596f">Đồ dùng thiết yếu giúp việc chuẩn bị và bảo quản thực phẩm thuận tiện hơn.</text>
+</svg>
