@@ -4,9 +4,7 @@
 @{
     ViewData["Title"] = Model.IsEdit ? "Chỉnh sửa sản phẩm" : "Thêm sản phẩm";
     ViewData["Description"] = "Quản lý nội dung đăng bán, hình ảnh, SKU biến thể, giá, tồn kho và thông tin vận chuyển.";
-    var saveDisabled = Model.StoreOptions.Count == 0 ||
-        Model.CategoryOptions.Count == 0 ||
-        Model.BrandOptions.Count == 0;
+    var saveDisabled = Model.CategoryOptions.Count == 0 || Model.BrandOptions.Count == 0;
     var validFromValue = Model.ValidFrom.ToString("yyyy-MM-ddTHH:mm");
     var validToValue = Model.ValidTo?.ToString("yyyy-MM-ddTHH:mm");
     var variantJson = JsonSerializer.Serialize(Model.Variants, new JsonSerializerOptions
@@ -26,7 +24,7 @@
         <i class="bi bi-exclamation-triangle"></i>
         <div>
             <strong>Chưa thể tạo sản phẩm</strong>
-            <p>Hãy tạo ít nhất một cửa hàng, danh mục và thương hiệu đang hoạt động trước khi tiếp tục.</p>
+            <p>Hãy tạo ít nhất một danh mục và một thương hiệu đang hoạt động trước khi tiếp tục.</p>
         </div>
     </div>
 }
@@ -112,7 +110,6 @@
                 </div>
 
                 <div class="form-grid form-grid--2">
-                    <label class="form-field"><span>Cửa hàng <em>*</em></span><select asp-for="StoreId" asp-items="Model.StoreOptions"><option value="">Chọn cửa hàng</option></select><span asp-validation-for="StoreId"></span></label>
                     <label class="form-field"><span>Danh mục <em>*</em></span><select asp-for="CategoryId" asp-items="Model.CategoryOptions" data-product-category><option value="">Chọn danh mục</option></select><span asp-validation-for="CategoryId"></span></label>
                     <label class="form-field"><span>Thương hiệu <em>*</em></span><select asp-for="BrandId" asp-items="Model.BrandOptions" data-product-brand><option value="">Chọn thương hiệu</option></select><span asp-validation-for="BrandId"></span></label>
                 </div>

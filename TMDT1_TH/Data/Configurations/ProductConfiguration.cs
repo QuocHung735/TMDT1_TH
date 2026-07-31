@@ -36,8 +36,6 @@ public class ProductConfiguration : IEntityTypeConfiguration<Product>
         builder.Property(x => x.PackageHeightCm).HasPrecision(10, 2);
         builder.Property(x => x.LowStockThreshold).HasDefaultValue(5);
         builder.Property(x => x.MinPurchaseQuantity).HasDefaultValue(1);
-        builder.Property(x => x.StoreId)
-            .HasDefaultValue(StoreDefaults.OfficialStoreId);
 
         builder.HasIndex(x => x.Slug)
             .IsUnique()
@@ -53,7 +51,6 @@ public class ProductConfiguration : IEntityTypeConfiguration<Product>
 
         builder.HasIndex(x => new { x.CategoryId, x.Status });
         builder.HasIndex(x => new { x.BrandId, x.Status });
-        builder.HasIndex(x => new { x.StoreId, x.Status });
         builder.HasQueryFilter(x => !x.IsDeleted);
 
         builder.HasOne(x => x.Category)
@@ -65,13 +62,5 @@ public class ProductConfiguration : IEntityTypeConfiguration<Product>
             .WithMany(x => x.Products)
             .HasForeignKey(x => x.BrandId)
             .OnDelete(DeleteBehavior.Restrict);
-
-        builder.HasOne(x => x.Store)
-            .WithMany(x => x.Products)
-            .HasForeignKey(x => x.StoreId)
-            .OnDelete(DeleteBehavior.Restrict);
     }
 }
-
-
-

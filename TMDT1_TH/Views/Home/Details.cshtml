@@ -19,63 +19,6 @@
         Model.StockQuantity >= Model.MinPurchaseQuantity;
 }
 
-<style>
-    .marketplace-seller-card {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        margin: 16px 0;
-        padding: 14px;
-        border: 1px solid #e8e1ee;
-        border-radius: 16px;
-        background: #fcfaff;
-    }
-
-    .marketplace-seller-card__logo {
-        display: grid;
-        place-items: center;
-        width: 48px;
-        height: 48px;
-        flex: 0 0 48px;
-        overflow: hidden;
-        border-radius: 14px;
-        background: #eee7f4;
-        color: #684983;
-        font-weight: 800;
-    }
-
-    .marketplace-seller-card__logo img {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-    }
-
-    .marketplace-seller-card__content {
-        display: grid;
-        gap: 3px;
-    }
-
-    .marketplace-seller-card__content small {
-        color: #81758b;
-        font-size: 11px;
-        letter-spacing: .08em;
-    }
-
-    .marketplace-seller-card__content strong {
-        display: flex;
-        align-items: center;
-        gap: 6px;
-    }
-
-    .marketplace-seller-card__content strong i {
-        color: #76539b;
-    }
-
-    .marketplace-seller-card__content span {
-        color: #706779;
-        font-size: 13px;
-    }
-</style>
 <section class="product-breadcrumb">
     <div class="store-container">
         <a asp-controller="Home" asp-action="Index">Trang chủ</a>
@@ -141,43 +84,6 @@
                 </a>
             </div>
 
-            <section class="marketplace-seller-card">
-                <div class="marketplace-seller-card__logo">
-                    @if (!string.IsNullOrWhiteSpace(Model.StoreLogoUrl))
-                    {
-                        <img src="@Model.StoreLogoUrl"
-                             alt="@Model.StoreName" />
-                    }
-                    else
-                    {
-                        <span>
-                            @Model.StoreName.Substring(0, 1).ToUpperInvariant()
-                        </span>
-                    }
-                </div>
-
-                <div class="marketplace-seller-card__content">
-                    <small>ĐƯỢC BÁN BỞI</small>
-                    <strong>
-                        @Model.StoreName
-                        @if (Model.StoreIsVerified)
-                        {
-                            <i class="bi bi-patch-check-fill"
-                               title="Người bán đã được xác minh"></i>
-                        }
-                    </strong>
-
-                    <span>
-                        @(string.IsNullOrWhiteSpace(Model.StoreLocation)
-                            ? "Địa điểm đang cập nhật"
-                            : Model.StoreLocation)
-                        ·
-                        @(Model.StoreReliabilityScore.HasValue
-                            ? $"Uy tín {Model.StoreReliabilityScore:0.##}/100"
-                            : "Chưa đủ dữ liệu uy tín")
-                    </span>
-                </div>
-            </section>
             <div class="product-price-box">
                 <div class="product-price-box__sale" data-sale-price>
                     @if (!Model.HasVariants && Model.SalePrice.HasValue)

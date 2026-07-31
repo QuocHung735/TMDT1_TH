@@ -13,7 +13,6 @@ public class ApplicationDbContext(
 {
     public DbSet<Category> Categories => Set<Category>();
     public DbSet<Brand> Brands => Set<Brand>();
-    public DbSet<Store> Stores => Set<Store>();
     public DbSet<Product> Products => Set<Product>();
     public DbSet<ProductImage> ProductImages => Set<ProductImage>();
     public DbSet<ProductOption> ProductOptions => Set<ProductOption>();
@@ -83,7 +82,6 @@ public class ApplicationDbContext(
         }
     }
 }
-
 
 
 

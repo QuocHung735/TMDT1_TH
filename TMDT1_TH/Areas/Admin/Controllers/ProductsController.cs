@@ -47,7 +47,6 @@ public class ProductsController : Controller
             .AsNoTracking()
             .Include(x => x.Category)
             .Include(x => x.Brand)
-            .Include(x => x.Store)
             .Include(x => x.Images)
             .Include(x => x.Specifications)
             .Include(x => x.PriceSchedules)
@@ -158,7 +157,6 @@ public class ProductsController : Controller
     {
         var model = new ProductEditorViewModel
         {
-            StoreId = await GetDefaultStoreIdAsync(),
             MarketId = await GetDefaultMarketIdAsync(),
             ValidFrom = DateTime.Now,
             Status = ProductStatus.Draft,
@@ -462,7 +460,6 @@ public class ProductsController : Controller
         {
             CategoryId = source.CategoryId,
             BrandId = source.BrandId,
-            StoreId = source.StoreId,
             Name = copyName,
             Slug = await CreateUniqueSlugAsync(copyName, null),
             Sku = copyCodes.Sku,
@@ -647,7 +644,6 @@ public class ProductsController : Controller
             Unit = product.Unit,
             CategoryId = product.CategoryId,
             BrandId = product.BrandId,
-            StoreId = product.StoreId,
             ShortDescription = product.ShortDescription,
             Description = product.Description,
             CountryOfOrigin = product.CountryOfOrigin,
@@ -834,18 +830,10 @@ public class ProductsController : Controller
             .AsNoTracking()
             .AnyAsync(x => x.Id == model.BrandId.Value && x.IsActive);
 
-        var storeExists = model.StoreId.HasValue && await _db.Stores
-            .AsNoTracking()
-            .AnyAsync(x =>
-                x.Id == model.StoreId.Value &&
-                x.IsActive);
-
         if (!categoryExists)
             ModelState.AddModelError(nameof(model.CategoryId), "Danh mục không tồn tại hoặc đã bị ẩn.");
         if (!brandExists)
             ModelState.AddModelError(nameof(model.BrandId), "Thương hiệu không tồn tại hoặc đã bị ẩn.");
-        if (!storeExists)
-            ModelState.AddModelError(nameof(model.StoreId), "Cửa hàng không tồn tại hoặc đã bị ẩn.");
 
         var anyPrice = model.HasVariants
             ? model.Variants.Any(x => HasPrice(x.CostPrice, x.ListPrice, x.SalePrice))
@@ -1007,7 +995,6 @@ public class ProductsController : Controller
         product.Unit = model.Unit.Trim();
         product.CategoryId = model.CategoryId!.Value;
         product.BrandId = model.BrandId!.Value;
-        product.StoreId = model.StoreId!.Value;
         var description = NullIfWhiteSpace(model.Description);
         product.Description = description;
         product.ShortDescription = description is null
@@ -1488,23 +1475,6 @@ public class ProductsController : Controller
     {
         model.CategoryOptions = await BuildCategoryOptionsAsync(model.CategoryId);
         model.BrandOptions = await BuildBrandOptionsAsync(model.BrandId);
-        model.StoreOptions = await _db.Stores
-            .AsNoTracking()
-            .Where(x =>
-                x.IsActive ||
-                x.Id == model.StoreId)
-            .OrderBy(x => x.DisplayOrder)
-            .ThenBy(x => x.Name)
-            .Select(x => new SelectListItem
-            {
-                Value = x.Id.ToString(),
-                Text = x.IsVerified
-                    ? $"{x.Name} · Đã xác minh"
-                    : x.Name,
-                Selected = model.StoreId == x.Id
-            })
-            .ToListAsync();
-
         model.MarketOptions = await _db.Markets
             .AsNoTracking()
             .Where(x => x.IsActive)
@@ -1579,22 +1549,6 @@ public class ProductsController : Controller
                 Selected = selectedId == x.Id
             })
             .ToListAsync();
-    }
-
-    private async Task<int?> GetDefaultStoreIdAsync()
-    {
-        return await _db.Stores
-            .AsNoTracking()
-            .Where(x => x.IsActive)
-            .OrderBy(x =>
-                x.Id ==
-                StoreDefaults.OfficialStoreId
-                    ? 0
-                    : 1)
-            .ThenBy(x => x.DisplayOrder)
-            .ThenBy(x => x.Name)
-            .Select(x => (int?)x.Id)
-            .FirstOrDefaultAsync();
     }
 
     private async Task<int?> GetDefaultMarketIdAsync()

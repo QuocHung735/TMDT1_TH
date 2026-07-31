@@ -959,11 +959,6 @@ namespace TMDT1_TH.Migrations
                     b.Property<int>("StockQuantity")
                         .HasColumnType("int");
 
-                    b.Property<int>("StoreId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int")
-                        .HasDefaultValue(1);
-
                     b.Property<string>("Unit")
                         .IsRequired()
                         .ValueGeneratedOnAdd()
@@ -1003,8 +998,6 @@ namespace TMDT1_TH.Migrations
                     b.HasIndex("BrandId", "Status");
 
                     b.HasIndex("CategoryId", "Status");
-
-                    b.HasIndex("StoreId", "Status");
 
                     b.ToTable("Products", null, t =>
                         {
@@ -1826,112 +1819,6 @@ namespace TMDT1_TH.Migrations
                         });
                 });
 
-            modelBuilder.Entity("TMDT1_TH.Domain.Entities.Store", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("AddressLine")
-                        .HasMaxLength(400)
-                        .HasColumnType("nvarchar(400)");
-
-                    b.Property<string>("ContactEmail")
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("datetime2")
-                        .HasDefaultValueSql("SYSUTCDATETIME()");
-
-                    b.Property<string>("CreatedBy")
-                        .HasMaxLength(150)
-                        .HasColumnType("nvarchar(150)");
-
-                    b.Property<string>("Description")
-                        .HasMaxLength(1200)
-                        .HasColumnType("nvarchar(1200)");
-
-                    b.Property<int>("DisplayOrder")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int")
-                        .HasDefaultValue(0);
-
-                    b.Property<string>("District")
-                        .HasMaxLength(150)
-                        .HasColumnType("nvarchar(150)");
-
-                    b.Property<bool>("IsActive")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bit")
-                        .HasDefaultValue(true);
-
-                    b.Property<bool>("IsDeleted")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bit")
-                        .HasDefaultValue(false);
-
-                    b.Property<bool>("IsVerified")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bit")
-                        .HasDefaultValue(false);
-
-                    b.Property<string>("LogoUrl")
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
-                    b.Property<string>("PhoneNumber")
-                        .HasMaxLength(30)
-                        .HasColumnType("nvarchar(30)");
-
-                    b.Property<string>("Province")
-                        .HasMaxLength(150)
-                        .HasColumnType("nvarchar(150)");
-
-                    b.Property<decimal?>("ReliabilityScore")
-                        .HasPrecision(5, 2)
-                        .HasColumnType("decimal(5,2)");
-
-                    b.Property<string>("Slug")
-                        .IsRequired()
-                        .HasMaxLength(220)
-                        .HasColumnType("nvarchar(220)");
-
-                    b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("UpdatedBy")
-                        .HasMaxLength(150)
-                        .HasColumnType("nvarchar(150)");
-
-                    b.Property<string>("Ward")
-                        .HasMaxLength(150)
-                        .HasColumnType("nvarchar(150)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("Slug")
-                        .IsUnique()
-                        .HasFilter("[IsDeleted] = 0");
-
-                    b.HasIndex("IsActive", "DisplayOrder", "Name");
-
-                    b.ToTable("Stores", null, t =>
-                        {
-                            t.HasCheckConstraint("CK_Stores_DisplayOrder", "[DisplayOrder] >= 0");
-
-                            t.HasCheckConstraint("CK_Stores_ReliabilityScore", "[ReliabilityScore] IS NULL OR ([ReliabilityScore] >= 0 AND [ReliabilityScore] <= 100)");
-                        });
-                });
-
             modelBuilder.Entity("TMDT1_TH.Domain.Identity.ApplicationUser", b =>
                 {
                     b.Property<int>("Id")
@@ -2190,17 +2077,9 @@ namespace TMDT1_TH.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("TMDT1_TH.Domain.Entities.Store", "Store")
-                        .WithMany("Products")
-                        .HasForeignKey("StoreId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
                     b.Navigation("Brand");
 
                     b.Navigation("Category");
-
-                    b.Navigation("Store");
                 });
 
             modelBuilder.Entity("TMDT1_TH.Domain.Entities.ProductImage", b =>
@@ -2501,11 +2380,6 @@ namespace TMDT1_TH.Migrations
             modelBuilder.Entity("TMDT1_TH.Domain.Entities.ShippingService", b =>
                 {
                     b.Navigation("Orders");
-                });
-
-            modelBuilder.Entity("TMDT1_TH.Domain.Entities.Store", b =>
-                {
-                    b.Navigation("Products");
                 });
 
             modelBuilder.Entity("TMDT1_TH.Domain.Identity.ApplicationUser", b =>
