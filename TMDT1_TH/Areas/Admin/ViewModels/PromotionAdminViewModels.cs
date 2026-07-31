@@ -185,4 +185,8 @@ public sealed class PromotionListItem
     public string Status { get; set; } = string.Empty;
     public bool IsActive { get; set; }
     public int UsedCount { get; set; }
+    public bool HasRedemptionHistory { get; set; }
+    public bool CanPermanentlyDelete { get; set; }
+    public string DeleteConstraintText { get; set; }
+        = string.Empty;
 }

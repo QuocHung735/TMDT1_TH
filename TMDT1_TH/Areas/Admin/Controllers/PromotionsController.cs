@@ -1,4 +1,5 @@
-﻿using System.Globalization;
+﻿using System.Data;
+using System.Globalization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
@@ -263,6 +264,7 @@ public sealed class PromotionsController(
         TryValidateModel(form, nameof(page.Form));
 
         await ValidateReferencesAsync(form);
+        await ValidateUsageLimitAsync(form);
 
         if (!ModelState.IsValid)
         {
@@ -358,36 +360,119 @@ public sealed class PromotionsController(
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Delete(int id)
+    public async Task<IActionResult> Delete(
+        int id,
+        CancellationToken cancellationToken)
     {
-        var promotion = await _db.Promotions
-            .FirstOrDefaultAsync(x => x.Id == id);
+        await using var transaction =
+            await _db.Database.BeginTransactionAsync(
+                IsolationLevel.Serializable,
+                cancellationToken);
 
-        if (promotion is null)
-            return NotFound();
-
-        if (promotion.UsedCount > 0)
+        try
         {
-            promotion.IsActive = false;
-            promotion.UpdatedBy = CurrentUserName();
+            var promotion = await _db.Promotions
+                .FirstOrDefaultAsync(
+                    x => x.Id == id,
+                    cancellationToken);
 
-            await _db.SaveChangesAsync();
+            if (promotion is null)
+            {
+                await transaction.RollbackAsync(
+                    cancellationToken);
 
-            TempData["Error"] =
-                "Khuyến mãi đã phát sinh lượt dùng nên chỉ được tạm tắt.";
+                return NotFound();
+            }
+
+            var hasRedemptionHistory =
+                await _db.PromotionRedemptions
+                    .AsNoTracking()
+                    .AnyAsync(
+                        x => x.PromotionId == id,
+                        cancellationToken);
+
+            if (!PromotionConstraintPolicy
+                    .CanPermanentlyDelete(
+                        promotion.UsedCount,
+                        hasRedemptionHistory))
+            {
+                promotion.IsActive = false;
+                promotion.UpdatedBy =
+                    CurrentUserName();
+
+                await _db.SaveChangesAsync(
+                    cancellationToken);
+
+                await transaction.CommitAsync(
+                    cancellationToken);
+
+                TempData["Error"] =
+                    PromotionConstraintPolicy
+                        .DeleteBlockedMessage(
+                            promotion.UsedCount,
+                            hasRedemptionHistory);
+
+                return RedirectToAction(
+                    nameof(Index));
+            }
+
+            _db.Promotions.Remove(promotion);
+
+            await _db.SaveChangesAsync(
+                cancellationToken);
+
+            await transaction.CommitAsync(
+                cancellationToken);
+
+            TempData["Success"] =
+                "Đã xóa chương trình khuyến mãi.";
 
             return RedirectToAction(nameof(Index));
         }
+        catch (DbUpdateException)
+        {
+            await transaction.RollbackAsync(
+                cancellationToken);
 
-        _db.Promotions.Remove(promotion);
-        await _db.SaveChangesAsync();
+            _db.ChangeTracker.Clear();
 
-        TempData["Success"] =
-            "Đã xóa chương trình khuyến mãi.";
+            TempData["Error"] =
+                "Không thể xóa khuyến mãi vì dữ liệu đang được tham chiếu. " +
+                "Hãy tạm tắt chương trình để bảo toàn lịch sử.";
 
-        return RedirectToAction(nameof(Index));
+            return RedirectToAction(nameof(Index));
+        }
     }
 
+    private async Task ValidateUsageLimitAsync(
+        PromotionFormViewModel form)
+    {
+        if (!form.Id.HasValue ||
+            !form.UsageLimit.HasValue)
+        {
+            return;
+        }
+
+        var usedCount = await _db.Promotions
+            .AsNoTracking()
+            .Where(x => x.Id == form.Id.Value)
+            .Select(x => (int?)x.UsedCount)
+            .FirstOrDefaultAsync();
+
+        if (!usedCount.HasValue)
+            return;
+
+        if (!PromotionConstraintPolicy
+                .IsUsageLimitValid(
+                    form.UsageLimit,
+                    usedCount.Value))
+        {
+            ModelState.AddModelError(
+                "Form.UsageLimit",
+                $"Giới hạn lượt dùng không được nhỏ hơn " +
+                $"số lượt đã sử dụng ({usedCount.Value:N0}).");
+        }
+    }
     private async Task<PromotionIndexViewModel>
         BuildModelAsync(
             string? q,
@@ -463,6 +548,24 @@ public sealed class PromotionsController(
             .Take(300)
             .ToListAsync();
 
+        var promotionIds =
+            promotions
+                .Select(x => x.Id)
+                .ToList();
+
+        var promotionIdsWithHistory =
+            promotionIds.Count == 0
+                ? new HashSet<int>()
+                : (await _db.PromotionRedemptions
+                    .AsNoTracking()
+                    .Where(x =>
+                        promotionIds.Contains(
+                            x.PromotionId))
+                    .Select(x => x.PromotionId)
+                    .Distinct()
+                    .ToListAsync())
+                    .ToHashSet();
+
         var items = promotions
             .Select(x => new PromotionListItem
             {
@@ -488,7 +591,22 @@ public sealed class PromotionsController(
                     $"{x.EndsAt:dd/MM/yyyy HH:mm}",
                 Status = GetStatus(x, now),
                 IsActive = x.IsActive,
-                UsedCount = x.UsedCount
+                UsedCount = x.UsedCount,
+                HasRedemptionHistory =
+                    promotionIdsWithHistory.Contains(
+                        x.Id),
+                CanPermanentlyDelete =
+                    PromotionConstraintPolicy
+                        .CanPermanentlyDelete(
+                            x.UsedCount,
+                            promotionIdsWithHistory
+                                .Contains(x.Id)),
+                DeleteConstraintText =
+                    PromotionConstraintPolicy
+                        .DeleteBlockedMessage(
+                            x.UsedCount,
+                            promotionIdsWithHistory
+                                .Contains(x.Id))
             })
             .ToList();
 

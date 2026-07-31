@@ -160,16 +160,32 @@
                                     <i class="bi @toggleIcon"></i>
                                 </button>
                             </form>
-                            <form asp-action="Delete"
-                                  method="post"
-                                  class="inline-form"
-                                  onsubmit="return confirm('Xóa khuyến mãi này? Khuyến mãi đã có lượt dùng chỉ được tạm tắt.');">
-                                @Html.AntiForgeryToken()
-                                <input type="hidden" name="id" value="@item.Id" />
-                                <button class="icon-btn icon-btn--danger" type="submit" title="Xóa">
-                                    <i class="bi bi-trash"></i>
+                            @if (item.CanPermanentlyDelete)
+                            {
+                                <form asp-action="Delete"
+                                      method="post"
+                                      class="inline-form"
+                                      onsubmit="return confirm('Xóa vĩnh viễn khuyến mãi chưa từng được sử dụng này?');">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden"
+                                           name="id"
+                                           value="@item.Id" />
+                                    <button class="icon-btn icon-btn--danger"
+                                            type="submit"
+                                            title="Xóa vĩnh viễn">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </form>
+                            }
+                            else
+                            {
+                                <button class="icon-btn"
+                                        type="button"
+                                        disabled
+                                        title="@item.DeleteConstraintText">
+                                    <i class="bi bi-lock"></i>
                                 </button>
-                            </form>
+                            }
                         </td>
                     </tr>
                 }
