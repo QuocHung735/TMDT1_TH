@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using TMDT1_TH.Domain.Entities;
-using TMDT1_TH.Domain.Enums;
+using TMDT1_TH.Domain.Enums;using TMDT1_TH.Infrastructure;
+
 
 namespace TMDT1_TH.Data.Database;
 
@@ -592,11 +593,13 @@ public static class HouseholdCatalogSeeder
 
     private static string NormalizeToken(string value)
     {
-        return value
-            .Trim()
-            .ToUpperInvariant()
-            .Replace(" ", "-")
-            .Replace(",", string.Empty);
+        var token = SlugHelper.Generate(value)
+            .Replace("-", string.Empty)
+            .ToUpperInvariant();
+
+        return string.IsNullOrWhiteSpace(token)
+            ? "VAR"
+            : token;
     }
 
     private static IReadOnlyList<SeedCategory>

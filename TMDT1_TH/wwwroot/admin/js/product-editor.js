@@ -193,24 +193,36 @@
         return map;
     };
 
-    const normalizeSeed = (item) => ({
-        id: item.id ?? null,
-        priceScheduleId: item.priceScheduleId ?? null,
-        combinationKey: item.combinationKey || combinationKey(item.value1, item.value2),
-        value1: item.value1 || '',
-        value2: item.value2 || '',
-        name: item.name || [item.value1, item.value2].filter(Boolean).join(' / '),
-        sku: item.sku || '',
-        barcode: item.barcode || '',
-        costPrice: item.costPrice ?? 0,
-        listPrice: item.listPrice ?? 0,
-        salePrice: item.salePrice ?? 0,
-        stockQuantity: item.stockQuantity ?? 0,
-        lowStockThreshold: item.lowStockThreshold ?? Number(lowStockThreshold?.value || 5),
-        weight: item.weight ?? Number(productWeight?.value || 0),
-        isDefault: Boolean(item.isDefault),
-        isActive: item.isActive !== false
-    });
+    const normalizeSeed = (item) => {
+        const value1 = item.value1 || '';
+        const value2 = item.value2 || '';
+
+        // Không tin CombinationKey cũ vì dữ liệu seed và editor từng
+        // sử dụng hai cách chuẩn hóa khác nhau. Khóa mới được tạo từ
+        // chính giá trị phân loại để dòng cũ khớp đúng khi render lại.
+        const canonicalKey = value1
+            ? combinationKey(value1, value2)
+            : (item.combinationKey || '');
+
+        return {
+            id: item.id ?? null,
+            priceScheduleId: item.priceScheduleId ?? null,
+            combinationKey: canonicalKey,
+            value1,
+            value2,
+            name: item.name || [value1, value2].filter(Boolean).join(' / '),
+            sku: item.sku || '',
+            barcode: item.barcode || '',
+            costPrice: item.costPrice ?? 0,
+            listPrice: item.listPrice ?? 0,
+            salePrice: item.salePrice ?? 0,
+            stockQuantity: item.stockQuantity ?? 0,
+            lowStockThreshold: item.lowStockThreshold ?? Number(lowStockThreshold?.value || 5),
+            weight: item.weight ?? Number(productWeight?.value || 0),
+            isDefault: Boolean(item.isDefault),
+            isActive: item.isActive !== false
+        };
+    };
 
     let variantState = new Map(seedVariants.map((item) => {
         const normalized = normalizeSeed(item);

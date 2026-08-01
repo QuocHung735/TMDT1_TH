@@ -184,8 +184,15 @@ public class ProductsController : Controller
         if (product is null)
             return NotFound();
 
-        var selectedMarketId = marketId ?? await GetDefaultMarketIdAsync();
-        var model = BuildEditorModel(product, selectedMarketId);
+        var selectedMarketId =
+            await ResolveEditMarketIdAsync(
+                product,
+                marketId);
+
+        var model =
+            BuildEditorModel(
+                product,
+                selectedMarketId);
         await LoadEditorStateAsync(model);
         return View("Editor", model);
     }
@@ -729,6 +736,16 @@ public class ProductsController : Controller
             OptionName2 = options.ElementAtOrDefault(1)?.Name,
             OptionValues2 = JoinOptionValues(options.ElementAtOrDefault(1)),
             MarketId = marketId,
+            MarketIds = product.PriceSchedules
+                .Select(x => x.MarketId)
+                .Concat(
+                    product.Variants
+                        .SelectMany(x =>
+                            x.PriceSchedules)
+                        .Select(x =>
+                            x.MarketId))
+                .Distinct()
+                .ToList(),
             ProductPriceScheduleId = productPrice?.Id,
             CostPrice = productPrice?.CostPrice ?? 0,
             ListPrice = productPrice?.ListPrice ?? 0,
@@ -1614,6 +1631,58 @@ public class ProductsController : Controller
             .ToListAsync();
     }
 
+    private async Task<int?> ResolveEditMarketIdAsync(
+        Product product,
+        int? requestedMarketId)
+    {
+        var markets = await _db.Markets
+            .AsNoTracking()
+            .Where(x => x.IsActive)
+            .OrderByDescending(x => x.IsDefault)
+            .ThenBy(x => x.Name)
+            .Select(x => new
+            {
+                x.Id,
+                x.IsDefault
+            })
+            .ToListAsync();
+
+        if (markets.Count == 0)
+            return null;
+
+        if (requestedMarketId.HasValue &&
+            markets.Any(x =>
+                x.Id == requestedMarketId.Value))
+        {
+            return requestedMarketId.Value;
+        }
+
+        var pricedMarketIds = product.PriceSchedules
+            .Select(x => x.MarketId)
+            .Concat(
+                product.Variants
+                    .SelectMany(x =>
+                        x.PriceSchedules)
+                    .Select(x =>
+                        x.MarketId))
+            .ToHashSet();
+
+        var defaultWithPrice = markets
+            .FirstOrDefault(x =>
+                x.IsDefault &&
+                pricedMarketIds.Contains(x.Id));
+
+        if (defaultWithPrice is not null)
+            return defaultWithPrice.Id;
+
+        var firstWithPrice = markets
+            .FirstOrDefault(x =>
+                pricedMarketIds.Contains(x.Id));
+
+        return firstWithPrice?.Id
+            ?? markets[0].Id;
+    }
+
     private async Task<int?> GetDefaultMarketIdAsync()
     {
         return await _db.Markets
@@ -1625,16 +1694,31 @@ public class ProductsController : Controller
             .FirstOrDefaultAsync();
     }
 
-    private static PriceSchedule? SelectPreferredSchedule(IEnumerable<PriceSchedule> schedules, int marketId)
+    private static PriceSchedule? SelectPreferredSchedule(
+        IEnumerable<PriceSchedule> schedules,
+        int marketId)
     {
         var now = DateTime.Now;
-        return schedules
-            .Where(x => x.MarketId == marketId && x.IsActive && x.ValidFrom <= now && (!x.ValidTo.HasValue || x.ValidTo.Value >= now))
-            .OrderByDescending(x => x.ValidFrom)
-            .FirstOrDefault()
-            ?? schedules
-                .Where(x => x.MarketId == marketId && x.IsActive)
-                .OrderByDescending(x => x.ValidFrom)
+
+        var marketSchedules = schedules
+            .Where(x =>
+                x.MarketId == marketId)
+            .OrderByDescending(x =>
+                x.ValidFrom)
+            .ThenByDescending(x =>
+                x.Id)
+            .ToList();
+
+        return marketSchedules
+            .FirstOrDefault(x =>
+                x.IsActive &&
+                x.ValidFrom <= now &&
+                (!x.ValidTo.HasValue ||
+                 x.ValidTo.Value >= now))
+            ?? marketSchedules
+                .FirstOrDefault(x =>
+                    x.IsActive)
+            ?? marketSchedules
                 .FirstOrDefault();
     }
 
