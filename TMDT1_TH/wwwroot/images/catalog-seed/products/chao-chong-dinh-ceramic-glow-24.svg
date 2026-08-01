@@ -1,0 +1,25 @@
+﻿<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="1200" viewBox="0 0 1200 1200">
+  <defs>
+    <linearGradient id="bg24" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#f7d6c6"/>
+      <stop offset="1" stop-color="#fff8f3"/>
+    </linearGradient>
+    <linearGradient id="pan24" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#4e4b59"/>
+      <stop offset="1" stop-color="#24222b"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="1200" rx="80" fill="url(#bg24)"/>
+  <rect x="70" y="70" width="300" height="58" rx="29" fill="#fff" opacity=".9"/>
+  <text x="220" y="108" text-anchor="middle" font-family="Arial, sans-serif" font-size="25" font-weight="700" fill="#5b5260">BẾP XINH • DEMO</text>
+  <ellipse cx="510" cy="585" rx="300" ry="245" fill="#ba8b72" opacity=".22"/>
+  <ellipse cx="510" cy="545" rx="255" ry="205" fill="url(#pan24)"/>
+  <ellipse cx="510" cy="525" rx="210" ry="160" fill="#d6b7a8"/>
+  <ellipse cx="510" cy="518" rx="177" ry="130" fill="#ead7cd"/>
+  <path d="M720 520 C850 500 1000 430 1060 455 C1102 472 1101 522 1062 542 C992 577 850 572 720 565Z" fill="#302e38"/>
+  <rect x="785" y="515" width="235" height="34" rx="17" fill="#494652"/>
+  <circle cx="510" cy="520" r="22" fill="#fff" opacity=".25"/>
+  <text x="90" y="930" font-family="Arial, sans-serif" font-size="62" font-weight="700" fill="#342f39">Ceramic Glow</text>
+  <text x="90" y="1010" font-family="Arial, sans-serif" font-size="48" font-weight="700" fill="#b56f50">Kích thước 24 cm</text>
+  <text x="90" y="1080" font-family="Arial, sans-serif" font-size="28" fill="#706571">HOME-PAN-CG-24</text>
+</svg>

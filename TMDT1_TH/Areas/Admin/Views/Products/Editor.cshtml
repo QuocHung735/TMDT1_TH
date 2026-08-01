@@ -18,6 +18,15 @@
           asp-append-version="true" />
 }
 @section PageActions {
+    @if (Model.IsEdit && Model.HasVariants)
+    {
+        <a class="btn btn-light"
+           asp-action="VariantImages"
+           asp-route-id="@Model.Id">
+            <i class="bi bi-images"></i>
+            Ảnh biến thể
+        </a>
+    }
     <a class="btn btn-light" asp-action="Index">Hủy</a>
     <button class="btn btn-light" type="button" data-product-save-button="draft"><i class="bi bi-save"></i> Lưu nháp</button>
     <button class="btn btn-primary" type="button" data-product-save-button="save"><i class="bi bi-check2"></i> Lưu sản phẩm</button>

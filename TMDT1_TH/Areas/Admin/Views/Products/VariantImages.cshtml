@@ -1,0 +1,183 @@
+﻿@model VariantImagesAdminViewModel
+@{
+    ViewData["Title"] = "Ảnh biến thể";
+    ViewData["Description"] =
+        "Chọn một ảnh đại diện riêng cho từng biến thể. " +
+        "Nếu chưa có ảnh riêng, website sẽ dùng ảnh chung của sản phẩm.";
+}
+
+@section Styles {
+    <link rel="stylesheet"
+          href="~/admin/css/variant-images.css"
+          asp-append-version="true" />
+}
+
+@section PageActions {
+    <a class="btn btn-light"
+       asp-action="Edit"
+       asp-route-id="@Model.ProductId">
+        <i class="bi bi-pencil"></i>
+        Sửa sản phẩm
+    </a>
+    <a class="btn btn-light"
+       asp-action="Index">
+        Quay lại danh sách
+    </a>
+}
+
+<section class="card variant-image-overview">
+    <div class="variant-image-overview__preview">
+        @if (!string.IsNullOrWhiteSpace(Model.ProductImageUrl))
+        {
+            <img src="@Model.ProductImageUrl"
+                 alt="@Model.ProductName" />
+        }
+        else
+        {
+            <span>
+                <i class="bi bi-image"></i>
+            </span>
+        }
+    </div>
+
+    <div>
+        <span class="eyebrow">ẢNH CHUNG CỦA SẢN PHẨM</span>
+        <h2>@Model.ProductName</h2>
+        <p>SKU: <strong>@Model.ProductSku</strong></p>
+        <small>
+            Ảnh này được dùng làm ảnh dự phòng cho những biến thể
+            chưa thiết lập ảnh riêng.
+        </small>
+    </div>
+</section>
+
+@if (Model.Items.Count == 0)
+{
+    <section class="card panel">
+        <div class="empty-state">
+            <i class="bi bi-box-seam"></i>
+            <strong>Không có biến thể để quản lý ảnh</strong>
+            <p>Hãy tạo biến thể trong trang sửa sản phẩm trước.</p>
+        </div>
+    </section>
+}
+else
+{
+    <section class="variant-image-grid">
+        @foreach (var item in Model.Items)
+        {
+            var displayedImage =
+                item.ImageUrl ?? Model.ProductImageUrl;
+
+            <article class="card variant-image-card
+                    @(item.IsActive ? string.Empty : "is-inactive")">
+                <div class="variant-image-card__visual">
+                    @if (!string.IsNullOrWhiteSpace(displayedImage))
+                    {
+                        <img src="@displayedImage"
+                             alt="@Model.ProductName - @item.Name" />
+                    }
+                    else
+                    {
+                        <span>
+                            <i class="bi bi-image"></i>
+                        </span>
+                    }
+
+                    @if (string.IsNullOrWhiteSpace(item.ImageUrl))
+                    {
+                        <em>Dùng ảnh chung</em>
+                    }
+                    else
+                    {
+                        <em>Ảnh riêng</em>
+                    }
+                </div>
+
+                <div class="variant-image-card__body">
+                    <div class="variant-image-card__heading">
+                        <div>
+                            <h3>@item.Name</h3>
+                            <p>@item.Sku</p>
+                        </div>
+
+                        <span class="status-pill
+                            @(item.IsActive ? "status-active" : "status-inactive")">
+                            @(item.IsActive ? "Đang bán" : "Tạm tắt")
+                        </span>
+                    </div>
+
+                    <dl>
+                        <div>
+                            <dt>Tồn kho</dt>
+                            <dd>@item.StockQuantity</dd>
+                        </div>
+                        <div>
+                            <dt>Trạng thái ảnh</dt>
+                            <dd>
+                                @(item.ImageUrl is null
+                                    ? "Đang dùng ảnh chung"
+                                    : "Đã có ảnh riêng")
+                            </dd>
+                        </div>
+                    </dl>
+
+                    <form asp-action="UpdateVariantImage"
+                          method="post"
+                          enctype="multipart/form-data"
+                          class="variant-image-upload">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden"
+                               name="productId"
+                               value="@Model.ProductId" />
+                        <input type="hidden"
+                               name="variantId"
+                               value="@item.Id" />
+
+                        <label>
+                            <span>
+                                @(item.ImageUrl is null
+                                    ? "Chọn ảnh cho biến thể"
+                                    : "Thay ảnh biến thể")
+                            </span>
+                            <input type="file"
+                                   name="imageFile"
+                                   accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"
+                                   required />
+                            <small>
+                                JPG, PNG hoặc WEBP · tối đa 5 MB
+                            </small>
+                        </label>
+
+                        <button class="btn btn-primary"
+                                type="submit">
+                            <i class="bi bi-cloud-arrow-up"></i>
+                            Lưu ảnh
+                        </button>
+                    </form>
+
+                    @if (!string.IsNullOrWhiteSpace(item.ImageUrl))
+                    {
+                        <form asp-action="RemoveVariantImage"
+                              method="post"
+                              onsubmit="return confirm('Xóa ảnh riêng của biến thể này? Website sẽ quay lại dùng ảnh chung của sản phẩm.');">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden"
+                                   name="productId"
+                                   value="@Model.ProductId" />
+                            <input type="hidden"
+                                   name="variantId"
+                                   value="@item.Id" />
+
+                            <button class="btn btn-light btn-danger-text"
+                                    type="submit">
+                                <i class="bi bi-trash3"></i>
+                                Xóa ảnh riêng
+                            </button>
+                        </form>
+                    }
+                </div>
+            </article>
+        }
+    </section>
+}

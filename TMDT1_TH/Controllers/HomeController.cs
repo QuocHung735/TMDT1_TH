@@ -241,6 +241,7 @@ public class HomeController(ApplicationDbContext db) : Controller
             .ToList();
 
         var images = product.Images
+            .Where(x => x.ProductVariantId == null)
             .OrderByDescending(x => x.IsPrimary)
             .ThenBy(x => x.DisplayOrder)
             .Select(x => new StoreImageViewModel

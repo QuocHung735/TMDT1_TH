@@ -1,4 +1,4 @@
-(() => {
+﻿(() => {
     const root = document.querySelector('[data-product-details]');
     if (!root) return;
 
@@ -25,6 +25,10 @@
     const sku = root.querySelector('[data-product-sku]');
     const stock = root.querySelector('[data-product-stock]');
     const mainImage = root.querySelector('[data-main-product-image]');
+    const fallbackImageUrl =
+        mainImage?.tagName === 'IMG'
+            ? mainImage.src
+            : '';
     const quantityInput = root.querySelector('[data-quantity-input]');
     const minusButton = root.querySelector('[data-quantity-minus]');
     const plusButton = root.querySelector('[data-quantity-plus]');
@@ -41,8 +45,26 @@
     }).format(value) + ' ' + currency;
 
     const setMainImage = url => {
-        if (!url || !mainImage || mainImage.tagName !== 'IMG') return;
-        mainImage.src = url;
+        if (!mainImage ||
+            mainImage.tagName !== 'IMG') {
+            return;
+        }
+
+        const targetUrl =
+            url || fallbackImageUrl;
+
+        if (!targetUrl) return;
+
+        mainImage.src = targetUrl;
+
+        document
+            .querySelectorAll('[data-gallery-image]')
+            .forEach(button => {
+                button.classList.toggle(
+                    'is-active',
+                    button.dataset.galleryImage ===
+                        targetUrl);
+            });
     };
 
     const setFeedback = (message, state = '') => {

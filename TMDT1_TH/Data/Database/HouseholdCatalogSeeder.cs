@@ -39,6 +39,9 @@ public static class HouseholdCatalogSeeder
                     .Include(x => x.Images)
                     .Include(x => x.Specifications)
                     .Include(x => x.PriceSchedules)
+                    .Include(x => x.Variants)
+                        .ThenInclude(x => x.Images)
+                    .AsSplitQuery()
                     .FirstOrDefaultAsync(x => x.Sku == seed.Sku);
 
                 if (existing is not null)
@@ -401,6 +404,23 @@ public static class HouseholdCatalogSeeder
                     variantSeed.ListPrice,
                     variantSeed.SalePrice));
 
+            if (!string.IsNullOrWhiteSpace(
+                    variantSeed.ImagePath))
+            {
+                variant.Images.Add(
+                    new ProductImage
+                    {
+                        Product = product,
+                        ProductVariant = variant,
+                        ImageUrl = variantSeed.ImagePath,
+                        AltText =
+                            $"{product.Name} - {variant.Name}",
+                        DisplayOrder = 0,
+                        IsPrimary = true,
+                        CreatedBy = SeedSource
+                    });
+            }
+
             product.Variants.Add(variant);
         }
     }
@@ -412,7 +432,8 @@ public static class HouseholdCatalogSeeder
     {
         var changed = false;
 
-        if (product.Images.Count == 0)
+        if (!product.Images.Any(x =>
+                x.ProductVariantId == null))
         {
             product.Images.Add(new ProductImage
             {
@@ -449,6 +470,10 @@ public static class HouseholdCatalogSeeder
             changed = true;
         }
 
+        changed |= EnrichVariantImages(
+            product,
+            seed);
+
         changed |= FillIfMissing(product, seed);
 
         if (!product.HasVariants &&
@@ -469,6 +494,53 @@ public static class HouseholdCatalogSeeder
 
         if (changed)
             product.UpdatedBy = SeedSource;
+
+        return changed;
+    }
+
+    private static bool EnrichVariantImages(
+        Product product,
+        ProductSeed seed)
+    {
+        if (seed.Variants.Count == 0)
+            return false;
+
+        var changed = false;
+
+        foreach (var variantSeed in seed.Variants
+                     .Where(x =>
+                         !string.IsNullOrWhiteSpace(
+                             x.ImagePath)))
+        {
+            var variant = product.Variants
+                .FirstOrDefault(x =>
+                    !x.IsDeleted &&
+                    string.Equals(
+                        x.Sku,
+                        variantSeed.Sku,
+                        StringComparison.OrdinalIgnoreCase));
+
+            if (variant is null ||
+                variant.Images.Count > 0)
+            {
+                continue;
+            }
+
+            variant.Images.Add(
+                new ProductImage
+                {
+                    Product = product,
+                    ProductVariant = variant,
+                    ImageUrl = variantSeed.ImagePath!,
+                    AltText =
+                        $"{product.Name} - {variant.Name}",
+                    DisplayOrder = 0,
+                    IsPrimary = true,
+                    CreatedBy = SeedSource
+                });
+
+            changed = true;
+        }
 
         return changed;
     }
@@ -768,7 +840,9 @@ public static class HouseholdCatalogSeeder
                     Weight: 0.9m,
                     CostPrice: 190000m,
                     ListPrice: 449000m,
-                    SalePrice: 359000m),
+                    SalePrice: 359000m,
+                    ImagePath:
+                        "/images/catalog-seed/products/chao-chong-dinh-ceramic-glow-24.svg"),
                 new SeedVariant(
                     Value: "28 cm",
                     Sku: "HOME-PAN-CG-28",
@@ -776,7 +850,9 @@ public static class HouseholdCatalogSeeder
                     Weight: 1.1m,
                     CostPrice: 230000m,
                     ListPrice: 549000m,
-                    SalePrice: 429000m)
+                    SalePrice: 429000m,
+                    ImagePath:
+                        "/images/catalog-seed/products/chao-chong-dinh-ceramic-glow-28.svg")
             },
             specifications: new[]
             {
@@ -1586,7 +1662,8 @@ public static class HouseholdCatalogSeeder
         decimal Weight,
         decimal CostPrice,
         decimal ListPrice,
-        decimal SalePrice);
+        decimal SalePrice,
+        string? ImagePath = null);
 
     private sealed record ProductSeed(
         string CategorySlug,

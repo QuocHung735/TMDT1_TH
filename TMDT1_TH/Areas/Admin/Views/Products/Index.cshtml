@@ -105,7 +105,21 @@
                         </td>
                         <td><span class="status-pill @UiStatus.Class(item.Status)">@item.Status</span></td>
                         <td class="table-actions">
-                            <a class="icon-btn" asp-action="Edit" asp-route-id="@item.Id" title="Chỉnh sửa"><i class="bi bi-pencil"></i></a>
+                            <a class="icon-btn"
+                               asp-action="Edit"
+                               asp-route-id="@item.Id"
+                               title="Chỉnh sửa">
+                                <i class="bi bi-pencil"></i>
+                            </a>
+                            @if (item.VariantCount > 0)
+                            {
+                                <a class="icon-btn"
+                                   asp-action="VariantImages"
+                                   asp-route-id="@item.Id"
+                                   title="Quản lý ảnh biến thể">
+                                    <i class="bi bi-images"></i>
+                                </a>
+                            }
                             <form asp-action="Duplicate" asp-route-id="@item.Id" method="post" style="display:inline">
                                 @Html.AntiForgeryToken()
                                 <button class="icon-btn" type="submit" title="Nhân bản thành bản nháp"><i class="bi bi-copy"></i></button>

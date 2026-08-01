@@ -106,6 +106,7 @@ public class ProductsController : Controller
                     .ToList();
 
             var imageUrl = product.Images
+                .Where(x => x.ProductVariantId == null)
                 .OrderByDescending(x => x.IsPrimary)
                 .ThenBy(x => x.DisplayOrder)
                 .Select(x => x.ImageUrl)
@@ -495,7 +496,9 @@ public class ProductsController : Controller
         _db.Products.Add(copy);
         await _db.SaveChangesAsync();
 
-        foreach (var image in source.Images.OrderBy(x => x.DisplayOrder))
+        foreach (var image in source.Images
+                     .Where(x => x.ProductVariantId == null)
+                     .OrderBy(x => x.DisplayOrder))
         {
             copy.Images.Add(new ProductImage
             {
@@ -563,6 +566,22 @@ public class ProductsController : Controller
                 CreatedBy = CurrentUserName()
             };
 
+            foreach (var image in variant.Images
+                         .OrderBy(x => x.DisplayOrder))
+            {
+                newVariant.Images.Add(
+                    new ProductImage
+                    {
+                        ProductId = copy.Id,
+                        ImageUrl = image.ImageUrl,
+                        AltText =
+                            $"{copy.Name} - {newVariant.Name}",
+                        DisplayOrder = image.DisplayOrder,
+                        IsPrimary = image.IsPrimary,
+                        CreatedBy = CurrentUserName()
+                    });
+            }
+
             foreach (var link in variant.VariantValues)
             {
                 if (optionMap.TryGetValue(link.ProductOptionValueId, out var newValue))
@@ -580,6 +599,239 @@ public class ProductsController : Controller
         await transaction.CommitAsync();
         TempData["Success"] = $"Đã nhân bản “{source.Name}” thành bản nháp.";
         return RedirectToAction(nameof(Edit), new { id = copy.Id });
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> VariantImages(int id)
+    {
+        var product = await _db.Products
+            .IgnoreQueryFilters()
+            .AsNoTracking()
+            .Include(x => x.Images)
+            .Include(x => x.Variants)
+                .ThenInclude(x => x.Images)
+            .AsSplitQuery()
+            .FirstOrDefaultAsync(x =>
+                x.Id == id &&
+                !x.IsDeleted);
+
+        if (product is null)
+            return NotFound();
+
+        if (!product.HasVariants)
+        {
+            TempData["Error"] =
+                "Sản phẩm này không có biến thể.";
+
+            return RedirectToAction(
+                nameof(Edit),
+                new { id });
+        }
+
+        var productImageUrl = product.Images
+            .Where(x => x.ProductVariantId == null)
+            .OrderByDescending(x => x.IsPrimary)
+            .ThenBy(x => x.DisplayOrder)
+            .Select(x => x.ImageUrl)
+            .FirstOrDefault();
+
+        var model = new VariantImagesAdminViewModel
+        {
+            ProductId = product.Id,
+            ProductName = product.Name,
+            ProductSku = product.Sku,
+            ProductImageUrl = productImageUrl,
+            Items = product.Variants
+                .Where(x => !x.IsDeleted)
+                .OrderByDescending(x => x.IsDefault)
+                .ThenBy(x => x.SortOrder)
+                .ThenBy(x => x.Name)
+                .Select(x => new VariantImageAdminItem(
+                    x.Id,
+                    x.Name,
+                    x.Sku,
+                    x.StockQuantity,
+                    x.IsActive,
+                    x.Images
+                        .OrderByDescending(image =>
+                            image.IsPrimary)
+                        .ThenBy(image =>
+                            image.DisplayOrder)
+                        .Select(image =>
+                            image.ImageUrl)
+                        .FirstOrDefault()))
+                .ToList()
+        };
+
+        return View(model);
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> UpdateVariantImage(
+        int productId,
+        int variantId,
+        IFormFile? imageFile)
+    {
+        var variant = await _db.ProductVariants
+            .IgnoreQueryFilters()
+            .Include(x => x.Product)
+            .Include(x => x.Images)
+            .FirstOrDefaultAsync(x =>
+                x.Id == variantId &&
+                x.ProductId == productId &&
+                !x.IsDeleted &&
+                !x.Product.IsDeleted);
+
+        if (variant is null)
+            return NotFound();
+
+        if (imageFile is null ||
+            imageFile.Length <= 0)
+        {
+            TempData["Error"] =
+                "Vui lòng chọn một tệp ảnh.";
+
+            return RedirectToAction(
+                nameof(VariantImages),
+                new { id = productId });
+        }
+
+        var extension = Path
+            .GetExtension(imageFile.FileName)
+            .ToLowerInvariant();
+
+        if (!AllowedImageExtensions.Contains(
+                extension))
+        {
+            TempData["Error"] =
+                "Ảnh biến thể chỉ hỗ trợ JPG, PNG hoặc WEBP.";
+
+            return RedirectToAction(
+                nameof(VariantImages),
+                new { id = productId });
+        }
+
+        if (imageFile.Length > MaxImageSize)
+        {
+            TempData["Error"] =
+                "Ảnh biến thể không được vượt quá 5 MB.";
+
+            return RedirectToAction(
+                nameof(VariantImages),
+                new { id = productId });
+        }
+
+        var newImageUrl =
+            await SaveImageAsync(imageFile);
+
+        var oldImages = variant.Images.ToList();
+        var oldUrls = oldImages
+            .Select(x => x.ImageUrl)
+            .ToList();
+
+        try
+        {
+            if (oldImages.Count > 0)
+            {
+                _db.ProductImages.RemoveRange(
+                    oldImages);
+            }
+
+            _db.ProductImages.Add(
+                new ProductImage
+                {
+                    ProductId = productId,
+                    ProductVariantId = variantId,
+                    ImageUrl = newImageUrl,
+                    AltText =
+                        $"{variant.Product.Name} - {variant.Name}",
+                    DisplayOrder = 0,
+                    IsPrimary = true,
+                    CreatedBy = CurrentUserName()
+                });
+
+            await _db.SaveChangesAsync();
+
+            foreach (var oldUrl in oldUrls
+                         .Distinct(
+                             StringComparer.OrdinalIgnoreCase))
+            {
+                await DeleteUploadedFileIfUnusedAsync(
+                    oldUrl);
+            }
+
+            TempData["Success"] =
+                $"Đã cập nhật ảnh cho biến thể “{variant.Name}”.";
+        }
+        catch (Exception exception)
+        {
+            DeleteUploadedFile(newImageUrl);
+            _db.ChangeTracker.Clear();
+
+            TempData["Error"] =
+                "Không thể lưu ảnh biến thể: " +
+                exception.Message;
+        }
+
+        return RedirectToAction(
+            nameof(VariantImages),
+            new { id = productId });
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> RemoveVariantImage(
+        int productId,
+        int variantId)
+    {
+        var variant = await _db.ProductVariants
+            .IgnoreQueryFilters()
+            .Include(x => x.Product)
+            .Include(x => x.Images)
+            .FirstOrDefaultAsync(x =>
+                x.Id == variantId &&
+                x.ProductId == productId &&
+                !x.IsDeleted &&
+                !x.Product.IsDeleted);
+
+        if (variant is null)
+            return NotFound();
+
+        var images = variant.Images.ToList();
+
+        if (images.Count == 0)
+        {
+            TempData["Error"] =
+                "Biến thể này chưa có ảnh riêng.";
+
+            return RedirectToAction(
+                nameof(VariantImages),
+                new { id = productId });
+        }
+
+        var oldUrls = images
+            .Select(x => x.ImageUrl)
+            .ToList();
+
+        _db.ProductImages.RemoveRange(images);
+        await _db.SaveChangesAsync();
+
+        foreach (var oldUrl in oldUrls
+                     .Distinct(
+                         StringComparer.OrdinalIgnoreCase))
+        {
+            await DeleteUploadedFileIfUnusedAsync(
+                oldUrl);
+        }
+
+        TempData["Success"] =
+            $"Đã xóa ảnh riêng của biến thể “{variant.Name}”. " +
+            "Website sẽ dùng ảnh chung của sản phẩm.";
+
+        return RedirectToAction(
+            nameof(VariantImages),
+            new { id = productId });
     }
 
     [HttpPost]
@@ -692,6 +944,8 @@ public class ProductsController : Controller
             .Include(x => x.Variants)
                 .ThenInclude(x => x.PriceSchedules)
             .Include(x => x.Variants)
+                .ThenInclude(x => x.Images)
+            .Include(x => x.Variants)
                 .ThenInclude(x => x.VariantValues)
                     .ThenInclude(x => x.ProductOptionValue)
                         .ThenInclude(x => x.ProductOption)
@@ -754,6 +1008,7 @@ public class ProductsController : Controller
             ValidTo = productPrice?.ValidTo,
             PriceNote = productPrice?.Note,
             ExistingImages = product.Images
+                .Where(x => x.ProductVariantId == null)
                 .OrderBy(x => x.DisplayOrder)
                 .Select(x => new ProductImageEditorItem
                 {
@@ -763,7 +1018,11 @@ public class ProductsController : Controller
                     DisplayOrder = x.DisplayOrder
                 })
                 .ToList(),
-            PrimaryImageId = product.Images.FirstOrDefault(x => x.IsPrimary)?.Id,
+            PrimaryImageId = product.Images
+                .FirstOrDefault(x =>
+                    x.ProductVariantId == null &&
+                    x.IsPrimary)
+                ?.Id,
             Specifications = product.Specifications
                 .OrderBy(x => x.DisplayOrder)
                 .Select(x => new ProductSpecificationEditorItem
@@ -932,7 +1191,13 @@ public class ProductsController : Controller
     private async Task ValidateImagesAsync(ProductEditorViewModel model, bool publishing)
     {
         var currentImages = model.Id.HasValue
-            ? await _db.ProductImages.AsNoTracking().Where(x => x.ProductId == model.Id.Value).Select(x => x.Id).ToListAsync()
+            ? await _db.ProductImages
+                .AsNoTracking()
+                .Where(x =>
+                    x.ProductId == model.Id.Value &&
+                    x.ProductVariantId == null)
+                .Select(x => x.Id)
+                .ToListAsync()
             : new List<int>();
         var removeIds = model.RemoveImageIds.Distinct().ToHashSet();
         var remainingCount = currentImages.Count(x => !removeIds.Contains(x)) + model.ImageFiles.Count(x => x.Length > 0);
@@ -1107,7 +1372,9 @@ public class ProductsController : Controller
         List<string> filesToDeleteAfterCommit)
     {
         var existing = await _db.ProductImages
-            .Where(x => x.ProductId == product.Id)
+            .Where(x =>
+                x.ProductId == product.Id &&
+                x.ProductVariantId == null)
             .OrderBy(x => x.DisplayOrder)
             .ToListAsync();
         var removeIds = model.RemoveImageIds.Distinct().ToHashSet();
